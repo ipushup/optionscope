@@ -1,0 +1,55 @@
+name: OptionScope Scanner
+
+on:
+  schedule:
+    # Runs every 2 hours during US market hours (Mon-Fri)
+    # GitHub Actions uses UTC. US market = 13:30-20:00 UTC
+    - cron: '30 13 * * 1-5'   # 9:30 AM ET (market open)
+    - cron: '0  15 * * 1-5'   # 11:00 AM ET
+    - cron: '0  17 * * 1-5'   # 1:00 PM ET
+    - cron: '0  19 * * 1-5'   # 3:00 PM ET
+    - cron: '55 19 * * 1-5'   # 3:55 PM ET (near close)
+
+  # Also allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      min_iv:
+        description: 'Minimum IV Rank to include (0-100)'
+        required: false
+        default: '0'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push results.json to gh-pages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas numpy scipy
+
+      - name: Run option scanner
+        run: |
+          python scanner/run_scan.py
+        env:
+          MIN_IV: ${{ github.event.inputs.min_iv || '0' }}
+
+      - name: Deploy results to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/build
+          # Keep previous build, only update results.json
+          keep_files: true
