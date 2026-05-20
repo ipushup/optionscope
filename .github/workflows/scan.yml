@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -30,27 +32,25 @@ jobs:
       - name: Run option scanner
         run: python scanner/run_scan.py
 
-      - name: Verify results.json was created
+      - name: Show results.json preview
         run: |
-          echo "=== results.json preview ==="
-          head -50 frontend/public/results.json
+          echo "=== File check ==="
+          ls -la frontend/public/results.json
+          echo "=== Preview ==="
+          head -30 frontend/public/results.json
 
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages-dir
-
-      - name: Copy results.json into gh-pages
+      - name: Push results.json to gh-pages
         run: |
-          cp frontend/public/results.json gh-pages-dir/results.json
-          echo "Copied results.json to gh-pages"
+          cp frontend/public/results.json /tmp/results.json
 
-      - name: Commit and push results.json to gh-pages
-        run: |
-          cd gh-pages-dir
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          cp /tmp/results.json ./results.json
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add results.json
-          git diff --staged --quiet || git commit -m "scan: update results.json $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push
+          git diff --staged --quiet && echo "No changes" || git commit -m "scan: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push origin gh-pages
+          echo "=== Done. results.json pushed to gh-pages ==="
