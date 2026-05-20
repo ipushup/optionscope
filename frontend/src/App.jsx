@@ -89,10 +89,10 @@ function IVBar({ value }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-        <span style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", letterSpacing: "0.1em" }}>IV RANK</span>
+        <span style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", letterSpacing: "0.1em" }}>IV RANK</span>
         <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: "DM Mono,monospace" }}>{value.toFixed(1)}</span>
       </div>
-      <div style={{ background: "#0e1c28", borderRadius: 3, height: 6 }}>
+      <div style={{ background: "#162030", borderRadius: 3, height: 6 }}>
         <div style={{ width: `${Math.min(value,100)}%`, height: "100%", background: color, borderRadius: 3, transition: "width 1s ease" }} />
       </div>
     </div>
@@ -122,12 +122,11 @@ function PremiumCard({ stock, isSelected, onClick }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <ScoreRing score={score} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 11 }}>{catIcon}</span>
-            <span style={{ fontSize: 21, fontWeight: 900, color: "#ddeeff", fontFamily: "'Syne',sans-serif", letterSpacing: "-0.5px" }}>{stock.ticker}</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#7a9ab8", fontFamily: "DM Mono,monospace" }}>${stock.price.toFixed(2)}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 21, fontWeight: 900, color: "#ffffff", fontFamily: "'Syne',sans-serif", letterSpacing: "-0.5px" }}>{stock.ticker}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#aaccee", fontFamily: "DM Mono,monospace" }}>${stock.price.toFixed(2)}</span>
           </div>
-          <div style={{ fontSize: 10, color: "#3a5060", fontFamily: "DM Mono,monospace", marginTop: 1 }}>
+          <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 2 }}>
             IV {stock.iv_current}% · ADX {stock.adx} · RSI {stock.rsi}
           </div>
         </div>
@@ -147,49 +146,49 @@ function PremiumCard({ stock, isSelected, onClick }) {
       <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
 
         {/* Suggested strike */}
-        <div style={{ padding: "8px 10px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28" }}>
-          <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", letterSpacing: "0.08em", marginBottom: 3 }}>
+        <div style={{ padding: "8px 10px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40" }}>
+          <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", letterSpacing: "0.08em", marginBottom: 3 }}>
             {sell.type === "SELL PUT" ? "SELL PUT STRIKE" : sell.type === "SELL CALL" ? "SELL CALL STRIKE" : "SELL STRANGLE"}
           </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: sell.color, fontFamily: "DM Mono,monospace" }}>
             {strike ? `$${strike.toFixed(2)}` : "Both sides"}
           </div>
-          <div style={{ fontSize: 9, color: "#445566", fontFamily: "DM Mono,monospace", marginTop: 2 }}>{sell.desc}</div>
+          <div style={{ fontSize: 10, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 2 }}>{sell.desc}</div>
         </div>
 
         {/* DTE recommendation */}
-        <div style={{ padding: "8px 10px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28" }}>
-          <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", letterSpacing: "0.08em", marginBottom: 3 }}>BEST EXPIRY (DTE)</div>
+        <div style={{ padding: "8px 10px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40" }}>
+          <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", letterSpacing: "0.08em", marginBottom: 3 }}>BEST EXPIRY (DTE)</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#f5a623", fontFamily: "DM Mono,monospace" }}>{dte.dte}</div>
-          <div style={{ fontSize: 9, color: "#445566", fontFamily: "DM Mono,monospace", marginTop: 2 }}>{dte.reason}</div>
+          <div style={{ fontSize: 10, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 2 }}>{dte.reason}</div>
         </div>
       </div>
 
       {/* ── SAFE ZONE ── */}
-      <div style={{ marginTop: 8, padding: "8px 10px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28" }}>
-        <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", letterSpacing: "0.08em", marginBottom: 4 }}>
-          SAFE PRICE ZONE (1 WEEK · 1 STD DEV · ~68% PROBABILITY)
+      <div style={{ marginTop: 8, padding: "8px 10px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40" }}>
+        <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", letterSpacing: "0.08em", marginBottom: 4 }}>
+          SAFE ZONE THIS WEEK (keep strike outside)
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#ff8c42", fontFamily: "DM Mono,monospace" }}>${stock.range_1w.low}</span>
-          <div style={{ flex: 1, height: 4, background: "#0e1c28", borderRadius: 2, position: "relative" }}>
-            <div style={{ position: "absolute", left: "20%", right: "20%", top: 0, height: "100%", background: "#00d4aa44", borderRadius: 2 }} />
+          <div style={{ flex: 1, height: 4, background: "#162030", borderRadius: 2, position: "relative" }}>
+            <div style={{ position: "absolute", left: "20%", right: "20%", top: 0, height: "100%", background: "#00d4aa33", borderRadius: 2 }} />
             <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", top: -3, width: 2, height: 10, background: "#3b9eff", borderRadius: 1 }} />
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#ff8c42", fontFamily: "DM Mono,monospace" }}>${stock.range_1w.high}</span>
         </div>
-        <div style={{ fontSize: 9, color: "#2e4055", fontFamily: "DM Mono,monospace", marginTop: 3, textAlign: "center" }}>
-          Keep your strike OUTSIDE this range for safety
+        <div style={{ fontSize: 10, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 3, textAlign: "center" }}>
+          1 week · 1 std dev · ~68% probability
         </div>
       </div>
 
       {/* ── FOOTER ── */}
       <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 10, color: "#3a5060", fontFamily: "DM Mono,monospace" }}>
-          {stock.volume_spike > 1.8 && <span style={{ color: "#f5a623" }}>🔥 Vol spike ×{stock.volume_spike} · </span>}
-          <span style={{ color: scoreCol }}>Score {score}/100</span>
+        <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace" }}>
+          {stock.volume_spike > 1.8 && <span style={{ color: "#f5a623" }}>🔥 Vol ×{stock.volume_spike} · </span>}
+          <span style={{ color: scoreCol, fontWeight: 700 }}>Score {score}/100</span>
         </div>
-        <div style={{ fontSize: 10, color: "#2e4055", fontFamily: "DM Mono,monospace" }}>
+        <div style={{ fontSize: 10, color: "#6a8898", fontFamily: "DM Mono,monospace" }}>
           {stock.scanned_at ? new Date(stock.scanned_at).toLocaleTimeString() : "demo"}
         </div>
       </div>
@@ -225,7 +224,7 @@ function DetailPanel({ stock, isMobile, onClose }) {
         <div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#ddeeff", fontFamily: "'Syne',sans-serif", letterSpacing: "-1px" }}>{stock.ticker}</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: "#7a9ab8", fontFamily: "DM Mono,monospace" }}>${stock.price.toFixed(2)}</div>
-          <div style={{ fontSize: 10, color: "#2e4055", fontFamily: "DM Mono,monospace" }}>{CATEGORY_ICON[stock.category]} {stock.category?.replace("_"," ")}</div>
+      <div style={{ fontSize: 10, color: "#6a8898", fontFamily: "DM Mono,monospace" }}>{CATEGORY_ICON[stock.category]} {stock.category?.replace("_"," ")}</div>
         </div>
       </div>
 
@@ -237,45 +236,45 @@ function DetailPanel({ stock, isMobile, onClose }) {
 
       {/* Strike + DTE */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-        <div style={{ padding: "12px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28", textAlign: "center" }}>
-          <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", marginBottom: 4 }}>STRIKE LEVEL</div>
+        <div style={{ padding: "12px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40", textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", marginBottom: 4 }}>STRIKE LEVEL</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: sell.color, fontFamily: "DM Mono,monospace" }}>
             {strike ? `$${strike.toFixed(0)}` : "±OTM"}
           </div>
-          <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", marginTop: 3 }}>suggested ATM±1σ</div>
+          <div style={{ fontSize: 10, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 3 }}>suggested ATM±1σ</div>
         </div>
-        <div style={{ padding: "12px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28", textAlign: "center" }}>
-          <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", marginBottom: 4 }}>EXPIRY (DTE)</div>
+        <div style={{ padding: "12px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40", textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", marginBottom: 4 }}>EXPIRY (DTE)</div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "#f5a623", fontFamily: "DM Mono,monospace" }}>{dte.dte}</div>
-          <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", marginTop: 3 }}>{dte.reason}</div>
+          <div style={{ fontSize: 10, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 3 }}>{dte.reason}</div>
         </div>
       </div>
 
       {/* IV Rank */}
       <div style={{ marginBottom: 10 }}>
         <IVBar value={stock.iv_rank} />
-        <div style={{ fontSize: 10, color: "#3a5060", fontFamily: "DM Mono,monospace", marginTop: 4 }}>
-          Current IV: {stock.iv_current}% · Higher IV Rank = more premium collected
+        <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 4 }}>
+          Current IV: {stock.iv_current}% · Higher = more premium collected
         </div>
       </div>
 
       {/* Safe zones */}
-      <div style={{ padding: "10px 12px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28", marginBottom: 8 }}>
-        <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", marginBottom: 6 }}>EXPECTED MOVE (keep strike outside these)</div>
+      <div style={{ padding: "10px 12px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40", marginBottom: 8 }}>
+        <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", marginBottom: 6 }}>EXPECTED MOVE — keep strike outside these</div>
         {[["1 Day", stock.range_1d], ["1 Week", stock.range_1w], ["1 Month", stock.range_1m]].map(([lbl, r]) => (
           <div key={lbl} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 10, color: "#445566", fontFamily: "DM Mono,monospace" }}>{lbl}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#7a9ab8", fontFamily: "DM Mono,monospace" }}>${r.low} – ${r.high}</span>
+            <span style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace" }}>{lbl}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#ccddee", fontFamily: "DM Mono,monospace" }}>${r.low} – ${r.high}</span>
           </div>
         ))}
       </div>
 
       {/* Theta estimate */}
-      <div style={{ padding: "10px 12px", background: "#06130e", borderRadius: 8, border: "1px solid #0e2e1e", marginBottom: 8 }}>
-        <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace", marginBottom: 4 }}>ESTIMATED DAILY THETA DECAY</div>
+      <div style={{ padding: "10px 12px", background: "#071510", borderRadius: 8, border: "1px solid #0e2e1e", marginBottom: 8 }}>
+        <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace", marginBottom: 4 }}>ESTIMATED DAILY THETA DECAY</div>
         <div style={{ fontSize: 20, fontWeight: 800, color: "#00d4aa", fontFamily: "DM Mono,monospace" }}>~${dailyTheta.toFixed(2)} / contract</div>
-        <div style={{ fontSize: 9, color: "#2e6040", fontFamily: "DM Mono,monospace", marginTop: 3 }}>
-          Approximate value lost by option each day · works in your favour as seller
+        <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginTop: 3 }}>
+          Option loses this value each day · works in your favour as seller
         </div>
       </div>
 
@@ -286,10 +285,10 @@ function DetailPanel({ stock, isMobile, onClose }) {
           ["RSI", stock.rsi, stock.rsi > 70 ? "#ff5c5c" : stock.rsi < 30 ? "#ff5c5c" : "#00d4aa", stock.rsi > 70 ? "Overbought" : stock.rsi < 30 ? "Oversold" : "Safe zone"],
           ["VOL ×", stock.volume_spike, stock.volume_spike > 2 ? "#ff5c5c" : "#00d4aa", stock.volume_spike > 2 ? "Event risk!" : "Normal"],
         ].map(([lbl, val, col, hint]) => (
-          <div key={lbl} style={{ padding: "8px", background: "#060e1a", borderRadius: 8, border: "1px solid #0e1c28", textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "#3a5060", fontFamily: "DM Mono,monospace" }}>{lbl}</div>
+          <div key={lbl} style={{ padding: "8px", background: "#0a1828", borderRadius: 8, border: "1px solid #1a2e40", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "#7a9ab8", fontFamily: "DM Mono,monospace" }}>{lbl}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: col, fontFamily: "DM Mono,monospace" }}>{typeof val === "number" ? val.toFixed(1) : val}</div>
-            <div style={{ fontSize: 8, color: "#3a5060", fontFamily: "DM Mono,monospace" }}>{hint}</div>
+            <div style={{ fontSize: 10, color: "#8aaabb", fontFamily: "DM Mono,monospace" }}>{hint}</div>
           </div>
         ))}
       </div>
@@ -409,20 +408,20 @@ export default function App() {
       {!loading && !error && data && (
         <div style={{ background: "#050c18", borderBottom: "1px solid #0a1826", padding: "6px 16px", display: "flex", gap: 20, alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
           <span style={{ fontSize: 11, fontFamily: "DM Mono,monospace" }}>
-            <span style={{ color: "#3a5060" }}>SELL NOW </span>
+            <span style={{ color: "#8aaabb" }}>SELL NOW </span>
             <span style={{ color: "#00d4aa", fontWeight: 700 }}>{sellNow} stocks</span>
           </span>
           <span style={{ fontSize: 11, fontFamily: "DM Mono,monospace" }}>
-            <span style={{ color: "#3a5060" }}>AVG IV RANK </span>
+            <span style={{ color: "#8aaabb" }}>AVG IV RANK </span>
             <span style={{ color: "#3b9eff", fontWeight: 700 }}>{avgIV}</span>
           </span>
           {!isMobile && topPicks && (
             <span style={{ fontSize: 11, fontFamily: "DM Mono,monospace" }}>
-              <span style={{ color: "#3a5060" }}>TOP PICKS </span>
+              <span style={{ color: "#8aaabb" }}>TOP PICKS </span>
               <span style={{ color: "#f5a623", fontWeight: 700 }}>{topPicks}</span>
             </span>
           )}
-          <span style={{ fontSize: 10, color: "#2e4055", fontFamily: "DM Mono,monospace", marginLeft: "auto" }}>
+          <span style={{ fontSize: 10, color: "#6a8898", fontFamily: "DM Mono,monospace", marginLeft: "auto" }}>
             {data.scanned_at ? `Scanned ${new Date(data.scanned_at).toLocaleString()}` : ""}
           </span>
         </div>
@@ -434,7 +433,7 @@ export default function App() {
         {loading && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#040b14", zIndex: 30, gap: 14 }}>
             <div style={{ width: 34, height: 34, border: "3px solid #0e1c28", borderTopColor: "#3b9eff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <div style={{ color: "#3a5060", fontFamily: "DM Mono,monospace", fontSize: 12 }}>Loading scan results…</div>
+            <div style={{ color: "#8aaabb", fontFamily: "DM Mono,monospace", fontSize: 12 }}>Loading scan results…</div>
           </div>
         )}
 
@@ -442,7 +441,7 @@ export default function App() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 24 }}>
             <div style={{ fontSize: 40 }}>📡</div>
             <div style={{ color: "#3b9eff", fontFamily: "'Syne',sans-serif", fontSize: 16, fontWeight: 700 }}>No scan data yet</div>
-            <div style={{ color: "#3a5060", fontFamily: "DM Mono,monospace", fontSize: 11, textAlign: "center", maxWidth: 300, lineHeight: 1.8 }}>
+            <div style={{ color: "#8aaabb", fontFamily: "DM Mono,monospace", fontSize: 11, textAlign: "center", maxWidth: 300, lineHeight: 1.8 }}>
               GitHub Actions → OptionScope Scanner → Run workflow<br/>Results appear here automatically after scan completes.
             </div>
             <button onClick={loadResults} style={{ padding: "8px 20px", background: "#0d3060", border: "none", borderRadius: 8, color: "#3b9eff", fontSize: 12, fontWeight: 700, fontFamily: "'Syne',sans-serif", cursor: "pointer" }}>Try Again</button>
@@ -460,7 +459,7 @@ export default function App() {
         {!loading && !error && view === "premium" && (
           <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
             <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
-              <div style={{ fontSize: 10, color: "#3a5060", fontFamily: "DM Mono,monospace", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginBottom: 10 }}>
                 {stocks.length} stocks · sorted by Premium Score
               </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
@@ -551,8 +550,8 @@ export default function App() {
         <span style={{ fontSize: 10, color: data ? "#00d4aa" : "#2e4055", fontFamily: "DM Mono,monospace" }}>
           {data ? `● ${data.total_results} stocks · auto-refresh 5min` : "○ Waiting"}
         </span>
-        <span style={{ fontSize: 10, color: "#1e3040", fontFamily: "DM Mono,monospace" }}>yfinance · 15min delayed</span>
-        <span style={{ fontSize: 10, color: "#1e3040", fontFamily: "DM Mono,monospace", marginLeft: "auto" }}>{new Date().toLocaleTimeString()}</span>
+        <span style={{ fontSize: 10, color: "#6a8898", fontFamily: "DM Mono,monospace" }}>yfinance · 15min delayed</span>
+        <span style={{ fontSize: 10, color: "#6a8898", fontFamily: "DM Mono,monospace", marginLeft: "auto" }}>{new Date().toLocaleTimeString()}</span>
       </div>
     </div>
   );
