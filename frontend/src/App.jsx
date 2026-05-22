@@ -112,10 +112,13 @@ function PremiumCard({ stock, isSelected, onClick }) {
       background: isSelected ? "#0c1e34" : "#080f1c",
       border: `1px solid ${isSelected ? scoreCol : "#0e1c28"}`,
       borderRadius: 14,
-      padding: "14px 16px",
+      padding: "14px 12px",
       cursor: "pointer",
       transition: "all 0.2s ease",
       boxShadow: isSelected ? `0 0 0 2px ${scoreCol}22, 0 8px 32px #00000088` : "none",
+      width: "100%",
+      minWidth: 0,
+      overflow: "hidden",
     }}>
 
       {/* ── ROW 1: Score ring + ticker + sell type ── */}
@@ -132,8 +135,8 @@ function PremiumCard({ stock, isSelected, onClick }) {
         </div>
         {/* Sell type badge */}
         <div style={{ textAlign: "center", flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: sell.color, fontFamily: "DM Mono,monospace", letterSpacing: "0.05em",
-            background: sell.color + "18", border: `1px solid ${sell.color}44`, borderRadius: 6, padding: "4px 8px" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: sell.color, fontFamily: "DM Mono,monospace",
+            background: sell.color + "18", border: `1px solid ${sell.color}44`, borderRadius: 6, padding: "4px 6px", whiteSpace: "nowrap" }}>
             {sell.type}
           </div>
         </div>
@@ -361,17 +364,18 @@ export default function App() {
   const topPicks  = stocks.slice(0, 3).map(s => s.ticker).join(", ");
 
   return (
-    <div style={{ minHeight: "100vh", background: "#040b14", color: "#ddeeff", fontFamily: "'Syne',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#040b14", color: "#ddeeff", fontFamily: "'Syne',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", maxWidth: "100vw" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
+        html,body{overflow-x:hidden;max-width:100vw}
         ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:#040b14} ::-webkit-scrollbar-thumb{background:#162030;border-radius:3px}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
       `}</style>
 
       {/* ── TOPBAR ── */}
-      <div style={{ height: 52, background: "#050c18", borderBottom: "1px solid #0a1826", display: "flex", alignItems: "center", padding: "0 14px", gap: 10, flexShrink: 0 }}>
+      <div style={{ height: 52, background: "#050c18", borderBottom: "1px solid #0a1826", display: "flex", alignItems: "center", padding: "0 10px", gap: 8, flexShrink: 0, overflow: "hidden" }}>
         <div style={{ width: 28, height: 28, background: "linear-gradient(135deg,#0d4080,#00b894)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>⚡</div>
         {!isMobile && <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: "-0.5px", background: "linear-gradient(90deg,#3b9eff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>OptionScope</span>}
 
@@ -458,11 +462,11 @@ export default function App() {
         {/* PREMIUM VIEW */}
         {!loading && !error && view === "premium" && (
           <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-            <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
-              <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginBottom: 10 }}>
+            <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "12px 10px" }}>
+              <div style={{ fontSize: 11, color: "#8aaabb", fontFamily: "DM Mono,monospace", marginBottom: 10, paddingLeft: 2 }}>
                 {stocks.length} stocks · sorted by Premium Score
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: 10, width: "100%" }}>
                 {stocks.map((s, i) => (
                   <div key={s.ticker} style={{ animation: `fadeUp 0.3s ease ${i * 0.03}s both` }}>
                     <PremiumCard stock={s} isSelected={selected?.ticker === s.ticker} onClick={() => handleSelect(s)} />
