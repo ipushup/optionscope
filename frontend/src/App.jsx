@@ -29,55 +29,34 @@ function getSellType(stock) {
   return                                 { type: "SELL STRANGLE", color: "#cc77ff", desc: "No clear trend — sell both sides" };
 }
 
-// ── STRIKE CALCULATOR ─────────────────────────────────────────────────────────
-// Uses ~0.30 delta approximation: strike at 8% OTM max, capped to meaningful premium
-// This keeps strikes in the real tradeable zone (not too far OTM)
-function getSuggestedStrike(stock, type) {
-  const iv      = stock.iv_current / 100;
-  const price   = stock.price;
-  const dte     = stock.iv_rank >= 75 ? 25 : stock.iv_rank >= 50 ? 37 : 52; // days
-  const T       = dte / 365;
-
-  // 1-std-dev move for chosen DTE
-  const oneSigma = price * iv * Math.sqrt(T);
-
-  // Use 0.5× sigma for ~0.30 delta strike (keeps it close enough for real premium)
-  // Hard cap: never more than 10% away from current price
-  const maxMove  = price * 0.10;
-  const move     = Math.min(oneSigma * 0.5, maxMove);
-
-  if (type === "SELL PUT")  return Math.floor((price - move) / 0.5) * 0.5;
-  if (type === "SELL CALL") return Math.ceil((price  + move) / 0.5) * 0.5;
-  return null;
+// ── STRIKE + PREMIUM ─────────────────────────────────────────────────────────
+// Use real market data from scanner (not estimated)
+function getRealStrike(stock) {
+  return stock.suggest_strike || null;
 }
-
-// ── PREMIUM ESTIMATOR ─────────────────────────────────────────────────────────
-// Based on simplified Black-Scholes approximation
-// Verified against real market data
+function getRealPremium(stock) {
+  if (!stock.suggest_premium_contract) return null;
+  return {
+    perContract: stock.suggest_premium_contract,
+    perShare:    stock.suggest_premium,
+    otmPct:      stock.suggest_otm_pct,
+  };
+}
+// Fallback estimator only if scanner data missing
 function estimatePremium(stock, strike, type) {
   if (!strike) return null;
-  const iv    = stock.iv_current / 100;   // e.g. 0.83 for 83%
+  const iv    = stock.iv_current / 100;
   const price = stock.price;
-  const dte   = stock.iv_rank >= 75 ? 25 : stock.iv_rank >= 50 ? 37 : 52;
+  const dte   = stock.suggest_dte || (stock.iv_rank >= 75 ? 25 : stock.iv_rank >= 50 ? 37 : 52);
   const T     = dte / 365;
-
-  // ATM option price approximation: price × IV × sqrt(T) × 0.4 (Brenner-Subrahmanyam)
-  const atmPremium = price * iv * Math.sqrt(T) * 0.4;
-
-  // Adjust for moneyness — how far strike is from current price
+  const atmPremium   = price * iv * Math.sqrt(T) * 0.4;
   const distance     = Math.abs(price - strike) / price;
   const moneynessAdj = Math.exp(-distance * distance / (2 * iv * iv * T));
-
-  // Per share price of the option
-  const perShare = atmPremium * moneynessAdj;
-
-  // Per contract = 100 shares (NOT × 100 again)
-  const perContract = perShare * 100;
-
+  const perShare     = atmPremium * moneynessAdj;
   return {
-    perContract: Math.round(perContract * 100) / 100,   // e.g. $18.50
-    perShare:    Math.round(perShare * 100) / 100,       // e.g. $0.185
-    otmPct:      Math.round(distance * 1000) / 10,       // e.g. 10.1
+    perContract: Math.round(perShare * 100 * 100) / 100,
+    perShare:    Math.round(perShare * 100) / 100,
+    otmPct:      Math.round(distance * 1000) / 10,
   };
 }
 
@@ -137,8 +116,8 @@ function PremiumCard({ stock, isSelected, onClick }) {
   const scoreCol = getScoreColor(score);
   const sell     = getSellType(stock);
   const dte      = getDTEadvice(stock.iv_rank);
-  const strike   = getSuggestedStrike(stock, sell.type);
-  const premium  = estimatePremium(stock, strike, sell.type);
+  const strike   = getRealStrike(stock);
+  const premium  = getRealPremium(stock) || estimatePremium(stock, strike, sell.type);
 
   return (
     <div onClick={onClick} style={{
@@ -194,7 +173,7 @@ function PremiumCard({ stock, isSelected, onClick }) {
             {premium ? `$${premium.perContract}` : "—"}
           </div>
           <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:2 }}>
-            per contract · {dte.dte}
+            per contract · {stock.suggest_dte ? `${stock.suggest_dte} DTE` : dte.dte}
           </div>
         </div>
       </div>
@@ -244,10 +223,10 @@ function DetailPanel({ stock, isMobile, onClose }) {
   const score      = calcPremiumScore(stock);
   const sell       = getSellType(stock);
   const dte        = getDTEadvice(stock.iv_rank);
-  const strike     = getSuggestedStrike(stock, sell.type);
-  const premium    = estimatePremium(stock, strike, sell.type);
+  const strike     = getRealStrike(stock);
+  const premium    = getRealPremium(stock) || estimatePremium(stock, strike, sell.type);
   const scoreCol   = getScoreColor(score);
-  const dailyTheta = (stock.iv_current / 100) * stock.price / Math.sqrt(365) * 0.4;
+  const dailyTheta = premium ? (premium.perContract / (stock.suggest_dte || 35)) : 0;
 
   return (
     <div style={{ padding:"18px 14px", overflowY:"auto", height:"100%" }}>
