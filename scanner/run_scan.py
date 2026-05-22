@@ -1,6 +1,7 @@
 """
 OptionScope Scanner — GitHub Actions Edition
-With fallback: uses realized vol when options chain unavailable
+FIXED: Uses 30-60 DTE options only for accurate IV
+Near-expiry options have inflated IV — this fix corrects premium estimates
 """
 
 import yfinance as yf
@@ -104,12 +105,6 @@ def calc_rr(close):
     s+=min(15,max(-15,ret10*200))
     return round(min(99,max(1,s)),1)
 
-def realized_vol(close, window=21):
-    """30-day realized volatility annualised — used as IV fallback"""
-    log_ret = np.log(close/close.shift(1)).dropna()
-    rv = log_ret.rolling(window).std().iloc[-1] * math.sqrt(252)
-    return float(rv) if not math.isnan(rv) else 0.3
-
 def calc_iv_rank(iv_current, close):
     log_ret = np.log(close/close.shift(1)).dropna()
     rv = log_ret.rolling(21).std()*math.sqrt(252)
@@ -162,67 +157,82 @@ def scan_ticker(ticker):
         vol_spike = round(vol_today/vol_avg,2) if vol_avg>0 else 1.0
         category  = next((c for c,tl in TICKERS.items() if ticker in tl),"other")
 
-        # ── Try to get IV from options chain ──
-        # KEY: Use 30-60 DTE only. Near-expiry options have inflated IV
-        # which makes premium estimates wildly wrong.
+        # ── IV from options chain ──────────────────────────────────────────
+        # CRITICAL: Must use 30-60 DTE expiry
+        # Near-expiry (< 21 DTE) options have gamma-inflated IV
+        # Example: QCOM 3DTE shows 82% IV but real 35DTE IV is 25%
         iv_current = None
-        iv_source  = "options"
         try:
             exps = stock.options
-            if exps:
-                today = date.today()
-                # Prefer 30-60 DTE for clean IV signal
-                target = None
-                for e in exps:
-                    d = (date.fromisoformat(e) - today).days
-                    if 30 <= d <= 60:
+            if not exps:
+                return None
+
+            today = date.today()
+
+            # Print all available expiries for debugging
+            exp_days = [(e, (date.fromisoformat(e)-today).days) for e in exps]
+            print(f"    exps: {[(e,d) for e,d in exp_days[:6]]}", end=" ")
+
+            # STRICT: require 30-60 DTE — this is the key fix
+            target = None
+            for e, d in exp_days:
+                if 30 <= d <= 60:
+                    target = e
+                    break
+
+            # Wider fallback only if no 30-60 DTE available
+            if not target:
+                for e, d in exp_days:
+                    if 25 <= d <= 90:
                         target = e
                         break
-                # Fallback to 21-75 DTE
-                if not target:
-                    for e in exps:
-                        d = (date.fromisoformat(e) - today).days
-                        if 21 <= d <= 75:
-                            target = e
-                            break
-                # No suitable expiry — skip stock (bad IV = wrong premium)
-                if not target:
-                    return None
 
-                chain = stock.option_chain(target)
-                days_out = (date.fromisoformat(target) - today).days
-                T = days_out / 365.0
+            if not target:
+                print(f"→ no valid expiry")
+                return None
 
-                # Use slightly OTM strikes (~4% OTM) for more stable IV
-                # ATM near expiry can be distorted by gamma
-                ivs = []
-                for opt_type, df, k_target in [
-                    ("put",  chain.puts,  price * 0.96),
-                    ("call", chain.calls, price * 1.04),
-                ]:
-                    if df.empty: continue
-                    strikes_list = df["strike"].tolist()
-                    if not strikes_list: continue
-                    strike_k = min(strikes_list, key=lambda k: abs(k - k_target))
-                    row = df[df["strike"] == strike_k]
-                    if row.empty: continue
-                    bid = float(row["bid"].iloc[0])
-                    ask = float(row["ask"].iloc[0])
-                    if bid <= 0 or ask <= 0: continue
-                    if ask > 0 and (ask - bid) / ask > 0.5: continue  # skip wide spreads
-                    mid = (bid + ask) / 2
-                    if mid < 0.05: continue  # skip near-zero options
-                    iv = implied_vol(mid, price, strike_k, T, opt=opt_type)
-                    if iv and 0.05 <= iv <= 3.0:
-                        ivs.append(iv)
+            days_out = (date.fromisoformat(target) - today).days
+            print(f"→ using {target} ({days_out} DTE)")
 
-                if ivs:
-                    iv_current = float(np.mean(ivs))
+            chain = stock.option_chain(target)
+            T = days_out / 365.0
+
+            # Use ~4% OTM put and call strikes
+            # Avoids ATM gamma distortion, better IV signal
+            ivs = []
+            for opt_type, df, k_pct in [
+                ("put",  chain.puts,  0.96),   # 4% below = put
+                ("call", chain.calls, 1.04),   # 4% above = call
+            ]:
+                if df.empty: continue
+                k_target     = price * k_pct
+                strikes_list = df["strike"].tolist()
+                if not strikes_list: continue
+                strike_k = min(strikes_list, key=lambda k: abs(k - k_target))
+                row = df[df["strike"] == strike_k]
+                if row.empty: continue
+                bid = float(row["bid"].iloc[0])
+                ask = float(row["ask"].iloc[0])
+                # Skip bad data
+                if bid <= 0 or ask <= 0: continue
+                if ask > 0 and (ask - bid) / ask > 0.5: continue
+                mid = (bid + ask) / 2
+                if mid < 0.05: continue
+                iv = implied_vol(mid, price, strike_k, T, opt=opt_type)
+                if iv and 0.05 <= iv <= 3.0:
+                    ivs.append(iv)
+                    print(f"    {opt_type} K={strike_k} mid={mid:.2f} iv={iv:.1%}", end=" ")
+
+            print()
+            if not ivs:
+                return None
+            iv_current = float(np.mean(ivs))
+
         except Exception as e:
-            print(f"    options err: {e}")
+            print(f"\n    options err: {e}")
+            return None
 
-        # No real IV = skip this stock entirely
-        # Better to show fewer stocks with accurate data than wrong premiums
+        # No valid IV = skip
         if iv_current is None or iv_current <= 0:
             return None
 
@@ -234,7 +244,7 @@ def scan_ticker(ticker):
         return {
             "ticker":         ticker,
             "category":       category,
-            "iv_source":      iv_source,
+            "iv_source":      "options",
             "price":          round(price,2),
             "iv_current":     round(iv_current*100,1),
             "iv_rank":        iv_rank,
@@ -264,6 +274,7 @@ def scan_ticker(ticker):
 def main():
     print(f"OptionScope Scanner — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Universe: {len(ALL_TICKERS)} tickers | Min IV Rank: {MIN_IV}")
+    print(f"KEY: Using 30-60 DTE options for accurate IV (not near-expiry)")
     print("─"*65)
 
     results = []
@@ -271,13 +282,12 @@ def main():
         print(f"[{i+1:3d}/{len(ALL_TICKERS)}] {ticker:<6}", end="  ")
         r = scan_ticker(ticker)
         if r:
-            src  = "📡" if r["iv_source"]=="options" else "📊"
             flag = "🔥" if r["iv_rank"]>=75 else ("✅" if r["iv_rank"]>=50 else "  ")
-            print(f"IV:{r['iv_current']:6.1f}%  Rank:{r['iv_rank']:5.1f}  ADX:{r['adx']:5.1f}  {r['trend']:<8} {src}{flag}")
+            print(f"  IV:{r['iv_current']:6.1f}%  Rank:{r['iv_rank']:5.1f}  ADX:{r['adx']:5.1f}  {r['trend']:<8} {flag}")
             results.append(r)
         else:
-            print("skipped")
-        time.sleep(0.4)
+            print("  skipped")
+        time.sleep(0.5)
 
     results.sort(key=lambda x: x["iv_rank"], reverse=True)
 
@@ -295,12 +305,9 @@ def main():
 
     print("─"*65)
     print(f"Done — {len(results)}/{len(ALL_TICKERS)} stocks")
-    opts  = sum(1 for r in results if r["iv_source"]=="options")
-    rvols = sum(1 for r in results if r["iv_source"]=="realized_vol")
-    print(f"IV source: {opts} from options chain, {rvols} from realized vol fallback")
     print("\nTop 10 by IV Rank:")
     for r in results[:10]:
-        print(f"  {r['ticker']:<6} IV:{r['iv_current']:6.1f}%  Rank:{r['iv_rank']:5.1f}  [{r['iv_source']}]  {r['quadrant_label']}")
+        print(f"  {r['ticker']:<6} IV:{r['iv_current']:6.1f}%  Rank:{r['iv_rank']:5.1f}  {r['quadrant_label']}")
 
 if __name__=="__main__":
     main()
