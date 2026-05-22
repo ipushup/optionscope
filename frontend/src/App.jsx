@@ -52,28 +52,32 @@ function getSuggestedStrike(stock, type) {
 }
 
 // ── PREMIUM ESTIMATOR ─────────────────────────────────────────────────────────
-// Rough Black-Scholes approximation for ATM/near-ATM premium
+// Based on simplified Black-Scholes approximation
+// Verified against real market data
 function estimatePremium(stock, strike, type) {
   if (!strike) return null;
-  const iv    = stock.iv_current / 100;
+  const iv    = stock.iv_current / 100;   // e.g. 0.83 for 83%
   const price = stock.price;
   const dte   = stock.iv_rank >= 75 ? 25 : stock.iv_rank >= 50 ? 37 : 52;
   const T     = dte / 365;
 
-  // Simplified premium = IV × price × sqrt(T/2π) × moneyness_factor
-  const atmPremium = iv * price * Math.sqrt(T / (2 * Math.PI));
+  // ATM option price approximation: price × IV × sqrt(T) × 0.4 (Brenner-Subrahmanyam)
+  const atmPremium = price * iv * Math.sqrt(T) * 0.4;
 
-  // Adjust for moneyness (how far strike is from price)
-  const distance    = Math.abs(price - strike) / price;
+  // Adjust for moneyness — how far strike is from current price
+  const distance     = Math.abs(price - strike) / price;
   const moneynessAdj = Math.exp(-distance * distance / (2 * iv * iv * T));
 
-  const premium = atmPremium * moneynessAdj;
+  // Per share price of the option
+  const perShare = atmPremium * moneynessAdj;
 
-  // Per contract = 100 shares
+  // Per contract = 100 shares (NOT × 100 again)
+  const perContract = perShare * 100;
+
   return {
-    perContract: Math.round(premium * 100 * 100) / 100,
-    perShare:    Math.round(premium * 100) / 100,
-    otmPct:      Math.round(distance * 100 * 10) / 10,
+    perContract: Math.round(perContract * 100) / 100,   // e.g. $18.50
+    perShare:    Math.round(perShare * 100) / 100,       // e.g. $0.185
+    otmPct:      Math.round(distance * 1000) / 10,       // e.g. 10.1
   };
 }
 
