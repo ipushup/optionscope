@@ -1,7 +1,7 @@
 """
 OptionScope Scanner — GitHub Actions Edition
-FIXED: Uses 30-60 DTE options only for accurate IV
-Near-expiry options have inflated IV — this fix corrects premium estimates
+FIXED: Fetches real market premium at suggested strike (not estimated)
+Uses 30-60 DTE for accurate IV, accounts for volatility skew
 """
 
 import yfinance as yf
@@ -131,6 +131,56 @@ def exp_range(price, iv, days):
     move = price*iv*math.sqrt(days/365)
     return {"low":round(price-move,2),"high":round(price+move,2)}
 
+def get_real_strike_and_premium(df, price, trend, T):
+    """
+    Find the best strike for selling and return REAL market premium.
+    For puts (bullish): target ~8-10% OTM below price
+    For calls (bearish): target ~8-10% OTM above price
+    Returns: (strike, real_mid_price, otm_pct, real_iv)
+    """
+    if df.empty:
+        return None, None, None, None
+
+    strikes = df["strike"].tolist()
+    if not strikes:
+        return None, None, None, None
+
+    # Target strike: 8-10% OTM
+    if trend in ("bullish", "neutral"):
+        k_target = price * 0.90  # 10% below for put
+    else:
+        k_target = price * 1.10  # 10% above for call
+
+    # Find closest available strike
+    strike = min(strikes, key=lambda k: abs(k - k_target))
+    row = df[df["strike"] == strike]
+    if row.empty:
+        return None, None, None, None
+
+    bid = float(row["bid"].iloc[0])
+    ask = float(row["ask"].iloc[0])
+
+    # Skip if no market
+    if bid <= 0 and ask <= 0:
+        return None, None, None, None
+
+    # Use ask if no bid (illiquid but still real)
+    if bid <= 0:
+        mid = ask * 0.9
+    else:
+        mid = (bid + ask) / 2
+
+    if mid < 0.01:
+        return None, None, None, None
+
+    otm_pct = round(abs(price - strike) / price * 100, 1)
+
+    # Get real IV at this strike (accounts for vol skew)
+    opt_type = "put" if trend in ("bullish", "neutral") else "call"
+    real_iv = implied_vol(mid, price, strike, T, opt=opt_type)
+
+    return round(strike, 2), round(mid, 2), otm_pct, real_iv
+
 # ── SCAN ONE TICKER ───────────────────────────────────────────────────────────
 def scan_ticker(ticker):
     try:
@@ -157,53 +207,44 @@ def scan_ticker(ticker):
         vol_spike = round(vol_today/vol_avg,2) if vol_avg>0 else 1.0
         category  = next((c for c,tl in TICKERS.items() if ticker in tl),"other")
 
-        # ── IV from options chain ──────────────────────────────────────────
-        # CRITICAL: Must use 30-60 DTE expiry
-        # Near-expiry (< 21 DTE) options have gamma-inflated IV
-        # Example: QCOM 3DTE shows 82% IV but real 35DTE IV is 25%
-        iv_current = None
+        # ── IV + Real Premium from options chain ──────────────────────────
+        iv_current   = None
+        suggest_strike    = None
+        suggest_premium   = None  # real market mid price per share
+        suggest_otm_pct   = None
+        suggest_strike_iv = None
+        dte_used      = None
+
         try:
             exps = stock.options
             if not exps:
                 return None
 
-            today = date.today()
-
-            # Print all available expiries for debugging
+            today    = date.today()
             exp_days = [(e, (date.fromisoformat(e)-today).days) for e in exps]
-            print(f"    exps: {[(e,d) for e,d in exp_days[:6]]}", end=" ")
 
-            # STRICT: require 30-60 DTE — this is the key fix
+            # Strict 30-60 DTE for clean IV
             target = None
             for e, d in exp_days:
                 if 30 <= d <= 60:
                     target = e
                     break
-
-            # Wider fallback only if no 30-60 DTE available
             if not target:
                 for e, d in exp_days:
                     if 25 <= d <= 90:
                         target = e
                         break
-
             if not target:
-                print(f"→ no valid expiry")
                 return None
 
-            days_out = (date.fromisoformat(target) - today).days
-            print(f"→ using {target} ({days_out} DTE)")
-
+            dte_used = (date.fromisoformat(target) - today).days
+            T = dte_used / 365.0
             chain = stock.option_chain(target)
-            T = days_out / 365.0
 
-            # Use ~4% OTM put and call strikes
-            # Avoids ATM gamma distortion, better IV signal
-            ivs = []
-            for opt_type, df, k_pct in [
-                ("put",  chain.puts,  0.96),   # 4% below = put
-                ("call", chain.calls, 1.04),   # 4% above = call
-            ]:
+            # ── Step 1: Get ATM IV for IV Rank calculation ──
+            # Use 4% OTM put + call average = cleaner ATM IV signal
+            ivs_atm = []
+            for opt_type, df, k_pct in [("put", chain.puts, 0.96), ("call", chain.calls, 1.04)]:
                 if df.empty: continue
                 k_target     = price * k_pct
                 strikes_list = df["strike"].tolist()
@@ -213,26 +254,42 @@ def scan_ticker(ticker):
                 if row.empty: continue
                 bid = float(row["bid"].iloc[0])
                 ask = float(row["ask"].iloc[0])
-                # Skip bad data
                 if bid <= 0 or ask <= 0: continue
                 if ask > 0 and (ask - bid) / ask > 0.5: continue
                 mid = (bid + ask) / 2
                 if mid < 0.05: continue
                 iv = implied_vol(mid, price, strike_k, T, opt=opt_type)
                 if iv and 0.05 <= iv <= 3.0:
-                    ivs.append(iv)
-                    print(f"    {opt_type} K={strike_k} mid={mid:.2f} iv={iv:.1%}", end=" ")
+                    ivs_atm.append(iv)
 
-            print()
-            if not ivs:
+            if not ivs_atm:
                 return None
-            iv_current = float(np.mean(ivs))
+            iv_current = float(np.mean(ivs_atm))
+
+            # ── Step 2: Get REAL premium at suggested strike ──
+            # Fetch directly from options chain — no estimation formula!
+            if trend in ("bullish", "neutral"):
+                # Selling put — use puts chain
+                strike, mid_price, otm_pct, strike_iv = get_real_strike_and_premium(
+                    chain.puts, price, trend, T)
+            else:
+                # Selling call — use calls chain
+                strike, mid_price, otm_pct, strike_iv = get_real_strike_and_premium(
+                    chain.calls, price, trend, T)
+
+            suggest_strike    = strike
+            suggest_premium   = mid_price   # per share (×100 for contract)
+            suggest_otm_pct   = otm_pct
+            suggest_strike_iv = round(strike_iv * 100, 1) if strike_iv else None
+
+            print(f"    {dte_used}DTE | IV:{iv_current:.1%} | "
+                  f"strike:{suggest_strike} mid:${suggest_premium} "
+                  f"otm:{suggest_otm_pct}% iv_at_strike:{suggest_strike_iv}%")
 
         except Exception as e:
             print(f"\n    options err: {e}")
             return None
 
-        # No valid IV = skip
         if iv_current is None or iv_current <= 0:
             return None
 
@@ -241,30 +298,40 @@ def scan_ticker(ticker):
 
         quad = get_quadrant(iv_rank, rr)
 
+        # Real premium per contract = mid_price × 100
+        premium_per_contract = round(suggest_premium * 100, 2) if suggest_premium else None
+
         return {
-            "ticker":         ticker,
-            "category":       category,
-            "iv_source":      "options",
-            "price":          round(price,2),
-            "iv_current":     round(iv_current*100,1),
-            "iv_rank":        iv_rank,
-            "risk_reversal":  rr,
-            "trend":          trend,
-            "rsi":            round(rsi,1),
-            "adx":            round(adx,1),
-            "ema9":           round(ema9,2),
-            "ema21":          round(ema21,2),
-            "ema50":          round(ema50,2),
-            "volume_spike":   vol_spike,
-            "quadrant_label": quad["label"],
-            "quadrant_color": quad["color"],
-            "quadrant_bg":    quad["bg"],
-            "strategies":     quad["strategies"],
-            "win_rate":       WIN_RATES.get(quad["strategies"][0],"~55%"),
-            "range_1d":       exp_range(price,iv_current,1),
-            "range_1w":       exp_range(price,iv_current,7),
-            "range_1m":       exp_range(price,iv_current,30),
-            "scanned_at":     datetime.utcnow().isoformat()+"Z",
+            "ticker":              ticker,
+            "category":            category,
+            "iv_source":           "options",
+            "price":               round(price, 2),
+            "iv_current":          round(iv_current * 100, 1),
+            "iv_rank":             iv_rank,
+            "risk_reversal":       rr,
+            "trend":               trend,
+            "rsi":                 round(rsi, 1),
+            "adx":                 round(adx, 1),
+            "ema9":                round(ema9, 2),
+            "ema21":               round(ema21, 2),
+            "ema50":               round(ema50, 2),
+            "volume_spike":        vol_spike,
+            "quadrant_label":      quad["label"],
+            "quadrant_color":      quad["color"],
+            "quadrant_bg":         quad["bg"],
+            "strategies":          quad["strategies"],
+            "win_rate":            WIN_RATES.get(quad["strategies"][0], "~55%"),
+            "range_1d":            exp_range(price, iv_current, 1),
+            "range_1w":            exp_range(price, iv_current, 7),
+            "range_1m":            exp_range(price, iv_current, 30),
+            # Real market data at suggested strike
+            "suggest_strike":      suggest_strike,
+            "suggest_premium":     suggest_premium,       # per share
+            "suggest_premium_contract": premium_per_contract,  # per contract
+            "suggest_otm_pct":     suggest_otm_pct,
+            "suggest_strike_iv":   suggest_strike_iv,
+            "suggest_dte":         dte_used,
+            "scanned_at":          datetime.utcnow().isoformat() + "Z",
         }
     except Exception as e:
         print(f"  [ERROR] {ticker}: {e}")
@@ -274,16 +341,17 @@ def scan_ticker(ticker):
 def main():
     print(f"OptionScope Scanner — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Universe: {len(ALL_TICKERS)} tickers | Min IV Rank: {MIN_IV}")
-    print(f"KEY: Using 30-60 DTE options for accurate IV (not near-expiry)")
+    print(f"Using REAL market premium from options chain (no estimation)")
     print("─"*65)
 
     results = []
-    for i,ticker in enumerate(ALL_TICKERS):
+    for i, ticker in enumerate(ALL_TICKERS):
         print(f"[{i+1:3d}/{len(ALL_TICKERS)}] {ticker:<6}", end="  ")
         r = scan_ticker(ticker)
         if r:
-            flag = "🔥" if r["iv_rank"]>=75 else ("✅" if r["iv_rank"]>=50 else "  ")
-            print(f"  IV:{r['iv_current']:6.1f}%  Rank:{r['iv_rank']:5.1f}  ADX:{r['adx']:5.1f}  {r['trend']:<8} {flag}")
+            flag = "🔥" if r["iv_rank"] >= 75 else ("✅" if r["iv_rank"] >= 50 else "  ")
+            print(f"  IV:{r['iv_current']:5.1f}%  Rank:{r['iv_rank']:5.1f}  "
+                  f"Strike:${r['suggest_strike']}  Premium:${r['suggest_premium_contract']}  {flag}")
             results.append(r)
         else:
             print("  skipped")
@@ -292,7 +360,7 @@ def main():
     results.sort(key=lambda x: x["iv_rank"], reverse=True)
 
     output = {
-        "scanned_at":    datetime.utcnow().isoformat()+"Z",
+        "scanned_at":    datetime.utcnow().isoformat() + "Z",
         "total_scanned": len(ALL_TICKERS),
         "total_results": len(results),
         "categories":    list(TICKERS.keys()),
@@ -300,14 +368,17 @@ def main():
     }
 
     os.makedirs("frontend/public", exist_ok=True)
-    with open("frontend/public/results.json","w") as f:
-        json.dump(output,f,indent=2)
+    with open("frontend/public/results.json", "w") as f:
+        json.dump(output, f, indent=2)
 
     print("─"*65)
     print(f"Done — {len(results)}/{len(ALL_TICKERS)} stocks")
     print("\nTop 10 by IV Rank:")
     for r in results[:10]:
-        print(f"  {r['ticker']:<6} IV:{r['iv_current']:6.1f}%  Rank:{r['iv_rank']:5.1f}  {r['quadrant_label']}")
+        print(f"  {r['ticker']:<6} IV:{r['iv_current']:5.1f}%  "
+              f"Strike:${r['suggest_strike']}  "
+              f"Premium:${r['suggest_premium_contract']}  "
+              f"({r['suggest_otm_pct']}% OTM)  {r['quadrant_label']}")
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
