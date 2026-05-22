@@ -28,12 +28,55 @@ function getSellType(stock) {
   if (stock.trend === "bearish") return { type: "SELL CALL",     color: "#ff8c42", desc: "Stock trending down — sell above price" };
   return                                 { type: "SELL STRANGLE", color: "#cc77ff", desc: "No clear trend — sell both sides" };
 }
+
+// ── STRIKE CALCULATOR ─────────────────────────────────────────────────────────
+// Uses ~0.30 delta approximation: strike at 8% OTM max, capped to meaningful premium
+// This keeps strikes in the real tradeable zone (not too far OTM)
 function getSuggestedStrike(stock, type) {
-  const move = stock.price * (stock.iv_current / 100) * Math.sqrt(7 / 365);
-  if (type === "SELL PUT")  return Math.floor((stock.price - move * 1.2) / 0.5) * 0.5;
-  if (type === "SELL CALL") return Math.ceil((stock.price  + move * 1.2) / 0.5) * 0.5;
+  const iv      = stock.iv_current / 100;
+  const price   = stock.price;
+  const dte     = stock.iv_rank >= 75 ? 25 : stock.iv_rank >= 50 ? 37 : 52; // days
+  const T       = dte / 365;
+
+  // 1-std-dev move for chosen DTE
+  const oneSigma = price * iv * Math.sqrt(T);
+
+  // Use 0.5× sigma for ~0.30 delta strike (keeps it close enough for real premium)
+  // Hard cap: never more than 10% away from current price
+  const maxMove  = price * 0.10;
+  const move     = Math.min(oneSigma * 0.5, maxMove);
+
+  if (type === "SELL PUT")  return Math.floor((price - move) / 0.5) * 0.5;
+  if (type === "SELL CALL") return Math.ceil((price  + move) / 0.5) * 0.5;
   return null;
 }
+
+// ── PREMIUM ESTIMATOR ─────────────────────────────────────────────────────────
+// Rough Black-Scholes approximation for ATM/near-ATM premium
+function estimatePremium(stock, strike, type) {
+  if (!strike) return null;
+  const iv    = stock.iv_current / 100;
+  const price = stock.price;
+  const dte   = stock.iv_rank >= 75 ? 25 : stock.iv_rank >= 50 ? 37 : 52;
+  const T     = dte / 365;
+
+  // Simplified premium = IV × price × sqrt(T/2π) × moneyness_factor
+  const atmPremium = iv * price * Math.sqrt(T / (2 * Math.PI));
+
+  // Adjust for moneyness (how far strike is from price)
+  const distance    = Math.abs(price - strike) / price;
+  const moneynessAdj = Math.exp(-distance * distance / (2 * iv * iv * T));
+
+  const premium = atmPremium * moneynessAdj;
+
+  // Per contract = 100 shares
+  return {
+    perContract: Math.round(premium * 100 * 100) / 100,
+    perShare:    Math.round(premium * 100) / 100,
+    otmPct:      Math.round(distance * 100 * 10) / 10,
+  };
+}
+
 function getDTEadvice(ivRank) {
   if (ivRank >= 75) return { dte: "21–30 DTE", reason: "IV very high — shorter expiry, max decay" };
   if (ivRank >= 50) return { dte: "30–45 DTE", reason: "Good IV — standard theta zone" };
@@ -91,6 +134,7 @@ function PremiumCard({ stock, isSelected, onClick }) {
   const sell     = getSellType(stock);
   const dte      = getDTEadvice(stock.iv_rank);
   const strike   = getSuggestedStrike(stock, sell.type);
+  const premium  = estimatePremium(stock, strike, sell.type);
 
   return (
     <div onClick={onClick} style={{
@@ -132,14 +176,22 @@ function PremiumCard({ stock, isSelected, onClick }) {
             {sell.type === "SELL PUT" ? "PUT STRIKE" : sell.type === "SELL CALL" ? "CALL STRIKE" : "STRANGLE"}
           </div>
           <div style={{ fontSize:16, fontWeight:700, color:sell.color, fontFamily:"DM Mono,monospace" }}>
-            {strike ? `$${strike.toFixed(2)}` : "Both sides"}
+            {strike ? `$${strike.toFixed(0)}` : "—"}
           </div>
-          <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:2 }}>{sell.desc}</div>
+          {premium && (
+            <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:2 }}>
+              ~{premium.otmPct}% OTM
+            </div>
+          )}
         </div>
         <div style={{ flex:1, minWidth:0, padding:"8px 10px", background:"#0a1828", borderRadius:8, border:"1px solid #1a2e40" }}>
-          <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:3 }}>BEST EXPIRY</div>
-          <div style={{ fontSize:16, fontWeight:700, color:"#f5a623", fontFamily:"DM Mono,monospace" }}>{dte.dte}</div>
-          <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:2 }}>{dte.reason}</div>
+          <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:3 }}>EST. PREMIUM</div>
+          <div style={{ fontSize:16, fontWeight:700, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>
+            {premium ? `$${premium.perContract}` : "—"}
+          </div>
+          <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:2 }}>
+            per contract · {dte.dte}
+          </div>
         </div>
       </div>
 
@@ -189,6 +241,7 @@ function DetailPanel({ stock, isMobile, onClose }) {
   const sell       = getSellType(stock);
   const dte        = getDTEadvice(stock.iv_rank);
   const strike     = getSuggestedStrike(stock, sell.type);
+  const premium    = estimatePremium(stock, strike, sell.type);
   const scoreCol   = getScoreColor(score);
   const dailyTheta = (stock.iv_current / 100) * stock.price / Math.sqrt(365) * 0.4;
 
@@ -215,19 +268,27 @@ function DetailPanel({ stock, isMobile, onClose }) {
         <div style={{ fontSize:12, color:sell.color+"aa", fontFamily:"DM Mono,monospace", marginTop:4 }}>{sell.desc}</div>
       </div>
 
-      {/* Strike + DTE */}
+      {/* Strike + DTE + Premium */}
       <div style={{ display:"flex", gap:8, marginBottom:10 }}>
         <div style={{ flex:1, minWidth:0, padding:"12px", background:"#0a1828", borderRadius:8, border:"1px solid #1a2e40", textAlign:"center" }}>
-          <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:4 }}>STRIKE LEVEL</div>
-          <div style={{ fontSize:20, fontWeight:800, color:sell.color, fontFamily:"DM Mono,monospace" }}>
-            {strike ? `$${strike.toFixed(0)}` : "±OTM"}
+          <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:4 }}>
+            {sell.type === "SELL PUT" ? "PUT STRIKE" : "CALL STRIKE"}
           </div>
-          <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:3 }}>suggested ATM±1σ</div>
+          <div style={{ fontSize:22, fontWeight:800, color:sell.color, fontFamily:"DM Mono,monospace" }}>
+            {strike ? `$${strike.toFixed(0)}` : "—"}
+          </div>
+          <div style={{ fontSize:11, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:3 }}>
+            {premium ? `~${premium.otmPct}% OTM` : "~0.30 delta"}
+          </div>
         </div>
-        <div style={{ flex:1, minWidth:0, padding:"12px", background:"#0a1828", borderRadius:8, border:"1px solid #1a2e40", textAlign:"center" }}>
-          <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:4 }}>EXPIRY (DTE)</div>
-          <div style={{ fontSize:16, fontWeight:800, color:"#f5a623", fontFamily:"DM Mono,monospace" }}>{dte.dte}</div>
-          <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:3 }}>{dte.reason}</div>
+        <div style={{ flex:1, minWidth:0, padding:"12px", background:"#071510", borderRadius:8, border:"1px solid #0e2e1e", textAlign:"center" }}>
+          <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:4 }}>EST. PREMIUM</div>
+          <div style={{ fontSize:22, fontWeight:800, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>
+            {premium ? `$${premium.perContract}` : "—"}
+          </div>
+          <div style={{ fontSize:11, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:3 }}>
+            per contract · {dte.dte}
+          </div>
         </div>
       </div>
 
