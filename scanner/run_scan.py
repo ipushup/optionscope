@@ -14,36 +14,20 @@ import warnings
 warnings.filterwarnings("ignore")
 
 TICKERS = {
-    "meme": ["SOFI", "PLTR", "HOOD", "RIVN"],
-    "crypto": ["COIN", "MSTR", "MARA"],
-    "nuclear_energy": ["OKLO", "NNE", "SMR", "CEG", "VST", "CCJ"],
-    "ai_quantum": ["NVDA", "AMD", "IONQ", "RGTI", "QUBT", "QBTS", "SOUN", "BBAI", "SMCI", "ARM", "AVGO", "CRWD", "SNOW", "NET"],
-    "ev_clean": ["TSLA", "NIO", "XPEV", "PLUG", "BE", "RIVN"],
-    "biotech": ["LLY", "REGN", "VKTX", "HIMS"],
-    "high_beta_tech": ["META", "AMZN", "NFLX", "SNAP", "RBLX", "UBER", "DASH", "PANW"],
-    "fintech": ["PYPL", "SCHW", "GS", "MS", "BAC"],
-    "leveraged_etfs": ["TQQQ", "SQQQ"],
-    "sp100_core": [
-        "AAPL", "MSFT", "JPM", "UNH", "JNJ", "V", "PG", "MA", "HD", "ABBV",
-        "TMO", "CSCO", "ABT", "CRM", "TXN", "ORCL", "NKE", "ADBE", "RTX",
-        "QCOM", "HON", "CAT", "SPGI", "BLK", "AMGN", "SBUX", "GILD", "BMY",
-        "ISRG", "LMT", "MU", "KLAC", "AMAT", "LRCX", "INTU", "NOW"
-    ],
-    "other": [
-        "GOOGL", "GOOG", "BRK.B", "WMT", "CVX", "XOM", "KO", "PEP", "COST",
-        "ACN", "LIN", "DIS", "WFC", "VZ", "CMCSA", "NEE", "DHR", "LOW", "UPS",
-        "IBM", "BKNG", "C", "TJX", "ELV", "MDT", "SYK", "MMC", "ADI", "CB",
-        "ADP", "DE", "MDLZ", "CI", "MO", "GE", "APO", "MMM", "EOG", "ZTS",
-        "BSX", "DUK", "BDX", "ICE", "SO", "BX", "ANET", "SHW", "SNPS", "MCO",
-        "CDNS", "APH", "PH", "ITW", "AON", "WELL", "WM", "PNC", "TDG", "EMR",
-        "GD", "NOC", "CARR", "TFC", "PSA", "FDX", "JCI", "ROP", "AFL", "PGR",
-        "COF", "GM", "MPC", "VLO", "TRV", "OXY", "SLB", "AZO", "ADSK", "WBD",
-        "FTNT", "AIG", "ASML", "MRVL", "ZS", "LITE", "COHR", "AAOI", "POET",
-        "CRDO", "ALAB", "SMTC", "NBIS", "IREN", "APLD", "CRWV", "VRT", "EQIX",
-        "AMT", "RKLB", "ASTS", "LUNR", "SPCE", "KTOS", "AVAV", "JOBY", "QS",
-        "BABA", "PDD", "FUTU", "WDC", "GLD", "NEM", "F", "T", "PCG", "AAL",
-        "IBIT", "PFE", "TEM", "GEV", "PEG", "APP", "DUOL"
-    ],
+    "meme":           ["GME","AMC","SOFI","PLTR","HOOD","RIVN","LCID","NKLA"],
+    "crypto":         ["COIN","MSTR","MARA","RIOT","WULF","CLSK","HUT","BITF"],
+    "nuclear_energy": ["OKLO","NNE","SMR","CEG","VST","CCJ","URA","NRG"],
+    "ai_quantum":     ["NVDA","AMD","IONQ","RGTI","QUBT","QBTS","SOUN","BBAI","SMCI","ARM","AVGO","CRWD","SNOW","NET","MDB"],
+    "ev_clean":       ["TSLA","NIO","XPEV","LI","PLUG","FCEL","BE","CHPT","BLNK"],
+    "biotech":        ["MRNA","BNTX","NVAX","SRPT","BEAM","CRSP","EDIT","NTLA","RXRX"],
+    "high_beta_tech": ["META","GOOGL","AMZN","NFLX","SNAP","RBLX","DKNG","UBER","LYFT","ABNB","DASH","PANW"],
+    "fintech":        ["SQ","PYPL","AFRM","UPST","SCHW","GS","MS","BAC"],
+    "leveraged_etfs": ["TQQQ","SQQQ","UVXY","LABU","FNGU","UPRO"],
+    "sp100_core":     ["AAPL","MSFT","JPM","UNH","JNJ","V","PG","MA","HD","MRK",
+                       "ABBV","LLY","KO","MCD","TMO","CSCO","ABT","CRM","TXN","ORCL",
+                       "NKE","ADBE","RTX","QCOM","HON","CAT","UNP","SPGI","BLK","AMGN",
+                       "SBUX","GILD","AXP","BMY","BA","ISRG","LMT","MU","KLAC","AMAT",
+                       "LRCX","INTU","NOW"],
 }
 
 ALL_TICKERS = []
@@ -444,6 +428,78 @@ def scan_ticker(ticker):
             # ── Vol/OI Analysis ──
             vol_oi_data = analyze_vol_oi(calls, puts, price, suggest_strike, trend)
 
+            # ── Spread calculation using Put Wall as protection strike ──
+            spread_data = {}
+            if suggest_strike and suggest_premium and vol_oi_data.get("put_wall"):
+                protect_strike = vol_oi_data["put_wall"]
+
+                # Fetch real premium at protection strike
+                protect_premium = None
+                if trend in ("bullish", "neutral") and not puts.empty:
+                    row = puts[puts["strike"] == protect_strike]
+                    if not row.empty:
+                        bid = float(row["bid"].iloc[0])
+                        ask = float(row["ask"].iloc[0])
+                        if bid > 0 and ask > 0:
+                            protect_premium = round((bid + ask) / 2, 2)
+                    # If exact strike not found, find closest below suggest_strike
+                    if protect_premium is None:
+                        puts_below_sell = puts[puts["strike"] < suggest_strike]
+                        if not puts_below_sell.empty:
+                            closest = min(puts_below_sell["strike"].tolist(),
+                                         key=lambda k: abs(k - protect_strike))
+                            row = puts[puts["strike"] == closest]
+                            if not row.empty:
+                                bid = float(row["bid"].iloc[0])
+                                ask = float(row["ask"].iloc[0])
+                                if bid > 0 and ask > 0:
+                                    protect_premium  = round((bid + ask) / 2, 2)
+                                    protect_strike   = round(float(closest), 2)
+
+                elif trend == "bearish" and not calls.empty:
+                    # For bear call spread, use call wall as protection
+                    protect_call_wall = vol_oi_data.get("call_wall")
+                    if protect_call_wall:
+                        row = calls[calls["strike"] == protect_call_wall]
+                        if not row.empty:
+                            bid = float(row["bid"].iloc[0])
+                            ask = float(row["ask"].iloc[0])
+                            if bid > 0 and ask > 0:
+                                protect_premium = round((bid + ask) / 2, 2)
+                                protect_strike  = protect_call_wall
+
+                if protect_premium and protect_premium > 0:
+                    strike_diff      = abs(suggest_strike - protect_strike)
+                    net_premium      = round(suggest_premium - protect_premium, 2)
+                    net_contract     = round(net_premium * 100, 2)
+                    max_profit       = net_contract
+                    max_loss         = round(strike_diff * 100 - net_contract, 2)
+                    breakeven        = round(suggest_strike - net_premium, 2) if trend in ("bullish","neutral") else round(suggest_strike + net_premium, 2)
+                    return_on_risk   = round(net_contract / max_loss * 100, 1) if max_loss > 0 else 0
+
+                    # Scenario at protection strike (worst case spread)
+                    scenario_at_protect = round(-max_loss, 2)
+                    # Scenario halfway down
+                    halfway = round((suggest_strike + protect_strike) / 2, 2)
+
+                    spread_data = {
+                        "protect_strike":        round(float(protect_strike), 2),
+                        "protect_premium":        protect_premium,
+                        "protect_contract":       round(protect_premium * 100, 2),
+                        "net_premium":            net_premium,
+                        "net_contract":           net_contract,
+                        "max_profit":             max_profit,
+                        "max_loss":               max_loss,
+                        "breakeven":              breakeven,
+                        "return_on_risk":         return_on_risk,
+                        "scenario_above_sell":    max_profit,       # stock stays above sell strike
+                        "scenario_at_protect":    scenario_at_protect,  # stock at protection strike
+                        "halfway_price":          halfway,
+                    }
+                    print(f"    SPREAD: sell${suggest_strike}(${suggest_premium}) "
+                          f"buy${protect_strike}(${protect_premium}) "
+                          f"net:${net_contract} maxloss:-${max_loss} ror:{return_on_risk}%")
+
             print(f"    {dte_used}DTE | IV:{iv_current:.1%} | "
                   f"strike:{suggest_strike} premium:${suggest_premium_contract} | "
                   f"maxpain:{vol_oi_data.get('max_pain')} "
@@ -503,6 +559,8 @@ def scan_ticker(ticker):
             "oi_top_calls":           vol_oi_data.get("oi_top_calls",[]),
             "oi_top_puts":            vol_oi_data.get("oi_top_puts",[]),
             "vol_anomaly_strikes":    vol_oi_data.get("vol_anomaly_strikes",[]),
+            # Spread analysis
+            "spread":                 spread_data,
             "scanned_at":             datetime.utcnow().isoformat()+"Z",
         }
     except Exception as e:
