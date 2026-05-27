@@ -173,12 +173,12 @@ function PremiumCard({ stock, isSelected, onClick }) {
         </div>
       </div>
 
-      {/* OI walls if available */}
-      {(stock.call_wall || stock.put_wall) && (
+      {/* OI walls + spread summary */}
+      {(stock.call_wall || stock.put_wall || stock.spread?.net_contract) && (
         <div style={{ marginTop:8, display:"flex", gap:6 }}>
           {stock.put_wall && (
             <div style={{ flex:1, padding:"6px 8px", background:"#0a1828", borderRadius:6, border:"1px solid #1a2e40" }}>
-              <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>PUT WALL 🛡</div>
+              <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>PUT WALL</div>
               <div style={{ fontSize:13, fontWeight:700, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>${stock.put_wall}</div>
             </div>
           )}
@@ -188,10 +188,10 @@ function PremiumCard({ stock, isSelected, onClick }) {
               <div style={{ fontSize:13, fontWeight:700, color:"#f5a623", fontFamily:"DM Mono,monospace" }}>${stock.max_pain}</div>
             </div>
           )}
-          {stock.call_wall && (
-            <div style={{ flex:1, padding:"6px 8px", background:"#0a1828", borderRadius:6, border:"1px solid #1a2e40", textAlign:"right" }}>
-              <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>CALL WALL 🧱</div>
-              <div style={{ fontSize:13, fontWeight:700, color:"#ff8c42", fontFamily:"DM Mono,monospace" }}>${stock.call_wall}</div>
+          {stock.spread?.net_contract && (
+            <div style={{ flex:1, padding:"6px 8px", background:"#071510", borderRadius:6, border:"1px solid #0e2e1e", textAlign:"right" }}>
+              <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>SPREAD NET</div>
+              <div style={{ fontSize:13, fontWeight:700, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>${stock.spread.net_contract}</div>
             </div>
           )}
         </div>
@@ -224,9 +224,9 @@ function DetailPage({ stock, onClose }) {
 
   const tabs = [
     { id:"signal",  label:"Signal" },
+    { id:"spread",  label:"Spread" },
     { id:"voloi",   label:"Vol/OI" },
     { id:"maxpain", label:"Max Pain" },
-    { id:"guide",   label:"Guide" },
   ];
 
   return (
@@ -333,7 +333,162 @@ function DetailPage({ stock, onClose }) {
           </div>
         )}
 
-        {/* ── TAB 2: VOL/OI ── */}
+        {/* ── TAB 2: SPREAD ANALYSIS ── */}
+        {tab === "spread" && (() => {
+          const sp = stock.spread;
+          const sell = getSellType(stock);
+          const strike = stock.suggest_strike;
+          const sellPremium = stock.suggest_premium_contract;
+          const isBull = stock.trend !== "bearish";
+
+          if (!sp || !sp.protect_strike) return (
+            <div style={{ padding:24, textAlign:"center", color:"#445566", fontFamily:"DM Mono,monospace" }}>
+              <div style={{ fontSize:14, marginBottom:8 }}>No Put Wall detected</div>
+              <div style={{ fontSize:11 }}>Spread requires a Put Wall as protection strike. No high-OI put below current price found.</div>
+            </div>
+          );
+
+          const scenarios = [
+            { price: stock.price,          label: "Stock stays here",    pnl: sp.max_profit,          note: "Best case — full premium" },
+            { price: strike,               label: `Stock hits sell $${strike}`, pnl: sp.max_profit,   note: "Still max profit at expiry" },
+            { price: sp.breakeven,         label: `Breakeven $${sp.breakeven}`, pnl: 0,               note: "Zero profit/loss point" },
+            { price: sp.halfway_price,     label: `Halfway $${sp.halfway_price}`, pnl: Math.round(sp.max_profit / 2 * -1), note: "Partial loss zone" },
+            { price: sp.protect_strike,    label: `Protection $${sp.protect_strike}`, pnl: -sp.max_loss, note: "Max loss — spread fully ITM" },
+            { price: sp.protect_strike * 0.8, label: "Big crash", pnl: -sp.max_loss, note: "Still capped at max loss" },
+          ];
+
+          return (
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+
+              {/* Strategy header */}
+              <div style={{ padding:"14px", background:"#0a1828", borderRadius:10, border:"1px solid #1a2e40" }}>
+                <div style={{ fontSize:12, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>
+                  {isBull ? "BULL PUT SPREAD" : "BEAR CALL SPREAD"} — USING PUT WALL AS PROTECTION
+                </div>
+
+                {/* Sell leg */}
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 12px", background:"#071510", borderRadius:8, border:"1px solid #0e2e1e", marginBottom:6 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>SELL {isBull?"PUT":"CALL"} (collect)</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>${strike}</div>
+                    <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>{stock.suggest_otm_pct}% OTM</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>PREMIUM RECEIVED</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>+${sellPremium}</div>
+                    <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>per contract</div>
+                  </div>
+                </div>
+
+                {/* Buy leg */}
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 12px", background:"#1a0a0a", borderRadius:8, border:"1px solid #2e0e0e", marginBottom:10 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>BUY {isBull?"PUT":"CALL"} (protection)</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:"#ff8c42", fontFamily:"DM Mono,monospace" }}>${sp.protect_strike}</div>
+                    <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>at Put Wall</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>PREMIUM PAID</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:"#ff5c5c", fontFamily:"DM Mono,monospace" }}>-${sp.protect_contract}</div>
+                    <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>per contract</div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height:1, background:"#1a2e40", marginBottom:10 }} />
+
+                {/* Net result */}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                  <div style={{ padding:"10px", background:"#071510", borderRadius:8, border:"1px solid #0e2e1e", textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:3 }}>NET PREMIUM</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>${sp.net_contract}</div>
+                    <div style={{ fontSize:9, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>yours to keep</div>
+                  </div>
+                  <div style={{ padding:"10px", background:"#1a0a0a", borderRadius:8, border:"1px solid #2e0e0e", textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:3 }}>MAX LOSS</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:"#ff5c5c", fontFamily:"DM Mono,monospace" }}>-${sp.max_loss}</div>
+                    <div style={{ fontSize:9, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>if fully ITM</div>
+                  </div>
+                  <div style={{ padding:"10px", background:"#0a1828", borderRadius:8, border:"1px solid #1a2e40", textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:3 }}>RETURN/RISK</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:"#f5a623", fontFamily:"DM Mono,monospace" }}>{sp.return_on_risk}%</div>
+                    <div style={{ fontSize:9, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>on capital at risk</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakeven */}
+              <div style={{ padding:"12px", background:"#0a1828", borderRadius:10, border:"1px solid #1a2e40", textAlign:"center" }}>
+                <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:4 }}>BREAKEVEN PRICE</div>
+                <div style={{ fontSize:28, fontWeight:900, color:"#3b9eff", fontFamily:"DM Mono,monospace" }}>${sp.breakeven}</div>
+                <div style={{ fontSize:11, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:4 }}>
+                  Stock must stay above ${sp.breakeven} to profit · currently ${stock.price.toFixed(2)} ({((stock.price - sp.breakeven)/stock.price*100).toFixed(1)}% buffer)
+                </div>
+              </div>
+
+              {/* Scenario table */}
+              <div style={{ padding:"12px", background:"#0a1828", borderRadius:10, border:"1px solid #1a2e40" }}>
+                <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>SCENARIO ANALYSIS AT EXPIRY</div>
+                {scenarios.map((s, i) => (
+                  <div key={i} style={{
+                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                    padding:"8px 10px", marginBottom:4, borderRadius:8,
+                    background: s.pnl > 0 ? "#071510" : s.pnl === 0 ? "#0a1828" : "#1a0a0a",
+                    border: `1px solid ${s.pnl > 0 ? "#0e2e1e" : s.pnl === 0 ? "#1a3555" : "#2e0e0e"}`,
+                  }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#ccddee", fontFamily:"DM Mono,monospace" }}>{s.label}</div>
+                      <div style={{ fontSize:10, color:"#445566", fontFamily:"DM Mono,monospace" }}>{s.note}</div>
+                    </div>
+                    <div style={{ fontSize:16, fontWeight:800, fontFamily:"DM Mono,monospace",
+                      color: s.pnl > 0 ? "#00d4aa" : s.pnl === 0 ? "#3b9eff" : "#ff5c5c" }}>
+                      {s.pnl > 0 ? `+$${s.pnl}` : s.pnl === 0 ? "$0" : `-$${Math.abs(s.pnl)}`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* vs Naked comparison */}
+              <div style={{ padding:"12px", background:"#0a1828", borderRadius:10, border:"1px solid #1a2e40" }}>
+                <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>SPREAD vs NAKED SELL PUT</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  {[
+                    ["Net Premium",    `$${sp.net_contract}`,  `$${sellPremium}`,  false],
+                    ["Max Loss",       `-$${sp.max_loss}`,      "Unlimited",        true],
+                    ["Capital Needed", `-$${sp.max_loss}`,      `~$${Math.round(strike*100*0.2)}`, true],
+                    ["Return/Risk",    `${sp.return_on_risk}%`, `${(sellPremium/Math.round(strike*100*0.2)*100).toFixed(1)}%`, false],
+                  ].map(([label, spread, naked, spreadBetter]) => (
+                    <div key={label} style={{ gridColumn:"1/-1", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:"1px solid #0e1c28" }}>
+                      <span style={{ fontSize:11, color:"#7a9ab8", fontFamily:"DM Mono,monospace", flex:1 }}>{label}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#00d4aa", fontFamily:"DM Mono,monospace", flex:1, textAlign:"center" }}>
+                        Spread: {spread}
+                      </span>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#ff8c42", fontFamily:"DM Mono,monospace", flex:1, textAlign:"right" }}>
+                        Naked: {naked}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommendation */}
+              <div style={{ padding:"12px", background: sp.return_on_risk > 50 ? "#071510" : "#0a1828", borderRadius:10, border:`1px solid ${sp.return_on_risk > 50 ? "#0e2e1e" : "#1a2e40"}` }}>
+                <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:6 }}>RECOMMENDATION</div>
+                <div style={{ fontSize:12, color:"#ccddee", fontFamily:"DM Mono,monospace", lineHeight:1.7 }}>
+                  {sp.return_on_risk > 80
+                    ? `Spread is highly efficient. ${sp.return_on_risk}% return on risk with capped downside. Recommended over naked sell.`
+                    : sp.return_on_risk > 40
+                    ? `Decent spread setup. Consider spread if account is small or stock is volatile. Naked sell if you want more premium.`
+                    : `Put Wall too close to sell strike — spread premium is low. Naked sell may be better if you accept the risk.`}
+                </div>
+                <div style={{ fontSize:11, color:"#00d4aa", fontFamily:"DM Mono,monospace", marginTop:8 }}>
+                  Close at 50% profit = ${Math.round(sp.net_contract/2)} after ~{Math.round((stock.suggest_dte||35)/2)} days
+                </div>
+              </div>
+
+            </div>
+          );
+        })()}
         {tab === "voloi" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
 
@@ -436,11 +591,11 @@ function DetailPage({ stock, onClose }) {
               {/* Visual price ladder */}
               <div style={{ position:"relative", padding:"0 8px" }}>
                 {[
-                  { label:"CALL WALL 🧱", price:stock.call_wall, color:"#ff8c42", desc:"Resistance — call writers defend here" },
-                  { label:"CURRENT PRICE", price:stock.price, color:"#3b9eff", desc:"Where stock trades now", highlight:true },
-                  { label:"MAX PAIN ◎", price:stock.max_pain, color:"#f5a623", desc:"Option writers' target price" },
-                  { label:"YOUR STRIKE ✓", price:stock.suggest_strike, color:"#00d4aa", desc:"Suggested sell strike" },
-                  { label:"PUT WALL 🛡", price:stock.put_wall, color:"#00d4aa", desc:"Support — put writers defend here" },
+                  { label:"CALL WALL",     price:stock.call_wall,       color:"#ff8c42", desc:"Resistance — call writers defend here" },
+                  { label:"CURRENT PRICE", price:stock.price,           color:"#3b9eff", desc:"Where stock trades now", highlight:true },
+                  { label:"MAX PAIN",      price:stock.max_pain,        color:"#f5a623", desc:"Option writers' target price" },
+                  { label:"YOUR STRIKE",   price:stock.suggest_strike,  color:"#00d4aa", desc:"Suggested sell strike" },
+                  { label:"PUT WALL",      price:stock.put_wall,        color:"#00d4aa", desc:"Support — put writers defend here" },
                 ].filter(l => l.price).sort((a,b) => b.price-a.price).map((level,i) => (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8,
                     padding:"8px 10px", background:level.highlight?"#0d1f35":"#060e1a",
@@ -460,7 +615,7 @@ function DetailPage({ stock, onClose }) {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               {/* Top call OI */}
               <div style={{ padding:"12px", background:"#0a1828", borderRadius:10, border:"1px solid #1a2e40" }}>
-                <div style={{ fontSize:10, color:"#ff8c42", fontFamily:"DM Mono,monospace", marginBottom:8 }}>🧱 TOP CALL OI</div>
+                <div style={{ fontSize:10, color:"#ff8c42", fontFamily:"DM Mono,monospace", marginBottom:8 }}>TOP CALL OI</div>
                 {stock.oi_top_calls?.slice(0,3).map((c,i) => (
                   <div key={i} style={{ marginBottom:6 }}>
                     <div style={{ display:"flex", justifyContent:"space-between" }}>
@@ -475,7 +630,7 @@ function DetailPage({ stock, onClose }) {
               </div>
               {/* Top put OI */}
               <div style={{ padding:"12px", background:"#0a1828", borderRadius:10, border:"1px solid #1a2e40" }}>
-                <div style={{ fontSize:10, color:"#00d4aa", fontFamily:"DM Mono,monospace", marginBottom:8 }}>🛡 TOP PUT OI</div>
+                <div style={{ fontSize:10, color:"#00d4aa", fontFamily:"DM Mono,monospace", marginBottom:8 }}>TOP PUT OI</div>
                 {stock.oi_top_puts?.slice(0,3).map((p,i) => (
                   <div key={i} style={{ marginBottom:6 }}>
                     <div style={{ display:"flex", justifyContent:"space-between" }}>
