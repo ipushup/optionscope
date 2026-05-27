@@ -547,6 +547,7 @@ def scan_ticker(ticker):
             "suggest_otm_pct":        suggest_otm_pct,
             "suggest_strike_iv":      suggest_strike_iv,
             "suggest_dte":            dte_used,
+            "suggest_expiry":         target,
             # Vol/OI signals
             "vol_oi_anomaly":         vol_oi_data.get("vol_oi_anomaly", False),
             "anomaly_type":           vol_oi_data.get("anomaly_type"),
