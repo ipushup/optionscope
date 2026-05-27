@@ -150,7 +150,9 @@ function PremiumCard({ stock, isSelected, onClick }) {
             {premium ? `$${premium.perContract}` : "—"}
           </div>
           <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace", marginTop:2 }}>
-            per contract · {stock.suggest_dte||35} DTE
+            {stock.suggest_expiry
+              ? `Exp ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${stock.suggest_dte||35} DTE`
+              : `${stock.suggest_dte||35} DTE`}
           </div>
         </div>
       </div>
@@ -310,7 +312,11 @@ function DetailPage({ stock, onClose }) {
                 <div style={{ padding:"10px", background:"#071510", borderRadius:8, border:"1px solid #0e2e1e", textAlign:"center" }}>
                   <div style={{ fontSize:9, color:"#7a9ab8", fontFamily:"DM Mono,monospace", marginBottom:4 }}>PREMIUM</div>
                   <div style={{ fontSize:20, fontWeight:800, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>${premium?.perContract||"—"}</div>
-                  <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>{stock.suggest_dte} DTE</div>
+                  <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>
+                    {stock.suggest_expiry
+                      ? `Exp ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · ${stock.suggest_dte} DTE`
+                      : `${stock.suggest_dte} DTE`}
+                  </div>
                 </div>
               </div>
               <div style={{ marginTop:8, padding:"10px", background:"#071510", borderRadius:8, border:"1px solid #0e2e1e" }}>
@@ -376,7 +382,11 @@ function DetailPage({ stock, onClose }) {
                   <div style={{ textAlign:"right" }}>
                     <div style={{ fontSize:10, color:"#7a9ab8", fontFamily:"DM Mono,monospace" }}>PREMIUM RECEIVED</div>
                     <div style={{ fontSize:20, fontWeight:800, color:"#00d4aa", fontFamily:"DM Mono,monospace" }}>+${sellPremium}</div>
-                    <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>per contract</div>
+                    <div style={{ fontSize:10, color:"#8aaabb", fontFamily:"DM Mono,monospace" }}>
+                      {stock.suggest_expiry
+                        ? `Exp ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+                        : `${stock.suggest_dte} DTE`}
+                    </div>
                   </div>
                 </div>
 
@@ -483,6 +493,7 @@ function DetailPage({ stock, onClose }) {
                 </div>
                 <div style={{ fontSize:11, color:"#00d4aa", fontFamily:"DM Mono,monospace", marginTop:8 }}>
                   Close at 50% profit = ${Math.round(sp.net_contract/2)} after ~{Math.round((stock.suggest_dte||35)/2)} days
+                  {stock.suggest_expiry ? ` · Expiry ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}` : ""}
                 </div>
               </div>
 
