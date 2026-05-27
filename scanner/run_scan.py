@@ -14,20 +14,36 @@ import warnings
 warnings.filterwarnings("ignore")
 
 TICKERS = {
-    "meme":           ["GME","AMC","SOFI","PLTR","HOOD","RIVN","LCID","NKLA"],
-    "crypto":         ["COIN","MSTR","MARA","RIOT","WULF","CLSK","HUT","BITF"],
-    "nuclear_energy": ["OKLO","NNE","SMR","CEG","VST","CCJ","URA","NRG"],
-    "ai_quantum":     ["NVDA","AMD","IONQ","RGTI","QUBT","QBTS","SOUN","BBAI","SMCI","ARM","AVGO","CRWD","SNOW","NET","MDB"],
-    "ev_clean":       ["TSLA","NIO","XPEV","LI","PLUG","FCEL","BE","CHPT","BLNK"],
-    "biotech":        ["MRNA","BNTX","NVAX","SRPT","BEAM","CRSP","EDIT","NTLA","RXRX"],
-    "high_beta_tech": ["META","GOOGL","AMZN","NFLX","SNAP","RBLX","DKNG","UBER","LYFT","ABNB","DASH","PANW"],
-    "fintech":        ["SQ","PYPL","AFRM","UPST","SCHW","GS","MS","BAC"],
-    "leveraged_etfs": ["TQQQ","SQQQ","UVXY","LABU","FNGU","UPRO"],
-    "sp100_core":     ["AAPL","MSFT","JPM","UNH","JNJ","V","PG","MA","HD","MRK",
-                       "ABBV","LLY","KO","MCD","TMO","CSCO","ABT","CRM","TXN","ORCL",
-                       "NKE","ADBE","RTX","QCOM","HON","CAT","UNP","SPGI","BLK","AMGN",
-                       "SBUX","GILD","AXP","BMY","BA","ISRG","LMT","MU","KLAC","AMAT",
-                       "LRCX","INTU","NOW"],
+    "meme": ["SOFI", "PLTR", "HOOD", "RIVN"],
+    "crypto": ["COIN", "MSTR", "MARA"],
+    "nuclear_energy": ["OKLO", "NNE", "SMR", "CEG", "VST", "CCJ"],
+    "ai_quantum": ["NVDA", "AMD", "IONQ", "RGTI", "QUBT", "QBTS", "SOUN", "BBAI", "SMCI", "ARM", "AVGO", "CRWD", "SNOW", "NET"],
+    "ev_clean": ["TSLA", "NIO", "XPEV", "PLUG", "BE", "RIVN"],
+    "biotech": ["LLY", "REGN", "VKTX", "HIMS"],
+    "high_beta_tech": ["META", "AMZN", "NFLX", "SNAP", "RBLX", "UBER", "DASH", "PANW"],
+    "fintech": ["PYPL", "SCHW", "GS", "MS", "BAC"],
+    "leveraged_etfs": ["TQQQ", "SQQQ"],
+    "sp100_core": [
+        "AAPL", "MSFT", "JPM", "UNH", "JNJ", "V", "PG", "MA", "HD", "ABBV",
+        "TMO", "CSCO", "ABT", "CRM", "TXN", "ORCL", "NKE", "ADBE", "RTX",
+        "QCOM", "HON", "CAT", "SPGI", "BLK", "AMGN", "SBUX", "GILD", "BMY",
+        "ISRG", "LMT", "MU", "KLAC", "AMAT", "LRCX", "INTU", "NOW"
+    ],
+    "other": [
+        "GOOGL", "GOOG", "BRK.B", "WMT", "CVX", "XOM", "KO", "PEP", "COST",
+        "ACN", "LIN", "DIS", "WFC", "VZ", "CMCSA", "NEE", "DHR", "LOW", "UPS",
+        "IBM", "BKNG", "C", "TJX", "ELV", "MDT", "SYK", "MMC", "ADI", "CB",
+        "ADP", "DE", "MDLZ", "CI", "MO", "GE", "APO", "MMM", "EOG", "ZTS",
+        "BSX", "DUK", "BDX", "ICE", "SO", "BX", "ANET", "SHW", "SNPS", "MCO",
+        "CDNS", "APH", "PH", "ITW", "AON", "WELL", "WM", "PNC", "TDG", "EMR",
+        "GD", "NOC", "CARR", "TFC", "PSA", "FDX", "JCI", "ROP", "AFL", "PGR",
+        "COF", "GM", "MPC", "VLO", "TRV", "OXY", "SLB", "AZO", "ADSK", "WBD",
+        "FTNT", "AIG", "ASML", "MRVL", "ZS", "LITE", "COHR", "AAOI", "POET",
+        "CRDO", "ALAB", "SMTC", "NBIS", "IREN", "APLD", "CRWV", "VRT", "EQIX",
+        "AMT", "RKLB", "ASTS", "LUNR", "SPCE", "KTOS", "AVAV", "JOBY", "QS",
+        "BABA", "PDD", "FUTU", "WDC", "GLD", "NEM", "F", "T", "PCG", "AAL",
+        "IBIT", "PFE", "TEM", "GEV", "PEG", "APP", "DUOL"
+    ],
 }
 
 ALL_TICKERS = []
