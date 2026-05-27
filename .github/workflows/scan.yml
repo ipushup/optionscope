@@ -2,11 +2,23 @@ name: OptionScope Scanner
 
 on:
   schedule:
-    - cron: '30 13 * * 1-5'
-    - cron: '0  15 * * 1-5'
-    - cron: '0  17 * * 1-5'
-    - cron: '0  19 * * 1-5'
-    - cron: '55 19 * * 1-5'
+    # Every 30 mins during US market hours (9:30 AM - 4:00 PM ET = 13:30 - 20:00 UTC)
+    # Monday to Friday only
+    - cron: '30 13 * * 1-5'   # 9:30 AM ET  - market open
+    - cron: '0  14 * * 1-5'   # 10:00 AM ET
+    - cron: '30 14 * * 1-5'   # 10:30 AM ET
+    - cron: '0  15 * * 1-5'   # 11:00 AM ET
+    - cron: '30 15 * * 1-5'   # 11:30 AM ET
+    - cron: '0  16 * * 1-5'   # 12:00 PM ET
+    - cron: '30 16 * * 1-5'   # 12:30 PM ET
+    - cron: '0  17 * * 1-5'   # 1:00 PM ET
+    - cron: '30 17 * * 1-5'   # 1:30 PM ET
+    - cron: '0  18 * * 1-5'   # 2:00 PM ET
+    - cron: '30 18 * * 1-5'   # 2:30 PM ET
+    - cron: '0  19 * * 1-5'   # 3:00 PM ET
+    - cron: '30 19 * * 1-5'   # 3:30 PM ET
+    - cron: '55 19 * * 1-5'   # 3:55 PM ET  - near close
+
   workflow_dispatch:
 
 jobs:
