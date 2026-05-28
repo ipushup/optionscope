@@ -234,34 +234,41 @@ function DetailPage({ stock, onClose }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"#040b14", zIndex:50, display:"flex", flexDirection:"column", overflow:"hidden" }}>
       {/* Header */}
-      <div style={{ padding:"12px 14px", background:"#050c18", borderBottom:"1px solid #0a1826", flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
-          <button onClick={onClose} style={{ background:"#0a1520", border:"1px solid #162030", borderRadius:6, color:"#8aaabb", padding:"6px 12px", fontSize:12, cursor:"pointer", fontFamily:"DM Mono,monospace", flexShrink:0 }}>← Back</button>
-          <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
-            <ScoreRing score={score} size={48} />
-            <div style={{ minWidth:0 }}>
-              <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
-                <span style={{ fontSize:24, fontWeight:900, color:"#fff", fontFamily:"'Syne',sans-serif" }}>{stock.ticker}</span>
-                <span style={{ fontSize:16, color:"#aaccee", fontFamily:"DM Mono,monospace" }}>${stock.price.toFixed(2)}</span>
+      <div style={{
+        background:"#050c18",
+        borderBottom:"1px solid #0a1826",
+        flexShrink:0,
+        paddingTop:"env(safe-area-inset-top, 44px)",
+      }}>
+        <div style={{ padding:"12px 14px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+            <button onClick={onClose} style={{ background:"#0a1520", border:"1px solid #162030", borderRadius:6, color:"#8aaabb", padding:"6px 12px", fontSize:12, cursor:"pointer", fontFamily:"DM Mono,monospace", flexShrink:0 }}>← Back</button>
+            <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
+              <ScoreRing score={score} size={48} />
+              <div style={{ minWidth:0 }}>
+                <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
+                  <span style={{ fontSize:24, fontWeight:900, color:"#fff", fontFamily:"'Syne',sans-serif" }}>{stock.ticker}</span>
+                  <span style={{ fontSize:16, color:"#aaccee", fontFamily:"DM Mono,monospace" }}>${stock.price.toFixed(2)}</span>
+                </div>
+                <div style={{ fontSize:11, padding:"2px 8px", borderRadius:12, background:sig.bg, color:sig.color, fontFamily:"DM Mono,monospace", display:"inline-block", marginTop:2 }}>{sig.label}</div>
               </div>
-              <div style={{ fontSize:11, padding:"2px 8px", borderRadius:12, background:sig.bg, color:sig.color, fontFamily:"DM Mono,monospace", display:"inline-block", marginTop:2 }}>{sig.label}</div>
+            </div>
+            <div style={{ textAlign:"right", flexShrink:0 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:sell.color, background:sell.color+"18", border:`1px solid ${sell.color}44`, borderRadius:6, padding:"4px 8px", fontFamily:"DM Mono,monospace" }}>{sell.type}</div>
+              {premium && <div style={{ fontSize:14, fontWeight:700, color:"#00d4aa", fontFamily:"DM Mono,monospace", marginTop:4 }}>${premium.perContract}</div>}
             </div>
           </div>
-          <div style={{ textAlign:"right", flexShrink:0 }}>
-            <div style={{ fontSize:11, fontWeight:800, color:sell.color, background:sell.color+"18", border:`1px solid ${sell.color}44`, borderRadius:6, padding:"4px 8px", fontFamily:"DM Mono,monospace" }}>{sell.type}</div>
-            {premium && <div style={{ fontSize:14, fontWeight:700, color:"#00d4aa", fontFamily:"DM Mono,monospace", marginTop:4 }}>${premium.perContract}</div>}
+          {/* Tab bar */}
+          <div style={{ display:"flex", gap:4, background:"#080f1c", borderRadius:8, padding:3 }}>
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                flex:1, padding:"6px 4px", borderRadius:6, border:"none", cursor:"pointer",
+                fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
+                background:tab===t.id?"#1a3555":"transparent",
+                color:tab===t.id?"#3b9eff":"#3a5060",
+              }}>{t.label}</button>
+            ))}
           </div>
-        </div>
-        {/* Tab bar */}
-        <div style={{ display:"flex", gap:4, background:"#080f1c", borderRadius:8, padding:3 }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              flex:1, padding:"6px 4px", borderRadius:6, border:"none", cursor:"pointer",
-              fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
-              background:tab===t.id?"#1a3555":"transparent",
-              color:tab===t.id?"#3b9eff":"#3a5060",
-            }}>{t.label}</button>
-          ))}
         </div>
       </div>
 
@@ -779,13 +786,27 @@ export default function App() {
         ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:#040b14} ::-webkit-scrollbar-thumb{background:#162030;border-radius:3px}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
+        /* iPhone safe area support */
+        :root {
+          --sat: env(safe-area-inset-top, 44px);
+          --sab: env(safe-area-inset-bottom, 0px);
+          --sal: env(safe-area-inset-left, 0px);
+          --sar: env(safe-area-inset-right, 0px);
+        }
       `}</style>
 
       {/* Detail page overlay */}
       {detailStock && <DetailPage stock={detailStock} onClose={() => setDetailStock(null)} />}
 
       {/* TOPBAR */}
-      <div style={{ height:52, background:"#050c18", borderBottom:"1px solid #0a1826", display:"flex", alignItems:"center", padding:"0 10px", gap:8, flexShrink:0, overflow:"hidden" }}>
+      <div style={{
+        background:"#050c18",
+        borderBottom:"1px solid #0a1826",
+        flexShrink:0,
+        overflow:"hidden",
+        paddingTop:"env(safe-area-inset-top, 44px)",
+      }}>
+        <div style={{ height:52, display:"flex", alignItems:"center", padding:"0 10px", gap:8 }}>
         <div style={{ width:28, height:28, background:"linear-gradient(135deg,#0d4080,#00b894)", borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>⚡</div>
         {!isMobile && <span style={{ fontSize:14, fontWeight:900, letterSpacing:"-0.5px", background:"linear-gradient(90deg,#3b9eff,#00d4aa)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>OptionScope</span>}
         <div style={{ display:"flex", gap:3, background:"#080f1c", borderRadius:8, padding:3 }}>
@@ -807,6 +828,7 @@ export default function App() {
           <option value={80}>≥80</option>
         </select>
         <button onClick={loadResults} style={{ padding:"5px 10px", background:"#0d3060", border:"none", borderRadius:7, color:"#88bbee", fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif", cursor:"pointer", flexShrink:0 }}>↻</button>
+        </div>
       </div>
 
       {/* SUMMARY BAR */}
