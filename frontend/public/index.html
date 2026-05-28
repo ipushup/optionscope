@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="OptionScope" />
-    <meta name="description" content="Options IV scanner — high IV + strong trend stocks" />
     <title>OptionScope</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,6 +15,9 @@
         width: 100%;
         max-width: 100vw;
         background: #050d18;
+        /* Critical: respect iPhone safe areas */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
       }
     </style>
   </head>
