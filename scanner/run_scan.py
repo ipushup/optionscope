@@ -15,28 +15,49 @@ warnings.filterwarnings("ignore")
 
 TICKERS = {
     "meme":           ["GME","AMC","SOFI","PLTR","HOOD","RIVN","LCID","NKLA"],
-    "crypto":         ["COIN","MSTR","MARA","RIOT","WULF","CLSK","HUT","BITF"],
-    "nuclear_energy": ["OKLO","NNE","SMR","CEG","VST","CCJ","URA","NRG"],
-    "ai_quantum":     ["NVDA","AMD","IONQ","RGTI","QUBT","QBTS","SOUN","BBAI","SMCI","ARM","AVGO","CRWD","SNOW","NET","MDB"],
-    "ev_clean":       ["TSLA","NIO","XPEV","LI","PLUG","FCEL","BE","CHPT","BLNK"],
-    "biotech":        ["MRNA","BNTX","NVAX","SRPT","BEAM","CRSP","EDIT","NTLA","RXRX"],
-    "high_beta_tech": ["META","GOOGL","AMZN","NFLX","SNAP","RBLX","DKNG","UBER","LYFT","ABNB","DASH","PANW"],
-    "fintech":        ["SQ","PYPL","AFRM","UPST","SCHW","GS","MS","BAC"],
+    "crypto":         ["COIN","MSTR","MARA","RIOT","WULF","CLSK","HUT","BITF","IBIT"],
+    "nuclear_energy": ["OKLO","NNE","SMR","CEG","VST","CCJ","URA","NRG","PEG","PCG"],
+    "ai_quantum":     ["NVDA","AMD","IONQ","RGTI","QUBT","QBTS","SOUN","BBAI","SMCI","ARM",
+                       "AVGO","CRWD","SNOW","NET","MDB","APP","DUOL","ALAB","NBIS","CRWV"],
+    "ev_clean":       ["TSLA","NIO","XPEV","LI","PLUG","FCEL","BE","CHPT","BLNK","JOBY","QS","RIVN"],
+    "biotech":        ["MRNA","BNTX","NVAX","SRPT","BEAM","CRSP","EDIT","NTLA","RXRX",
+                       "ABBV","AMGN","GILD","REGN","VKTX","TEM","HIMS"],
+    "high_beta_tech": ["META","GOOGL","AMZN","NFLX","SNAP","RBLX","DKNG","UBER","LYFT",
+                       "ABNB","DASH","PANW","FTNT","ZS","ADSK","WBD","BKNG"],
+    "fintech":        ["SQ","PYPL","AFRM","UPST","SCHW","GS","MS","BAC","C","COF","JPM","V","MA","AXP"],
     "leveraged_etfs": ["TQQQ","SQQQ","UVXY","LABU","FNGU","UPRO"],
-    "sp100_core":     ["AAPL","MSFT","JPM","UNH","JNJ","V","PG","MA","HD","MRK",
-                       "ABBV","LLY","KO","MCD","TMO","CSCO","ABT","CRM","TXN","ORCL",
-                       "NKE","ADBE","RTX","QCOM","HON","CAT","UNP","SPGI","BLK","AMGN",
-                       "SBUX","GILD","AXP","BMY","BA","ISRG","LMT","MU","KLAC","AMAT",
-                       "LRCX","INTU","NOW"],
+    "semiconductor":  ["INTC","TSM","QCOM","AMAT","KLAC","LRCX","MU","ARM","AVGO","MRVL",
+                       "LITE","COHR","AAOI","POET","CRDO","SMTC","IREN","APLD","WDC"],
+    "defense_space":  ["LMT","RTX","NOC","GD","KTOS","AVAV","RKLB","ASTS","LUNR","SPCE",
+                       "GEV","JOBY","DRNZ"],
+    "china_tech":     ["BABA","PDD","FUTU","NIO","XPEV","LI"],
+    "sp100_core":     ["AAPL","MSFT","UNH","JNJ","PG","HD","MRK","LLY","KO","MCD",
+                       "TMO","CSCO","ABT","CRM","TXN","ORCL","NKE","ADBE","HON","CAT",
+                       "UNP","SPGI","BLK","SBUX","BMY","BA","ISRG","INTU","NOW",
+                       "ACN","LIN","DIS","WFC","VZ","CMCSA","NEE","DHR","LOW","UPS",
+                       "IBM","TJX","MDT","SYK","MMC","ADI","CB","ADP","DE","MDLZ",
+                       "CI","MO","GE","APO","MMM","EOG","ZTS","BSX","DUK","BDX",
+                       "ICE","SO","BX","ANET","SHW","SNPS","MCO","CDNS","APH","PH",
+                       "ITW","AON","WELL","WM","PNC","TDG","EMR","AFL","PGR",
+                       "CARR","TFC","PSA","FDX","JCI","ROP","GM","MPC","VLO","TRV",
+                       "OXY","SLB","AZO","AAL","AIG","NEM","GLD","F","T","PFE",
+                       "COST","WMT","CVX","XOM","PEP"],
 }
 
+# ── DEDUPLICATE across all categories ────────────────────────────────────────
+# Tickers appearing in multiple categories keep their FIRST assignment
+_seen_dedup = set()
+for _cat in TICKERS:
+    _unique = []
+    for _t in TICKERS[_cat]:
+        if _t not in _seen_dedup:
+            _unique.append(_t)
+            _seen_dedup.add(_t)
+    TICKERS[_cat] = _unique
+
 ALL_TICKERS = []
-seen = set()
 for cat, tlist in TICKERS.items():
-    for t in tlist:
-        if t not in seen:
-            ALL_TICKERS.append(t)
-            seen.add(t)
+    ALL_TICKERS.extend(tlist)
 
 MIN_IV = float(os.environ.get("MIN_IV", "0"))
 
