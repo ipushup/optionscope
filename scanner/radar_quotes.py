@@ -83,6 +83,14 @@ def quote_one(tkr):
     return out
 
 
+def _write(payload):
+    d = os.path.dirname(QUOTES_PATH)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    with open(QUOTES_PATH, "w") as f:
+        json.dump(payload, f, indent=2)
+
+
 def _f(v):
     try:
         f = float(v)
@@ -93,14 +101,17 @@ def _f(v):
 
 def main():
     if not os.path.exists(RADAR_PATH):
-        print(f"{RADAR_PATH} not found — run radar_scan.py first")
+        print(f"ERROR: {RADAR_PATH} not found.")
+        print("  Run the workflow once with full_scan = true to create it.")
         sys.exit(1)
 
     with open(RADAR_PATH) as f:
         radar = json.load(f)
     tickers = radar.get("tickers") or [c["ticker"] for c in radar.get("cards", [])]
     if not tickers:
-        print("no tickers in radar.json — nothing to quote")
+        print("no tickers in radar.json — writing empty quotes file")
+        _write({"updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "radar_scanned_at": radar.get("scanned_at"), "quotes": {}})
         sys.exit(0)
 
     print(f"Quoting {len(tickers)} radar tickers…")
@@ -108,14 +119,11 @@ def main():
     for tk in tickers:
         quotes[tk] = quote_one(tk)
 
-    payload = {
+    _write({
         "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "radar_scanned_at": radar.get("scanned_at"),
         "quotes": quotes,
-    }
-    os.makedirs(os.path.dirname(QUOTES_PATH), exist_ok=True)
-    with open(QUOTES_PATH, "w") as f:
-        json.dump(payload, f, indent=2)
+    })
 
     ok = sum(1 for q in quotes.values() if q["price"])
     print(f"{ok}/{len(tickers)} quoted in {time.time()-t0:.0f}s → {QUOTES_PATH}")
