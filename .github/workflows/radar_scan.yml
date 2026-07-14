@@ -58,8 +58,20 @@ jobs:
         if: steps.mode.outputs.full == 'false'
         run: |
           mkdir -p frontend/public
-          git fetch origin gh-pages
-          git show origin/gh-pages:radar.json > frontend/public/radar.json 2>/dev/null || echo '{}' > frontend/public/radar.json
+          git fetch origin gh-pages --depth=1
+          if ! git show origin/gh-pages:radar.json > frontend/public/radar.json 2>/dev/null; then
+            echo "::error::Could not read radar.json from gh-pages."
+            echo "A quote-only run needs an existing radar.json. Run this workflow"
+            echo "manually with 'quotes_only' UNTICKED to generate one first."
+            exit 1
+          fi
+          # Guard: a previous broken run may have pushed an empty {} — refuse to build on it.
+          if ! python -c "import json,sys; d=json.load(open('frontend/public/radar.json')); sys.exit(0 if d.get('cards') else 1)"; then
+            echo "::error::radar.json on gh-pages has no cards (it is empty)."
+            echo "Run this workflow manually with 'quotes_only' UNTICKED to rebuild it."
+            exit 1
+          fi
+          echo "Pulled radar.json from gh-pages OK"
 
       - name: Full radar scan
         if: steps.mode.outputs.full == 'true'
