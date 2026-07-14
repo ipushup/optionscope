@@ -54,8 +54,13 @@ def quote_one(tkr):
 
         state = (info.get("marketState") or "").upper()
 
-        pre  = _f(info.get("preMarketPrice"))
-        post = _f(info.get("postMarketPrice"))
+        is_hk = tkr.upper().endswith(".HK")
+
+        # HK cash equities have no pre/post session. yfinance still returns a
+        # postMarketPrice for them (it echoes the close), which made the UI
+        # label every HK card "POST". Suppress both fields for .HK.
+        pre  = None if is_hk else _f(info.get("preMarketPrice"))
+        post = None if is_hk else _f(info.get("postMarketPrice"))
         reg  = out["price"]
         prev = out["prev_close"]
 
@@ -68,7 +73,9 @@ def quote_one(tkr):
         if reg and prev:
             out["chg_pct"] = round((reg / prev - 1) * 100, 2)
 
-        if state in ("PRE", "PREPRE"):
+        if is_hk:
+            out["session"] = "regular" if state == "REGULAR" else "closed"
+        elif state in ("PRE", "PREPRE"):
             out["session"] = "pre"
         elif state == "REGULAR":
             out["session"] = "regular"
