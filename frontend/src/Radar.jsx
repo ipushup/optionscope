@@ -65,8 +65,11 @@ function derive(card, quote) {
   else if (utBroken)   { status = "🟠 穿 UT Bot 止損";   statusColor = "#ff8c42"; }
   else if (atBuyZone)  { status = "🟢 已到買入區";       statusColor = "#00d4aa"; }
 
+  // 距止蝕太遠 = 追高，risk/reward 差（止蝕位一觸即損失 >15%）
+  const chaseRisk = !stopBroken && stopDist !== null && stopDist > 15;
+
   return { live, session, vsClose, stopDist, stopBroken, utDist, utBroken,
-           ema10Dist, ema20Dist, pullbackLvl, pullbackDist, atBuyZone,
+           ema10Dist, ema20Dist, pullbackLvl, pullbackDist, atBuyZone, chaseRisk,
            status, statusColor };
 }
 
@@ -112,7 +115,9 @@ function RadarListCard({ card, quote, onClick }) {
                 value={pctTxt(d.pullbackDist)}
                 color={d.atBuyZone ? "#00d4aa" : "#8aaabb"} />
         <Metric label="vs 止蝕" value={pctTxt(d.stopDist)}
-                color={d.stopBroken ? "#ff5c5c" : (d.stopDist < 3 ? "#f5a623" : "#8aaabb")} />
+                color={d.stopBroken ? "#ff5c5c" : d.chaseRisk ? "#ff8c42"
+                       : (d.stopDist < 3 ? "#f5a623" : "#8aaabb")} />
+        {d.chaseRisk && <Metric label="RISK" value="追高" color="#ff8c42" />}
         {card.warn_n > 0 && <Metric label="VETO" value={`⚠×${card.warn_n}`} color="#f5a623" />}
       </div>
 
@@ -307,7 +312,18 @@ export default function RadarView({ isMobile }) {
   }, [loadQuotes]);
 
   const cards = (radar?.cards || []).filter(c => filterScen === "all" || c.scen === filterScen);
-  const grouped = ["S1", "S2", "S3"].map(s => [s, cards.filter(c => c.scen === s)]).filter(([, a]) => a.length);
+
+  // ⚠️ ALERTS — anything that broke its stop / UT Bot floats to the top.
+  // These are positions you may already hold: most urgent info, so it goes first.
+  const alerts = cards.filter(c => {
+    const d = derive(c, quotes[c.ticker]);
+    return d.stopBroken || d.utBroken;
+  });
+  const alertSet = new Set(alerts.map(c => c.ticker));
+  const rest = cards.filter(c => !alertSet.has(c.ticker));
+  const grouped = ["S1", "S2", "S3"]
+    .map(s => [s, rest.filter(c => c.scen === s)])
+    .filter(([, a]) => a.length);
 
   if (loading) return (
     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -353,7 +369,22 @@ export default function RadarView({ isMobile }) {
         </span>
       </div>
 
-      {grouped.length === 0 && (
+      {alerts.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#ff5c5c", fontFamily: mono,
+                        letterSpacing: 1, marginBottom: 6, paddingLeft: 2 }}>
+            ⚠️ 警報 · {alerts.length} 隻 — 已穿止蝕或 UT Bot 止損
+          </div>
+          <div style={{ display: "grid", gap: 8,
+                        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(320px,1fr))" }}>
+            {alerts.map(c => (
+              <RadarListCard key={c.ticker} card={c} quote={quotes[c.ticker]} onClick={() => setDetail(c)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {grouped.length === 0 && alerts.length === 0 && (
         <div style={{ color: "#5a7a90", fontFamily: mono, fontSize: 12, textAlign: "center", padding: 30 }}>
           今日無符合條件嘅股票
         </div>
@@ -377,7 +408,7 @@ export default function RadarView({ isMobile }) {
       <div style={{ fontSize: 9, color: "#3a5060", fontFamily: mono, textAlign: "center",
                     marginTop: 14, lineHeight: 1.6 }}>
         指標為 closed candle 收市值 · 價格及距離即時更新（1 分鐘刷新）<br />
-        紅色 = 已穿止蝕 · 綠色 = 已到買入區
+        🔴 已穿止蝕 · 🟢 已到買入區 · 🟠 追高（距止蝕 &gt;15%，risk/reward 差）
       </div>
     </div>
   );
