@@ -1,0 +1,79 @@
+name: Turnaround Radar
+
+on:
+  schedule:
+    # ── heavy scan: once after US close (16:15 ET = 20:15 UTC), Mon-Fri
+    - cron: '15 20 * * 1-5'
+    # ── light quote refresh: every 15 min across pre + regular + post US session
+    #    (08:00-20:15 UTC covers 04:00 ET premarket → 16:15 ET post)
+    - cron: '*/15 8-20 * * 1-5'
+    # ── HK session quote refresh (01:00-08:30 UTC = 09:00-16:30 HKT)
+    - cron: '*/15 1-8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: 'Force full radar scan (not just quotes)'
+        type: boolean
+        default: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install yfinance pandas numpy jinja2
+
+      # Decide which job this run is. The 20:15 cron (and manual full_scan) does
+      # the heavy indicator scan; every other cron only refreshes quotes.
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event.inputs.full_scan }}" = "true" ] || \
+             [ "${{ github.event.schedule }}" = "15 20 * * 1-5" ]; then
+            echo "full=true" >> $GITHUB_OUTPUT
+          else
+            echo "full=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull existing radar.json from gh-pages (quote-only runs)
+        if: steps.mode.outputs.full == 'false'
+        run: |
+          git fetch origin gh-pages
+          git show origin/gh-pages:radar.json > /tmp/radar.json 2>/dev/null || echo '{}' > /tmp/radar.json
+          mkdir -p frontend/public
+          cp /tmp/radar.json frontend/public/radar.json
+
+      - name: Full radar scan
+        if: steps.mode.outputs.full == 'true'
+        run: python scanner/radar_scan.py
+
+      - name: Refresh quotes
+        run: python scanner/radar_quotes.py
+
+      - name: Push to gh-pages
+        run: |
+          cp frontend/public/radar.json        /tmp/radar_out.json
+          cp frontend/public/radar_quotes.json /tmp/quotes_out.json
+
+          git fetch origin gh-pages
+          git checkout gh-pages
+          cp /tmp/radar_out.json  ./radar.json
+          cp /tmp/quotes_out.json ./radar_quotes.json
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add radar.json radar_quotes.json
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "radar: $(date -u '+%Y-%m-%d %H:%M UTC') (full=${{ steps.mode.outputs.full }})"
+          git push origin gh-pages
