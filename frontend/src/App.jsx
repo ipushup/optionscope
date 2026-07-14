@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, BarChart, Bar } from "recharts";
+import RadarView from "./Radar";
 
 const RESULTS_URL = process.env.PUBLIC_URL ? `${process.env.PUBLIC_URL}/results.json` : "/results.json";
 
@@ -810,15 +811,16 @@ export default function App() {
         <div style={{ width:28, height:28, background:"linear-gradient(135deg,#0d4080,#00b894)", borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>⚡</div>
         {!isMobile && <span style={{ fontSize:14, fontWeight:900, letterSpacing:"-0.5px", background:"linear-gradient(90deg,#3b9eff,#00d4aa)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>OptionScope</span>}
         <div style={{ display:"flex", gap:3, background:"#080f1c", borderRadius:8, padding:3 }}>
-          {[["premium","💰"],["compass","🧭"]].map(([id,icon])=>(
+          {[["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"]].map(([id,icon,label])=>(
             <button key={id} onClick={()=>setView(id)} style={{
               padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer",
               fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
               background:view===id?"#1a3555":"transparent", color:view===id?"#3b9eff":"#3a5060",
-            }}>{isMobile?icon:(id==="premium"?"💰 Premium":"🧭 Compass")}</button>
+            }}>{isMobile?icon:label}</button>
           ))}
         </div>
         <div style={{ flex:1 }} />
+        {view!=="radar" && <>
         <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ background:"#080f1c", border:"1px solid #0e1c28", borderRadius:6, color:"#667788", padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer", maxWidth:90 }}>
           {categories.map(c=><option key={c} value={c}>{c==="all"?"All":CATEGORY_ICON[c]+" "+c.replace("_"," ")}</option>)}
         </select>
@@ -828,11 +830,12 @@ export default function App() {
           <option value={80}>≥80</option>
         </select>
         <button onClick={loadResults} style={{ padding:"5px 10px", background:"#0d3060", border:"none", borderRadius:7, color:"#88bbee", fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif", cursor:"pointer", flexShrink:0 }}>↻</button>
+        </>}
         </div>
       </div>
 
-      {/* SUMMARY BAR */}
-      {!loading && !error && data && (
+      {/* SUMMARY BAR — OptionScope scanner only */}
+      {view!=="radar" && !loading && !error && data && (
         <div style={{ background:"#050c18", borderBottom:"1px solid #0a1826", padding:"5px 12px", display:"flex", gap:14, alignItems:"center", flexShrink:0, flexWrap:"wrap" }}>
           <span style={{ fontSize:11, fontFamily:"DM Mono,monospace" }}>
             <span style={{ color:"#8aaabb" }}>SELL NOW </span>
@@ -860,14 +863,14 @@ export default function App() {
       {/* BODY */}
       <div style={{ flex:1, display:"flex", overflow:"hidden", position:"relative" }}>
 
-        {loading && (
+        {view!=="radar" && loading && (
           <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"#040b14", zIndex:30, gap:14 }}>
             <div style={{ width:34, height:34, border:"3px solid #0e1c28", borderTopColor:"#3b9eff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
             <div style={{ color:"#8aaabb", fontFamily:"DM Mono,monospace", fontSize:12 }}>Loading scan results…</div>
           </div>
         )}
 
-        {!loading && error && (
+        {view!=="radar" && !loading && error && (
           <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:14, padding:24 }}>
             <div style={{ fontSize:40 }}>📡</div>
             <div style={{ color:"#3b9eff", fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700 }}>No scan data yet</div>
@@ -955,12 +958,17 @@ export default function App() {
           </div>
         )}
 
+        {/* RADAR VIEW — self-contained: own data fetch, loading & error states */}
+        {view==="radar" && <RadarView isMobile={isMobile} />}
+
       </div>
 
       {/* STATUS BAR */}
       <div style={{ height:24, background:"#030910", borderTop:"1px solid #08141e", display:"flex", alignItems:"center", padding:"0 14px", gap:16, flexShrink:0 }}>
-        <span style={{ fontSize:10, color:data?"#00d4aa":"#2e4055", fontFamily:"DM Mono,monospace" }}>
-          {data?`● ${data.total_results} stocks · auto-refresh 5min`:"○ Waiting"}
+        <span style={{ fontSize:10, color:(view==="radar"||data)?"#00d4aa":"#2e4055", fontFamily:"DM Mono,monospace" }}>
+          {view==="radar"
+            ? "● Turnaround Radar · 報價 1min 刷新"
+            : (data?`● ${data.total_results} stocks · auto-refresh 5min`:"○ Waiting")}
         </span>
         <span style={{ fontSize:10, color:"#6a8898", fontFamily:"DM Mono,monospace", marginLeft:"auto" }}>{new Date().toLocaleTimeString()}</span>
       </div>
