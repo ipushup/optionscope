@@ -58,11 +58,22 @@ jobs:
         if: steps.mode.outputs.full == 'true'
         run: python scanner/radar_scan.py
 
+      - name: Verify radar.json
+        run: |
+          if [ ! -s frontend/public/radar.json ]; then
+            echo "::error::radar.json missing or empty."
+            echo "If this was a quote-only run, gh-pages has no radar.json yet."
+            echo "Re-run this workflow manually with full_scan = true."
+            exit 1
+          fi
+          python -c "import json;d=json.load(open('frontend/public/radar.json'));print('cards:',len(d.get('cards',[])),'| counts:',d.get('scen_counts'))"
+
       - name: Refresh quotes
         run: python scanner/radar_quotes.py
 
       - name: Push to gh-pages
         run: |
+          ls -la frontend/public/radar.json frontend/public/radar_quotes.json
           cp frontend/public/radar.json        /tmp/radar_out.json
           cp frontend/public/radar_quotes.json /tmp/quotes_out.json
 
