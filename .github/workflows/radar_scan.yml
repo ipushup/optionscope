@@ -2,17 +2,16 @@ name: Turnaround Radar
 
 on:
   schedule:
-    # ── heavy scan: once after US close (16:15 ET = 20:15 UTC), Mon-Fri
+    # heavy scan: once after US close (20:15 UTC = 16:15 ET), Mon-Fri
     - cron: '15 20 * * 1-5'
-    # ── light quote refresh: every 15 min across pre + regular + post US session
-    #    (08:00-20:15 UTC covers 04:00 ET premarket → 16:15 ET post)
-    - cron: '*/15 8-20 * * 1-5'
-    # ── HK session quote refresh (01:00-08:30 UTC = 09:00-16:30 HKT)
-    - cron: '*/15 1-8 * * 1-5'
+    # light quote refresh: every 15 min, US pre/regular/post (08:00-20:00 UTC)
+    - cron: '*/15 8-19 * * 1-5'
+    # light quote refresh: HK session (01:00-08:00 UTC = 09:00-16:00 HKT)
+    - cron: '*/15 1-7 * * 1-5'
   workflow_dispatch:
     inputs:
-      full_scan:
-        description: 'Force full radar scan (not just quotes)'
+      quotes_only:
+        description: 'Quotes only (skip the heavy scan)'
         type: boolean
         default: false
 
@@ -34,25 +33,33 @@ jobs:
       - name: Install deps
         run: pip install yfinance pandas numpy jinja2
 
-      # Decide which job this run is. The 20:15 cron (and manual full_scan) does
-      # the heavy indicator scan; every other cron only refreshes quotes.
+      # FULL SCAN unless: (a) it's one of the quote-only crons, or
+      #                   (b) the user explicitly ticked quotes_only.
+      # Manual runs therefore default to a FULL scan.
       - name: Determine mode
         id: mode
         run: |
-          if [ "${{ github.event.inputs.full_scan }}" = "true" ] || \
-             [ "${{ github.event.schedule }}" = "15 20 * * 1-5" ]; then
-            echo "full=true" >> $GITHUB_OUTPUT
-          else
-            echo "full=false" >> $GITHUB_OUTPUT
+          FULL=true
+          if [ "${{ github.event_name }}" = "schedule" ] && \
+             [ "${{ github.event.schedule }}" != "15 20 * * 1-5" ]; then
+            FULL=false
           fi
+          if [ "${{ github.event.inputs.quotes_only }}" = "true" ]; then
+            FULL=false
+          fi
+          echo "full=$FULL" >> $GITHUB_OUTPUT
+          echo "════════════════════════════════"
+          echo "  event    : ${{ github.event_name }}"
+          echo "  schedule : ${{ github.event.schedule }}"
+          echo "  FULL SCAN: $FULL"
+          echo "════════════════════════════════"
 
       - name: Pull existing radar.json from gh-pages (quote-only runs)
         if: steps.mode.outputs.full == 'false'
         run: |
-          git fetch origin gh-pages
-          git show origin/gh-pages:radar.json > /tmp/radar.json 2>/dev/null || echo '{}' > /tmp/radar.json
           mkdir -p frontend/public
-          cp /tmp/radar.json frontend/public/radar.json
+          git fetch origin gh-pages
+          git show origin/gh-pages:radar.json > frontend/public/radar.json 2>/dev/null || echo '{}' > frontend/public/radar.json
 
       - name: Full radar scan
         if: steps.mode.outputs.full == 'true'
@@ -60,13 +67,19 @@ jobs:
 
       - name: Verify radar.json
         run: |
-          if [ ! -s frontend/public/radar.json ]; then
-            echo "::error::radar.json missing or empty."
-            echo "If this was a quote-only run, gh-pages has no radar.json yet."
-            echo "Re-run this workflow manually with full_scan = true."
-            exit 1
-          fi
-          python -c "import json;d=json.load(open('frontend/public/radar.json'));print('cards:',len(d.get('cards',[])),'| counts:',d.get('scen_counts'))"
+          python - <<'PY'
+          import json, sys
+          try:
+              d = json.load(open('frontend/public/radar.json'))
+          except Exception as e:
+              print(f"::error::radar.json unreadable: {e}"); sys.exit(1)
+          cards = d.get('cards')
+          if cards is None:
+              print("::error::radar.json has no 'cards' key — the full scan never ran.")
+              print("Re-run this workflow manually (leave 'quotes_only' UNTICKED).")
+              sys.exit(1)
+          print(f"cards={len(cards)}  counts={d.get('scen_counts')}  scanned_at={d.get('scanned_at')}")
+          PY
 
       - name: Refresh quotes
         run: python scanner/radar_quotes.py
@@ -86,5 +99,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add radar.json radar_quotes.json
           git diff --staged --quiet && echo "No changes" || \
-            git commit -m "radar: $(date -u '+%Y-%m-%d %H:%M UTC') (full=${{ steps.mode.outputs.full }})"
+            git commit -m "radar: $(date -u '+%Y-%m-%d %H:%M UTC') full=${{ steps.mode.outputs.full }}"
           git push origin gh-pages
