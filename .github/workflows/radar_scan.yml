@@ -4,9 +4,10 @@ on:
   schedule:
     # heavy scan: once after US close (20:15 UTC = 16:15 ET), Mon-Fri
     - cron: '15 20 * * 1-5'
-    # light quote refresh: every 15 min, US pre/regular/post (08:00-20:00 UTC)
-    - cron: '*/15 8-19 * * 1-5'
-    # light quote refresh: HK session (01:00-08:00 UTC = 09:00-16:00 HKT)
+    # US quotes — pre(04:00 ET)+regular+post(→20:00 ET). 08:00-23:59 UTC, every 15 min.
+    #   (20:15 heavy-scan cron also refreshes quotes, so no gap at the close.)
+    - cron: '*/15 8-23 * * 1-5'
+    # HK quotes — 09:00-16:00 HKT = 01:00-08:00 UTC, every 15 min.
     - cron: '*/15 1-7 * * 1-5'
   workflow_dispatch:
     inputs:
@@ -94,6 +95,15 @@ jobs:
           PY
 
       - name: Refresh quotes
+        env:
+          # Restrict quote fetching to the market whose session is open, so we
+          # don't fetch 130+ tickers when only one exchange is trading.
+          #   HK cron (01-07 UTC) → HK only ; everything else → US only ;
+          #   the 20:15 full-scan and manual runs → BOTH.
+          QUOTE_MARKETS: >-
+            ${{ (github.event_name == 'schedule' && startsWith(github.event.schedule, '*/15 1-7')) && 'HK'
+             || (github.event_name == 'schedule' && github.event.schedule == '*/15 8-23 * * 1-5') && 'US'
+             || 'US,HK' }}
         run: python scanner/radar_quotes.py
 
       - name: Push to gh-pages
