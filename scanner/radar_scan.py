@@ -26,29 +26,17 @@ from turnaround_radar import compute_turnaround_radar, SCEN_META, MAX_CARDS  # n
 # ── WATCHLISTS ────────────────────────────────────────────────────────────
 # Keep in sync with daily_brief.py. Trim/extend freely.
 WATCHLIST_US = [
-    "AAPL","MSFT","NVDA","TSLA","AMZN","META","GOOGL","GOOG","BRK-B","JPM",
-    "V","JNJ","WMT","PG","MA","UNH","HD","CVX","BAC","XOM","KO","PEP",
-    "COST","TMO","ABBV","ADBE","CRM","NFLX","ORCL","CSCO","ACN","LIN",
-    "DIS","ABT","WFC","VZ","CMCSA","NEE","DHR","LOW","UPS","RTX","TXN",
-    "AMGN","IBM","QCOM","INTU","AMAT","CAT","NOW","SPGI","GS","BKNG",
-    "MS","C","HON","UBER","ISRG","TJX","PLTR","BLK","ELV","MDT","SYK",
-    "MMC","ADI","CB","MU","LRCX","PANW","ADP","SBUX","GILD","DE","BMY",
-    "MDLZ","CI","SCHW","MO","GE","APO","REGN","MMM","EOG","ZTS","BSX",
-    "DUK","BDX","ICE","SO","BX","ANET","KLAC","SHW","SNPS","MCO","CDNS",
-    "APH","PH","ITW","AON","WELL","WM","PNC","TDG","EMR","GD","NOC",
-    "CARR","TFC","PSA","FDX","JCI","ROP","AFL","PGR","COF","GM","MPC",
-    "VLO","TRV","OXY","SLB","AZO","ADSK","DASH","WBD","PYPL","FTNT","LLY","AIG",
-    "SMCI","AMD","ASML","MRVL","SNOW","CRWD","ZS","RBLX","SNAP","MARA","HOOD",
-    "SOFI","COIN","CEG","CCJ","TSM","AVGO","INTC","ARM","LITE","COHR","AAOI",
-    "POET","CRDO","ALAB","SMTC","NBIS","IREN","APLD","CRWV",
-    "VRT","EQIX","AMT","IONQ","RGTI","QBTS","QUBT",
-    "RKLB","ASTS","LUNR","SPCE","LMT",
-    "SOUN","APP","DUOL","BBAI","GEV","BE","VST","PEG","NNE","OKLO","SMR",
-    "KTOS","AVAV","JOBY","QS","PLUG","RIVN","NIO","XPEV","BABA","PDD",
-    "FUTU","NET","TQQQ","SQQQ","WDC","GLD","NEM","F","T","PCG",
-    "AAL","NKE","MSTR","IBIT","PFE","VKTX","TEM","DRNZ","ZETA","SKHY","HIMS",
+    "AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AVGO","AMD","NFLX",
+    "CRM","ORCL","ADBE","NOW","PANW","CRWD","ZS","SNOW","DDOG","MDB",
+    "PLTR","APP","ANET","MU","INTC","QCOM","TXN","AMAT","LRCX","KLAC",
+    "HOOD","COIN","PYPL","SOFI","V","MA","JPM","GS","MS","BAC",
+    "UNH","LLY","ABBV","JNJ","MRK","PFE","TMO","ISRG","VRTX","REGN",
+    "XOM","CVX","COP","SLB","OXY","CAT","DE","HON","GE","BA",
+    "WMT","COST","HD","NKE","SBUX","MCD","KO","PEP","PG","CL",
+    "UBER","ABNB","DASH","RBLX","SHOP","SQ","SPOT","TTD","NET","CRWV",
+    "VKTX","HIMS","TEM","ZETA","ELV","PGR","TRV","ADP","IBM","MPC",
+    "GEV","VRT","EQIX","OKLO","SMR","NNE","AVAV","KTOS","RCAT","IONQ",
 ]
-
 WATCHLIST_HK = [
     "0001.HK","0002.HK","0003.HK","0005.HK","0011.HK","0016.HK","0027.HK","0066.HK",
     "0175.HK","0241.HK","0267.HK","0288.HK","0300.HK","0386.HK","0388.HK","0669.HK",
@@ -62,6 +50,7 @@ WATCHLIST_HK = [
 ]
 
 OUT_PATH = os.environ.get("RADAR_OUT", "frontend/public/radar.json")
+HISTORY_PATH = os.environ.get("RADAR_HISTORY", "frontend/public/radar_history.json")
 
 # ── DATA LAYER (mirrors daily_brief semantics) ────────────────────────────
 _cache = {}
@@ -129,6 +118,7 @@ def card_to_json(cd):
         "warn_n":   cd["warn_n"],
         "concl":    cd["concl"],
         "concl_cls": cd["concl_cls"],
+        "downgraded": cd.get("downgraded"),
         "stop":     round(cd["stop"], 4),
         "stop_label": cd["meta"]["stop_lbl"],
         "rs_now":   round(cd["rs_now"], 2),
@@ -148,8 +138,19 @@ def main():
     t0 = time.time()
     print(f"Turnaround Radar scan · {len(WATCHLIST_US)} US + {len(WATCHLIST_HK)} HK")
 
+    # yesterday's breadth (for ↑/↓ deltas). Written each scan to HISTORY_PATH.
+    prev_breadth = None
+    if os.path.exists(HISTORY_PATH):
+        try:
+            hist = json.load(open(HISTORY_PATH))
+            if hist.get("days"):
+                prev_breadth = hist["days"][-1].get("breadth")
+        except Exception:
+            pass
+
     cards, meta = compute_turnaround_radar(
-        WATCHLIST_US, WATCHLIST_HK, fetch_df, get_closed_df)
+        WATCHLIST_US, WATCHLIST_HK, fetch_df, get_closed_df,
+        prev_breadth=prev_breadth)
 
     payload = {
         "scanned_at":  datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -158,6 +159,7 @@ def main():
         "truncated":   meta["truncated"],
         "total_cards": len(cards),
         "max_cards":   MAX_CARDS,
+        "market":      meta["market"],          # regime + indices + breadth + VIX
         "scen_meta":   {k: {"name": v["name"], "en": v["en"], "pos": v["pos"],
                             "stop_lbl": v["stop_lbl"]} for k, v in SCEN_META.items()},
         "cards":       [card_to_json(c) for c in cards],
@@ -167,6 +169,21 @@ def main():
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
+
+    # append today's breadth to rolling history (keep ~10 days)
+    try:
+        hist = {"days": []}
+        if os.path.exists(HISTORY_PATH):
+            hist = json.load(open(HISTORY_PATH))
+        today = datetime.now(timezone.utc).date().isoformat()
+        hist.setdefault("days", [])
+        hist["days"] = [d for d in hist["days"] if d.get("date") != today]  # replace same-day
+        hist["days"].append({"date": today, "breadth": meta["breadth_raw"]})
+        hist["days"] = hist["days"][-10:]
+        with open(HISTORY_PATH, "w") as f:
+            json.dump(hist, f, indent=2)
+    except Exception as e:
+        print(f"  history write warn: {e}")
 
     sc = meta["scen_counts"]
     print(f"\nS1:{sc['S1']} S2:{sc['S2']} S3:{sc['S3']} → {len(cards)} cards "

@@ -395,7 +395,7 @@ def _earnings_in_days(ticker, trading_days=V5_EARN_DAYS):
 # =====================================================================
 #  PER-TICKER ANALYSIS
 # =====================================================================
-def _analyze_ticker(ticker, market, fetch_df, get_closed_df, bench_close):
+def _analyze_ticker(ticker, market, fetch_df, get_closed_df, bench_close, breadth_acc=None):
     daily_raw = fetch_df(ticker, "1d", "2y")
     if daily_raw is None or daily_raw.empty:
         return None
@@ -413,6 +413,22 @@ def _analyze_ticker(ticker, market, fetch_df, get_closed_df, bench_close):
     c = float(close.iloc[-1])
     emas = {p: close.ewm(span=p, adjust=False).mean() for p in (10, 20, 50, 89, 250)}
     e250 = float(emas[250].iloc[-1])
+
+    # ── market breadth: count this ticker regardless of scenario outcome ──
+    if breadth_acc is not None:
+        try:
+            e50 = float(emas[50].iloc[-1])
+            e200 = float(close.ewm(span=200, adjust=False).mean().iloc[-1])
+            btrend, _ = supertrend_series(daily)
+            breadth_acc["n"] += 1
+            if btrend is not None and btrend[-1] == 1:
+                breadth_acc["st_b"] += 1
+            if c > e50:
+                breadth_acc["e50"] += 1
+            if c > e200:
+                breadth_acc["e200"] += 1
+        except Exception:
+            pass
 
     # ---- Layer 1 ------------------------------------------------------
     rs = _rs_now_slope(close, bench_close)
@@ -645,9 +661,55 @@ def _analyze_ticker(ticker, market, fetch_df, get_closed_df, bench_close):
 # =====================================================================
 #  ENTRY POINT
 # =====================================================================
+# ── index regime: daily ST + price vs EMA20/EMA50 ───────────────────
+US_INDICES = [("S&P", "^GSPC"), ("NAS", "^IXIC"), ("DOW", "^DJI")]
+HK_INDICES = [("HSI", "^HSI"), ("HSCE", "^HSCE")]
+
+
+def _index_state(tkr, fetch_df, get_closed_df):
+    """One index → dict(st, above20, above50, chg_pct) or None."""
+    raw = fetch_df(tkr, "1d", "2y")
+    if raw is None or raw.empty:
+        return None
+    df = get_closed_df(_flatten(raw).dropna(subset=["Close"]), "1d")
+    if len(df) < 60:
+        return None
+    close = df["Close"].astype(float)
+    c = float(close.iloc[-1])
+    e20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1])
+    e50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1])
+    trend, _ = supertrend_series(df)
+    prev = float(close.iloc[-2]) if len(close) > 1 else c
+    return {
+        "st": "B" if (trend is not None and trend[-1] == 1) else "S",
+        "above20": c > e20, "above50": c > e50,
+        "chg_pct": round((c / prev - 1) * 100, 2) if prev else 0.0,
+    }
+
+
+def _regime_from_indices(states):
+    """🟢/🟡/🔴 from a list of index-state dicts.
+    Risk On  = every index ST=B and price>EMA20.
+    Risk Off = majority ST=S or below EMA20.
+    else Mixed."""
+    valid = [s for s in states if s]
+    if not valid:
+        return "unknown"
+    on  = sum(1 for s in valid if s["st"] == "B" and s["above20"])
+    off = sum(1 for s in valid if s["st"] == "S" or not s["above20"])
+    if on == len(valid):
+        return "on"
+    if off > len(valid) / 2:
+        return "off"
+    return "mixed"
+
+
 def compute_turnaround_radar(watchlist_us, watchlist_hk, fetch_df, get_closed_df,
-                             bench_us_ticker="SPY", bench_hk_ticker="^HSI"):
-    """Returns (cards, meta). cards sorted S1→S2→S3, gate4 first, score desc."""
+                             bench_us_ticker="SPY", bench_hk_ticker="^HSI",
+                             prev_breadth=None):
+    """Returns (cards, meta). cards sorted S1→S2→S3, gate4 first, score desc.
+    Market regime downgrade (B): when a market is Risk Off, its S1+S2 🟢 cards
+    become 🟡; when Mixed, only S1 🟢 downgrades. S3 and alerts never downgrade."""
     def bench_close(tkr):
         b = fetch_df(tkr, "1d", "2y")
         if b is None or b.empty:
@@ -655,6 +717,11 @@ def compute_turnaround_radar(watchlist_us, watchlist_hk, fetch_df, get_closed_df
         return _flatten(b)['Close'].astype(float)
 
     bench_us, bench_hk = bench_close(bench_us_ticker), bench_close(bench_hk_ticker)
+
+    # ── breadth accumulators (counted while scanning, zero extra fetches) ──
+    breadth = {"US": {"st_b": 0, "e50": 0, "e200": 0, "n": 0},
+               "HK": {"st_b": 0, "e50": 0, "e200": 0, "n": 0}}
+
     cards = []
     for market, wl, bench in (("US", watchlist_us, bench_us), ("HK", watchlist_hk, bench_hk)):
         if bench is None:
@@ -662,12 +729,70 @@ def compute_turnaround_radar(watchlist_us, watchlist_hk, fetch_df, get_closed_df
             continue
         for t in wl:
             try:
-                r = _analyze_ticker(t, market, fetch_df, get_closed_df, bench)
+                r = _analyze_ticker(t, market, fetch_df, get_closed_df, bench,
+                                    breadth_acc=breadth[market])
             except Exception as e:
                 print(f"  radar warn {t}: {e}")
                 r = None
             if r is not None:
                 cards.append(r)
+
+    # ── index regimes + VIX ──
+    us_idx = {nm: _index_state(tk, fetch_df, get_closed_df) for nm, tk in US_INDICES}
+    hk_idx = {nm: _index_state(tk, fetch_df, get_closed_df) for nm, tk in HK_INDICES}
+    us_regime = _regime_from_indices(list(us_idx.values()))
+    hk_regime = _regime_from_indices(list(hk_idx.values()))
+    vix_raw = fetch_df("^VIX", "1d", "6mo")
+    vix = None
+    if vix_raw is not None and not vix_raw.empty:
+        vc = _flatten(vix_raw)["Close"].astype(float)
+        vix = {"val": round(float(vc.iloc[-1]), 1),
+               "up": bool(len(vc) > 1 and vc.iloc[-1] > vc.iloc[-2])}
+
+    def breadth_pct(m):
+        b = breadth[m]; n = max(b["n"], 1)
+        return {"st_b": round(b["st_b"] / n * 100),
+                "e50": round(b["e50"] / n * 100),
+                "e200": round(b["e200"] / n * 100),
+                "n": b["n"]}
+    breadth_out = {"US": breadth_pct("US"), "HK": breadth_pct("HK")}
+
+    # attach yesterday deltas if provided
+    if prev_breadth:
+        for m in ("US", "HK"):
+            pv = prev_breadth.get(m, {})
+            for k in ("st_b", "e50", "e200"):
+                if k in pv:
+                    breadth_out[m][f"{k}_prev"] = pv[k]
+
+    market = {
+        "US": {"regime": us_regime, "indices": us_idx, "breadth": breadth_out["US"]},
+        "HK": {"regime": hk_regime, "indices": hk_idx, "breadth": breadth_out["HK"]},
+        "vix": vix,
+    }
+
+    # ── (B) downgrade conclusions per market regime ──
+    def maybe_downgrade(card):
+        reg = us_regime if card["market"] == "US" else hk_regime
+        if reg in ("on", "unknown", "mixed" if card["scen"] != "S1" else "___"):
+            # Risk On / unknown → no change.
+            # Mixed → only S1 downgrades (handled by the condition below).
+            if not (reg == "mixed" and card["scen"] == "S1"):
+                return card
+        if reg == "off" and card["scen"] == "S3":
+            return card  # S3 (turnaround) never downgraded
+        if reg == "mixed" and card["scen"] in ("S2", "S3"):
+            return card
+        # downgrade a green conclusion to amber "等回踩"
+        if card["concl_cls"] == "concl-green":
+            tag = "Risk Off" if reg == "off" else "大盤 Mixed"
+            card = dict(card)
+            card["concl"] = "🟡 等回踩"
+            card["concl_cls"] = "concl-amber"
+            card["downgraded"] = tag
+        return card
+
+    cards = [maybe_downgrade(c) for c in cards]
 
     order = {"S1": 0, "S2": 1, "S3": 2}
     cards.sort(key=lambda x: (order[x["scen"]], -(x["gate_n"] == 4), -x["score"], -x["rs_slope"]))
@@ -676,7 +801,8 @@ def compute_turnaround_radar(watchlist_us, watchlist_hk, fetch_df, get_closed_df
     cards = cards[:MAX_CARDS]
     return cards, {"universe": len(watchlist_us) + len(watchlist_hk),
                    "carded": len(cards), "scen_counts": scen_counts,
-                   "truncated": truncated}
+                   "truncated": truncated, "market": market,
+                   "breadth_raw": breadth_out}
 
 
 # =====================================================================
