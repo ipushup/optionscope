@@ -105,6 +105,11 @@ function RadarListCard({ card, quote, onClick }) {
       {/* live status */}
       <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, fontFamily: mono, color: d.statusColor }}>
         {d.status}
+        {card.downgraded && (
+          <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: "#ff8c42" }}>
+            （{card.downgraded} 降級）
+          </span>
+        )}
       </div>
 
       {/* metrics strip */}
@@ -279,6 +284,78 @@ function LevelRow({ label, lvl, dist, live, note, good, bad }) {
 }
 
 // ── MAIN RADAR VIEW ───────────────────────────────────────────────────────
+// ── MARKET REGIME BAR ─────────────────────────────────────────────────────
+const REGIME = {
+  on:      { c: "#00d4aa", bg: "#00d4aa14", label: "Risk On" },
+  mixed:   { c: "#f5a623", bg: "#f5a62314", label: "Mixed 輪轉" },
+  off:     { c: "#ff5c5c", bg: "#ff5c5c14", label: "Risk Off" },
+  unknown: { c: "#6a8898", bg: "#0a1828", label: "—" },
+};
+
+function BreadthNum({ label, v, prev }) {
+  const delta = prev === undefined ? null : v - prev;
+  const arrow = delta === null ? "" : delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
+  const col = v >= 60 ? "#00d4aa" : v >= 45 ? "#f5a623" : "#ff5c5c";
+  return (
+    <span style={{ fontFamily: mono, fontSize: 10, color: "#8aaabb" }}>
+      {label} <b style={{ color: col }}>{v}%</b>
+      {delta !== null && <span style={{ color: delta > 0 ? "#00d4aa" : delta < 0 ? "#ff5c5c" : "#6a8898" }}>{arrow}</span>}
+    </span>
+  );
+}
+
+function MarketRow({ tag, data, indices, vix }) {
+  if (!data) return null;
+  const r = REGIME[data.regime] || REGIME.unknown;
+  const b = data.breadth || {};
+  return (
+    <div style={{ padding: "7px 10px", background: r.bg, borderLeft: `3px solid ${r.c}`,
+                  borderRadius: 8, marginBottom: 6 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: syne, fontSize: 12, fontWeight: 800, color: "#cdd7e3" }}>{tag}</span>
+        <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 800, color: r.c }}>
+          {data.regime === "on" ? "🟢" : data.regime === "off" ? "🔴" : data.regime === "mixed" ? "🟡" : "⚪"} {r.label}
+        </span>
+        {indices && Object.entries(indices).map(([nm, s]) => s && (
+          <span key={nm} style={{ fontFamily: mono, fontSize: 10, color: "#8aaabb" }}>
+            {nm}<b style={{ color: s.st === "B" && s.above20 ? "#00d4aa" : "#ff5c5c" }}>{s.chg_pct >= 0 ? "▲" : "▼"}</b>
+          </span>
+        ))}
+        {vix && (
+          <span style={{ fontFamily: mono, fontSize: 10, color: "#8aaabb" }}>
+            VIX <b style={{ color: vix.val >= 25 ? "#ff5c5c" : vix.val >= 18 ? "#f5a623" : "#00d4aa" }}>{vix.val}</b>
+            {vix.up ? "↑" : "↓"}
+          </span>
+        )}
+        <div style={{ flex: 1 }} />
+        <BreadthNum label="ST=B" v={b.st_b} prev={b.st_b_prev} />
+        <BreadthNum label=">EMA50" v={b.e50} prev={b.e50_prev} />
+        <BreadthNum label=">EMA200" v={b.e200} prev={b.e200_prev} />
+      </div>
+      {data.regime === "off" && (
+        <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 700, fontFamily: mono, color: "#ff5c5c" }}>
+          ⚠️ 大盤轉弱，S1/S2 結論自動降級，只宜減倉
+        </div>
+      )}
+      {data.regime === "mixed" && (
+        <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: "#f5a623" }}>
+          板塊輪轉中 — S1 動能股結論降級，S2/S3 不受影響
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarketBar({ market }) {
+  if (!market) return null;
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <MarketRow tag="美股" data={market.US} indices={market.US?.indices} vix={market.vix} />
+      <MarketRow tag="港股" data={market.HK} indices={market.HK?.indices} />
+    </div>
+  );
+}
+
 export default function RadarView({ isMobile }) {
   const [radar, setRadar]     = useState(null);
   const [quotes, setQuotes]   = useState({});
@@ -307,7 +384,7 @@ export default function RadarView({ isMobile }) {
   useEffect(() => { loadRadar(); loadQuotes(); }, [loadRadar, loadQuotes]);
   // radar itself changes once a day; quotes refresh often
   useEffect(() => {
-    const t = setInterval(loadQuotes, 60 * 1000);
+    const t = setInterval(loadQuotes, 5 * 60 * 1000);   // quotes.json refreshes ~15 min server-side
     return () => clearInterval(t);
   }, [loadQuotes]);
 
@@ -348,6 +425,9 @@ export default function RadarView({ isMobile }) {
   return (
     <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "10px 10px 20px" }}>
       {detail && <RadarDetail card={detail} quote={quotes[detail.ticker]} onClose={() => setDetail(null)} />}
+
+      {/* market regime bar */}
+      <MarketBar market={radar.market} />
 
       {/* funnel summary */}
       <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -407,7 +487,7 @@ export default function RadarView({ isMobile }) {
 
       <div style={{ fontSize: 9, color: "#3a5060", fontFamily: mono, textAlign: "center",
                     marginTop: 14, lineHeight: 1.6 }}>
-        指標為 closed candle 收市值 · 價格及距離即時更新（1 分鐘刷新）<br />
+        指標為 closed candle 收市值 · 價格及距離每 15 分鐘更新<br />
         🔴 已穿止蝕 · 🟢 已到買入區 · 🟠 追高（距止蝕 &gt;15%，risk/reward 差）
       </div>
     </div>
