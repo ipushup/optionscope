@@ -74,6 +74,13 @@ jobs:
           fi
           echo "Pulled radar.json from gh-pages OK"
 
+      - name: Pull breadth history from gh-pages (for day-over-day deltas)
+        if: steps.mode.outputs.full == 'true'
+        run: |
+          mkdir -p frontend/public
+          git fetch origin gh-pages --depth=1 2>/dev/null || true
+          git show origin/gh-pages:radar_history.json > frontend/public/radar_history.json 2>/dev/null || echo '{"days":[]}' > frontend/public/radar_history.json
+
       - name: Full radar scan
         if: steps.mode.outputs.full == 'true'
         run: python scanner/radar_scan.py
@@ -111,15 +118,17 @@ jobs:
           ls -la frontend/public/radar.json frontend/public/radar_quotes.json
           cp frontend/public/radar.json        /tmp/radar_out.json
           cp frontend/public/radar_quotes.json /tmp/quotes_out.json
+          [ -f frontend/public/radar_history.json ] && cp frontend/public/radar_history.json /tmp/history_out.json || true
 
           git fetch origin gh-pages
           git checkout gh-pages
           cp /tmp/radar_out.json  ./radar.json
           cp /tmp/quotes_out.json ./radar_quotes.json
+          [ -f /tmp/history_out.json ] && cp /tmp/history_out.json ./radar_history.json || true
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add radar.json radar_quotes.json
+          git add radar.json radar_quotes.json radar_history.json 2>/dev/null || git add radar.json radar_quotes.json
           git diff --staged --quiet && echo "No changes" || \
             git commit -m "radar: $(date -u '+%Y-%m-%d %H:%M UTC') full=${{ steps.mode.outputs.full }}"
           git push origin gh-pages
