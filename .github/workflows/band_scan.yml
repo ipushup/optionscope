@@ -1,14 +1,16 @@
-name: Turnaround Radar
+name: Triple Band Radar
 
 on:
   schedule:
-    # heavy scan: once after US close (20:15 UTC = 16:15 ET), Mon-Fri
-    - cron: '15 20 * * 1-5'
-    # US quotes — pre(04:00 ET)+regular+post(→20:00 ET). 08:00-23:59 UTC, every 15 min.
-    #   (20:15 heavy-scan cron also refreshes quotes, so no gap at the close.)
-    - cron: '*/15 8-23 * * 1-5'
-    # HK quotes — 09:00-16:00 HKT = 01:00-08:00 UTC, every 15 min.
-    - cron: '*/15 1-7 * * 1-5'
+    # heavy scan: after US close (20:00 UTC). Radar 用 20:15，band 排 20:40 —
+    # 錯開嚟避免兩個 workflow 同時打 Yahoo。
+    - cron: '40 20 * * 1-5'
+    # heavy scan: after HK close (08:00 UTC)
+    - cron: '40 8 * * 1-5'
+    # US quotes — pre+regular+post. 分鐘位 5/20/35/50，同 radar 嘅 */15 錯開。
+    - cron: '5,20,35,50 8-23 * * 1-5'
+    # HK quotes — 01:00-08:00 UTC
+    - cron: '5,20,35,50 1-7 * * 1-5'
   workflow_dispatch:
     inputs:
       quotes_only:
@@ -17,7 +19,7 @@ on:
         default: false
 
 jobs:
-  radar:
+  band:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -32,17 +34,17 @@ jobs:
           python-version: '3.11'
 
       - name: Install deps
-        run: pip install yfinance pandas numpy jinja2
+        run: pip install yfinance pandas numpy
 
-      # FULL SCAN unless: (a) it's one of the quote-only crons, or
-      #                   (b) the user explicitly ticked quotes_only.
-      # Manual runs therefore default to a FULL scan.
+      # FULL SCAN unless: (a) 係報價 cron，或 (b) 手動剔咗 quotes_only。
+      # 手動 run 預設就係 full scan。
       - name: Determine mode
         id: mode
         run: |
           FULL=true
+          SCHED="${{ github.event.schedule }}"
           if [ "${{ github.event_name }}" = "schedule" ] && \
-             [ "${{ github.event.schedule }}" != "15 20 * * 1-5" ]; then
+             [ "${SCHED:0:2}" != "40" ]; then
             FULL=false
           fi
           if [ "${{ github.event.inputs.quotes_only }}" = "true" ]; then
@@ -51,84 +53,83 @@ jobs:
           echo "full=$FULL" >> $GITHUB_OUTPUT
           echo "════════════════════════════════"
           echo "  event    : ${{ github.event_name }}"
-          echo "  schedule : ${{ github.event.schedule }}"
+          echo "  schedule : $SCHED"
           echo "  FULL SCAN: $FULL"
           echo "════════════════════════════════"
 
-      - name: Pull existing radar.json from gh-pages (quote-only runs)
+      - name: Pull existing band.json from gh-pages (quote-only runs)
         if: steps.mode.outputs.full == 'false'
         run: |
           mkdir -p frontend/public
           git fetch origin gh-pages --depth=1
-          if ! git show origin/gh-pages:radar.json > frontend/public/radar.json 2>/dev/null; then
-            echo "::error::Could not read radar.json from gh-pages."
-            echo "A quote-only run needs an existing radar.json. Run this workflow"
-            echo "manually with 'quotes_only' UNTICKED to generate one first."
+          if ! git show origin/gh-pages:band.json > frontend/public/band.json 2>/dev/null; then
+            echo "::error::Could not read band.json from gh-pages."
+            echo "報價 run 需要一份現成 band.json。手動行一次 workflow"
+            echo "（quotes_only 唔好剔）先產生佢。"
             exit 1
           fi
-          # Guard: a previous broken run may have pushed an empty {} — refuse to build on it.
-          if ! python -c "import json,sys; d=json.load(open('frontend/public/radar.json')); sys.exit(0 if d.get('cards') else 1)"; then
-            echo "::error::radar.json on gh-pages has no cards (it is empty)."
-            echo "Run this workflow manually with 'quotes_only' UNTICKED to rebuild it."
+          if ! python -c "import json,sys; d=json.load(open('frontend/public/band.json')); sys.exit(0 if d.get('tickers') else 1)"; then
+            echo "::error::gh-pages 嗰份 band.json 冇 tickers（空嘅）。"
+            echo "手動行一次 full scan 重建佢。"
             exit 1
           fi
-          echo "Pulled radar.json from gh-pages OK"
+          echo "Pulled band.json from gh-pages OK"
 
-      - name: Pull breadth history from gh-pages (for day-over-day deltas)
-        if: steps.mode.outputs.full == 'true'
+      # 業績 veto 來源（daily_brief 出）。冇就跳過，唔會 fail。
+      - name: Pull earnings.json from gh-pages
         run: |
           mkdir -p frontend/public
           git fetch origin gh-pages --depth=1 2>/dev/null || true
-          git show origin/gh-pages:radar_history.json > frontend/public/radar_history.json 2>/dev/null || echo '{"days":[]}' > frontend/public/radar_history.json
+          git show origin/gh-pages:earnings.json > frontend/public/earnings.json 2>/dev/null \
+            || echo '{}' > frontend/public/earnings.json
 
-      - name: Full radar scan
+      - name: Full band scan
         if: steps.mode.outputs.full == 'true'
-        run: python scanner/radar_scan.py
+        run: python scanner/band_scan.py
 
-      - name: Verify radar.json
+      - name: Verify band.json
         run: |
           python - <<'PY'
           import json, sys
           try:
-              d = json.load(open('frontend/public/radar.json'))
+              d = json.load(open('frontend/public/band.json'))
           except Exception as e:
-              print(f"::error::radar.json unreadable: {e}"); sys.exit(1)
-          cards = d.get('cards')
-          if cards is None:
-              print("::error::radar.json has no 'cards' key — the full scan never ran.")
-              print("Re-run this workflow manually (leave 'quotes_only' UNTICKED).")
+              print(f"::error::band.json unreadable: {e}"); sys.exit(1)
+          if d.get('tickers') is None:
+              print("::error::band.json 冇 'tickers' key — full scan 未跑過。")
+              print("手動重跑一次（quotes_only 唔好剔）。")
               sys.exit(1)
-          print(f"cards={len(cards)}  counts={d.get('scen_counts')}  scanned_at={d.get('scanned_at')}")
+          c = d.get('counts', {})
+          print(f"confirmed={c.get('confirmed')} forming={c.get('forming')} "
+                f"candidates={c.get('candidates')} errors={c.get('errors')} "
+                f"scanned_at={d.get('scanned_at')}")
           PY
 
       - name: Refresh quotes
         env:
-          # Restrict quote fetching to the market whose session is open, so we
-          # don't fetch 130+ tickers when only one exchange is trading.
-          #   HK cron (01-07 UTC) → HK only ; everything else → US only ;
-          #   the 20:15 full-scan and manual runs → BOTH.
+          # 只抽開緊市嗰邊嘅報價，唔好收市時段照掃 170 隻。
+          #   HK cron (01-07 UTC) → HK ; US cron (08-23) → US ;
+          #   full scan 同手動 run → 兩邊都要。
           QUOTE_MARKETS: >-
-            ${{ (github.event_name == 'schedule' && startsWith(github.event.schedule, '*/15 1-7')) && 'HK'
-             || (github.event_name == 'schedule' && github.event.schedule == '*/15 8-23 * * 1-5') && 'US'
+            ${{ (github.event_name == 'schedule' && startsWith(github.event.schedule, '5,20,35,50 1-7')) && 'HK'
+             || (github.event_name == 'schedule' && startsWith(github.event.schedule, '5,20,35,50 8-23')) && 'US'
              || 'US,HK' }}
-        run: python scanner/radar_quotes.py
+        run: python scanner/band_quotes.py
 
       - name: Push to gh-pages
         run: |
-          ls -la frontend/public/radar.json frontend/public/radar_quotes.json
-          cp frontend/public/radar.json        /tmp/radar_out.json
-          cp frontend/public/radar_quotes.json /tmp/quotes_out.json
-          [ -f frontend/public/radar_history.json ] && cp frontend/public/radar_history.json /tmp/history_out.json || true
+          ls -la frontend/public/band.json frontend/public/band_quotes.json
+          cp frontend/public/band.json        /tmp/band_out.json
+          cp frontend/public/band_quotes.json /tmp/band_quotes_out.json
 
           git fetch origin gh-pages
           git checkout gh-pages
-          cp /tmp/radar_out.json  ./radar.json
-          cp /tmp/quotes_out.json ./radar_quotes.json
-          [ -f /tmp/history_out.json ] && cp /tmp/history_out.json ./radar_history.json || true
+          cp /tmp/band_out.json        ./band.json
+          cp /tmp/band_quotes_out.json ./band_quotes.json
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add radar.json radar_quotes.json radar_history.json 2>/dev/null || git add radar.json radar_quotes.json
+          git add band.json band_quotes.json
           git diff --staged --quiet && echo "No changes" || \
-            git commit -m "radar: $(date -u '+%Y-%m-%d %H:%M UTC') full=${{ steps.mode.outputs.full }}"
+            git commit -m "band: $(date -u '+%Y-%m-%d %H:%M UTC') full=${{ steps.mode.outputs.full }}"
           git push origin gh-pages
