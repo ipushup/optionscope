@@ -84,12 +84,22 @@ pivot 窗口 `[p−3, p+3]`，`p+3` 就係今日嗰支未收嘅棒。所以今�
 
 ## 6. GitHub Actions
 
-一個 workflow 做兩件事，靠 cron 分鐘位分辨：
+照 `radar_scan.yml` 同一個 pattern：**輸出 push 去 `gh-pages` 分支根目錄**
+（唔係 commit 落 main）—— 前端讀嘅係已部署嗰份。
+
+靠 cron 分鐘位分辨模式：
 
 - **:40**（20:40 UTC 美股收市後、08:40 UTC 港股收市後）→ 完整掃描
-- **:00/:15/:30/:45** → 只刷報價，由 gh-pages 攞返上次嘅 band.json
+- **:05/:20/:35/:50** → 只刷報價，由 gh-pages 攞返上次嘅 band.json
 
-首次執行：Actions → Triple Band Radar → Run workflow → 剔 `full_scan` ✅
+**分鐘位特登錯開。** Radar 用 `15 20`（heavy）同 `*/15`（quotes）；band 用
+`40`（heavy）同 `5,20,35,50`。兩個 workflow 唔會同一分鐘一齊打 Yahoo。
+
+`QUOTE_MARKETS` 同 radar 一樣：HK cron 只抽港股、US cron 只抽美股、
+full scan 同手動 run 兩邊都抽。另一邊市場嘅報價會由上次 `band_quotes.json`
+保留落嚟，唔會被抹走。
+
+首次執行：Actions → Triple Band Radar → Run workflow → `quotes_only` **唔好剔**
 
 **`drop_forming()` 同 `radar_scan.py` 嘅 `get_closed_df()` 唔同**：後者見到
 「最後一支棒日期 == 今日 UTC 日期」就掉，即係 20:15 UTC 跑嗰陣會連當日已經
