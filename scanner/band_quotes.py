@@ -22,6 +22,10 @@ from datetime import datetime, timezone
 import yfinance as yf
 
 IN_PATH = os.environ.get("BAND_OUT", "frontend/public/band.json")
+# 只抽開緊市嗰邊。收市時段照掃 170 隻純粹浪費 Yahoo 額度，
+# 而且容易撞到 throttle 累埋開緊市嗰邊。
+MARKETS = {m.strip().upper() for m in
+           os.environ.get("QUOTE_MARKETS", "US,HK").split(",") if m.strip()}
 OUT_PATH = os.environ.get("BAND_QUOTES_OUT", "frontend/public/band_quotes.json")
 CHUNK = 40
 
@@ -68,9 +72,20 @@ def main():
     tickers = band.get("tickers", [])
     if not tickers:
         sys.exit("band.json 冇 tickers")
+    tickers = [t for t in tickers
+               if ("HK" if t.endswith(".HK") else "US") in MARKETS]
+    if not tickers:
+        print(f"QUOTE_MARKETS={sorted(MARKETS)} 之下冇 ticker 要抽")
+        return
 
     t0 = time.time()
-    quotes = grab(tickers)
+    quotes = {}
+    if os.path.exists(OUT_PATH):
+        try:                      # 保留另一邊市場上次嘅報價，唔好抹走
+            quotes = json.load(open(OUT_PATH)).get("quotes", {})
+        except Exception:
+            pass
+    quotes.update(grab(tickers))
     payload = {
         "quoted_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "band_scanned_at": band.get("scanned_at"),   # 前端用嚟偵測 JSON 過期
@@ -79,7 +94,8 @@ def main():
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w") as f:
         json.dump(payload, f, indent=2)
-    print(f"{len(quotes)}/{len(tickers)} quotes ({time.time() - t0:.0f}s) → {OUT_PATH}")
+    print(f"{len(tickers)} 隻 ({sorted(MARKETS)}) · 合共 {len(quotes)} quotes "
+          f"({time.time() - t0:.0f}s) → {OUT_PATH}")
 
 
 if __name__ == "__main__":
