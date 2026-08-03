@@ -1,0 +1,74 @@
+name: Triple Band Radar
+
+on:
+  schedule:
+    # 完整掃描：美股收市後（20:00 UTC 收市，留 40 分鐘畀 yfinance 定型）
+    - cron: "40 20 * * 1-5"
+    # 完整掃描：港股收市後（08:00 UTC 收市）
+    - cron: "40 8 * * 1-5"
+    # 報價刷新：每 15 分鐘，覆蓋港股時段 + 美股 pre/regular/post
+    - cron: "*/15 1-8,13-23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: "行完整掃描（唔剔就淨係刷報價）"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: band-radar
+  cancel-in-progress: false
+
+jobs:
+  band:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # 判斷今次係完整掃描定淨係刷報價。
+      # 兩個 cron 分鐘位都係 :40，*/15 嗰個永遠係 :00/:15/:30/:45 —— 唔會撞。
+      - name: Decide mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "full=${{ inputs.full_scan }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.schedule }}" == "40 "* ]]; then
+            echo "full=true" >> $GITHUB_OUTPUT
+          else
+            echo "full=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 只刷報價嗰啲 run 要攞返上次嘅 band.json，唔會重新計指標。
+      # 每次 run 得 30-60 秒，唔會燒爆 Action 額度。
+      - name: Restore previous band.json
+        if: steps.mode.outputs.full != 'true'
+        run: |
+          mkdir -p frontend/public
+          curl -sfL "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/band.json" \
+            -o frontend/public/band.json || echo "冇上次結果，今次跳過報價"
+
+      - name: Full scan
+        if: steps.mode.outputs.full == 'true'
+        run: python scanner/band_scan.py
+
+      - name: Quotes
+        if: hashFiles('frontend/public/band.json') != ''
+        run: python scanner/band_quotes.py
+
+      - name: Commit
+        run: |
+          git config user.name  github-actions
+          git config user.email github-actions@github.com
+          git add frontend/public/band.json frontend/public/band_quotes.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "band: $( [ '${{ steps.mode.outputs.full }}' = 'true' ] && echo scan || echo quotes ) $(date -u +%H:%MZ)"
+          git push
