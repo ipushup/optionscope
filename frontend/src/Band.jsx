@@ -255,16 +255,19 @@ function Forming({ rows, q, isMobile }) {
           return (
             <tr key={r.symbol} style={{
               background: broke ? "#1a0d14" : "transparent",
-              opacity: broke || (r.tier_gap_pct ?? 0) <= -3 ? 0.5 : 1,
+              opacity: broke ? 0.35 : (r.tier_gap_pct ?? 0) <= -3 ? 0.5 : 1,
+              textDecoration: broke ? "line-through" : "none",
             }}>
               <Sym s={r.symbol} />
               <Td c={C.acc} b>{N(r.ext)}</Td>
               <Td>{N(lo)}</Td>
               <Td c={C.dn}>{N(r.kill_low)}</Td>
-              <Td b c={dLow == null ? C.mute : dLow < 1 ? C.warn : C.up}>{P(dLow)}</Td>
+              <Td b c={dLow == null ? C.mute : broke ? C.dn : dLow < 1 ? C.warn : C.up}>{P(dLow)}</Td>
               <Td b>{N(px)}</Td>
-              <Td c={C.warn}>{N(r.kill_close)}</Td>
-              <Td b c={dCls == null ? C.mute : dCls < -3 ? C.dn : dCls < 0 ? C.warn : C.up}>{P(dCls)}</Td>
+              <Td c={broke ? C.mute : C.warn}>{broke ? "—" : N(r.kill_close)}</Td>
+              {broke
+                ? <Td c={C.mute}>—</Td>
+                : <Td b c={dCls == null ? C.mute : dCls < -3 ? C.dn : dCls < 0 ? C.warn : C.up}>{P(dCls)}</Td>}
               <Td b c={st[1]}>{st[0]}</Td>
             </tr>
           );
