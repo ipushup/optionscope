@@ -264,13 +264,19 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
                     and plv < np.nanmin(left) and plv < np.nanmin(right)):
                 ext_f = (m1[pf] - plv) / w1[pf]
                 if ext_f >= STRETCH_K and (pf - last_buy_bar) >= COOL_BARS:
+                    kc = float(close[n - RU_LEN] * (1 + RU_THR / 100))
+                    # tier_ok：以最後收市價計，rU60 而家已經合格。
+                    # 唔合格嘅要今日跌 tier_gap_pct 先入到 big —— 見過要跌
+                    # 20% 嘅（AMD rU60 +34%），擺出嚟純粹係雜訊。
                     events.append({
                         "kind": "FORMING",
                         "ext": float(ext_f),
                         "pivot_date": idx[pf].date(),
-                        "kill_low": float(plv),                     # 今日 Low ≤ 呢個 → 作廢
-                        "kill_close": float(close[n - RU_LEN] * (1 + RU_THR / 100)),
-                    })                                              # 今日 Close > 呢個 → 變 small
+                        "kill_low": float(plv),          # 今日 Low ≤ 呢個 → pivot 破，作廢
+                        "kill_close": kc,                # 今日 Close > 呢個 → 變 small，唔入場
+                        "tier_ok": bool(close[n - 1] <= kc),
+                        "tier_gap_pct": float((kc / close[n - 1] - 1) * 100),
+                    })
 
     if in_pos:                       # 收盤仲揸住
         hist.append({"symbol": sym, "entry_date": idx[entry_i].date(),
@@ -747,7 +753,8 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
                    if (r["symbol"], r.get("entry_date")) in taken)
 
     confirmed.sort(key=lambda r: -r.get("ext", 0))
-    forming.sort(key=lambda r: -r.get("ext", 0))
+    # 有機會嘅排前，冇機會嘅（今日要崩先合格）沉底
+    forming.sort(key=lambda r: (not r.get("tier_ok", True), -r.get("ext", 0)))
     candidates.sort(key=lambda r: r["entry_date"], reverse=True)
     exits.sort(key=lambda r: -r.get("ret_pct", 0))
     observe.sort(key=lambda r: (r["market"] != "US", -r.get("ext", 0)))
@@ -777,7 +784,12 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
             "entry_timing": "next_open",
             "verified": "2016-2026 · 5,645 筆 · 年化 25.2% vs SPX 13.2% · maxDD −33.3%",
         },
+        # 訊號基準棒。前端要用嚟判斷「下一個開市」過咗未 —— 盤中手動跑
+        # full scan 嘅話，confirmed 嗰批嘅執行窗口其實已經關咗。
+        "bar_date": str(max((r["date"] for grp in (confirmed, forming, candidates, exits)
+                             for r in grp), default="")),
         "counts": {"confirmed": len(confirmed), "forming": len(forming),
+                   "forming_live": sum(1 for r in forming if r.get("tier_ok")),
                    "candidates": len(candidates), "candidates_capped": n_capped,
                    "exits": len(exits), "observe": len(observe),
                    "universe": len(watchlist_us) + len(watchlist_hk),
