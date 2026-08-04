@@ -19,6 +19,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
+import pandas as pd
 import yfinance as yf
 
 IN_PATH = os.environ.get("BAND_OUT", "frontend/public/band.json")
@@ -31,38 +32,76 @@ CHUNK = 40
 
 
 def grab(tickers):
+    """
+    用 yf.download 批量攞當日 1 分鐘線 —— 同 band_scan.py 同一條 API，
+    已經證實喺 Actions 行得通。
+
+    唔用 Tickers().fast_info：FastInfo 唔係普通 dict，`.get()` 唔一定
+    work，實測成個 quotes 出空 {} 而且唔會拋錯 —— 靜靜咁失敗最難捉。
+
+    day_low 好緊要：形成中訊號第一條死線就係「今日 Low 跌穿 pivot low」。
+    分鐘線嘅 Low 累計就係當日 Low。
+    """
     out = {}
     for i in range(0, len(tickers), CHUNK):
         part = tickers[i:i + CHUNK]
         try:
-            tk = yf.Tickers(" ".join(part))
+            df = yf.download(" ".join(part), period="1d", interval="1m",
+                             progress=False, auto_adjust=False,
+                             threads=False, group_by="ticker")
         except Exception as e:
-            print(f"  batch fail: {e}")
+            print(f"  batch fail {part[0]}…: {e}")
+            continue
+        if df is None or df.empty:
             continue
         for sym in part:
             try:
-                fi = tk.tickers[sym].fast_info
-                px = fi.get("last_price") or fi.get("regular_market_price")
-                if px is None:
+                d = df[sym] if isinstance(df.columns, pd.MultiIndex) else df
+                d = d.dropna(subset=["Close"])
+                if d.empty:
                     continue
                 out[sym] = {
-                    "price": round(float(px), 4),
-                    "day_low": _f(fi.get("day_low")),
-                    "day_high": _f(fi.get("day_high")),
-                    "prev_close": _f(fi.get("previous_close")),
-                    "open": _f(fi.get("open")),
+                    "price": round(float(d["Close"].iloc[-1]), 4),
+                    "day_low": round(float(d["Low"].min()), 4),
+                    "day_high": round(float(d["High"].max()), 4),
+                    "open": round(float(d["Open"].iloc[0]), 4),
+                    "bars": int(len(d)),
                 }
             except Exception:
                 continue
-        time.sleep(0.4)
+        time.sleep(0.5)
+
+    if not out:
+        # 收市時段 1m 會空。退返落日線最後一支棒，總好過畀個空 {} 出去
+        # 令前端成版「—」而完全冇提示。
+        print("  1m 全空，fallback 落日線")
+        for i in range(0, len(tickers), CHUNK):
+            part = tickers[i:i + CHUNK]
+            try:
+                df = yf.download(" ".join(part), period="5d", interval="1d",
+                                 progress=False, auto_adjust=False,
+                                 threads=False, group_by="ticker")
+            except Exception:
+                continue
+            if df is None or df.empty:
+                continue
+            for sym in part:
+                try:
+                    d = df[sym] if isinstance(df.columns, pd.MultiIndex) else df
+                    d = d.dropna(subset=["Close"])
+                    if d.empty:
+                        continue
+                    out[sym] = {
+                        "price": round(float(d["Close"].iloc[-1]), 4),
+                        "day_low": round(float(d["Low"].iloc[-1]), 4),
+                        "day_high": round(float(d["High"].iloc[-1]), 4),
+                        "open": round(float(d["Open"].iloc[-1]), 4),
+                        "bars": 0,          # 0 = 日線 fallback，唔係即時
+                    }
+                except Exception:
+                    continue
+            time.sleep(0.5)
     return out
-
-
-def _f(v):
-    try:
-        return round(float(v), 4)
-    except (TypeError, ValueError):
-        return None
 
 
 def main():
