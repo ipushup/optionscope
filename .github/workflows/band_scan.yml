@@ -83,6 +83,14 @@ jobs:
           git show origin/gh-pages:earnings.json > frontend/public/earnings.json 2>/dev/null \
             || echo '{}' > frontend/public/earnings.json
 
+      # 形成中→確認 轉化率嘅滾動紀錄。冇就當空，唔會 fail。
+      - name: Pull forming log from gh-pages
+        run: |
+          mkdir -p frontend/public
+          git fetch origin gh-pages --depth=1 2>/dev/null || true
+          git show origin/gh-pages:band_forming_log.json > frontend/public/band_forming_log.json 2>/dev/null \
+            || echo '{"days":{}}' > frontend/public/band_forming_log.json
+
       - name: Full band scan
         if: steps.mode.outputs.full == 'true'
         run: python scanner/band_scan.py
@@ -121,15 +129,19 @@ jobs:
           ls -la frontend/public/band.json frontend/public/band_quotes.json
           cp frontend/public/band.json        /tmp/band_out.json
           cp frontend/public/band_quotes.json /tmp/band_quotes_out.json
+          [ -f frontend/public/band_forming_log.json ] && \
+            cp frontend/public/band_forming_log.json /tmp/band_log_out.json || true
 
           git fetch origin gh-pages
           git checkout gh-pages
           cp /tmp/band_out.json        ./band.json
           cp /tmp/band_quotes_out.json ./band_quotes.json
+          [ -f /tmp/band_log_out.json ] && cp /tmp/band_log_out.json ./band_forming_log.json || true
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add band.json band_quotes.json
+          git add band.json band_quotes.json band_forming_log.json 2>/dev/null \
+            || git add band.json band_quotes.json
           git diff --staged --quiet && echo "No changes" || \
             git commit -m "band: $(date -u '+%Y-%m-%d %H:%M UTC') full=${{ steps.mode.outputs.full }}"
           git push origin gh-pages
