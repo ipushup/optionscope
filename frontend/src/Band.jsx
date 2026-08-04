@@ -28,6 +28,7 @@ export default function BandView({ isMobile }) {
   const [band, setBand] = useState(null);
   const [q, setQ] = useState({});
   const [qAt, setQAt] = useState(null);
+  const [flog, setFlog] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("confirmed");
 
@@ -36,6 +37,11 @@ export default function BandView({ isMobile }) {
   useEffect(() => {
     fetch(`${base}band.json`).then(r => r.json()).then(setBand)
       .catch(() => setErr("攞唔到 band.json — 未行過 band_scan.py？"));
+  }, [base]);
+
+  useEffect(() => {
+    fetch(`${base}band_forming_log.json?t=${Date.now()}`)
+      .then(r => r.json()).then(d => setFlog(d.summary || null)).catch(() => {});
   }, [base]);
 
   useEffect(() => {
@@ -96,7 +102,7 @@ export default function BandView({ isMobile }) {
         </div>
       )}
       {tab === "confirmed" && <Confirmed rows={band.confirmed} live={live} cfg={band.config} barDate={band.bar_date} isMobile={isMobile} />}
-      {tab === "forming" && <Forming rows={band.forming} q={q} isMobile={isMobile} />}
+      {tab === "forming" && <Forming rows={band.forming} q={q} flog={flog} isMobile={isMobile} />}
       {tab === "candidates" && <Candidates rows={band.candidates} live={live} cnt={cnt} cfg={band.config} isMobile={isMobile} />}
       {tab === "exits" && <Exits rows={band.exits} isMobile={isMobile} />}
       {tab === "observe" && <Observe rows={band.observe} live={live} isMobile={isMobile} />}
@@ -213,7 +219,7 @@ function Confirmed({ rows, live, cfg, barDate, isMobile }) {
 }
 
 /* ─────────── ⏳ 形成中 ─────────── */
-function Forming({ rows, q, isMobile }) {
+function Forming({ rows, q, flog, isMobile }) {
   const [showDead, setShowDead] = useState(false);
   if (!rows.length) return <Empty t="今日冇形成中訊號" />;
   // 用 −3% 容差，唔用 tier_ok 一刀切：差 1-2% 係今日真係做得到嘅
@@ -229,6 +235,23 @@ function Forming({ rows, q, isMobile }) {
         <br />② 今日收市高過門檻 → rU60 升穿 −5%，變 small tier，唔入場
         <br />ext 唔會變（用 pivot 當日嘅 m1/w1），冷卻同左邊三棒亦已封。
         <b> 兩條線都守得住，收市就變「已確認」，下個開市買。</b>
+        <br />
+        {flog?.rate != null ? (
+          <span style={{ color: flog.rate >= 80 ? C.up : flog.rate >= 60 ? C.warn : C.dn }}>
+            📊 盤中「守住」→ 收市真係確認：<b>{flog.hold_confirmed}/{flog.hold_resolved} = {flog.rate}%</b>
+            （累積 {flog.days} 日）
+            {flog.hold_resolved < 20 && <span style={{ color: C.mute }}> — 樣本仲細，未讀得</span>}
+          </span>
+        ) : (
+          <span style={{ color: C.mute }}>
+            📊 轉化率統計累積緊 —— 每次報價刷新都會記低，收市後回填。
+          </span>
+        )}
+        <br /><span style={{ color: C.dim }}>
+          越接近收市，「守住」越有約束力。14:30 ET 之前嗰啲當熱身。
+          <b style={{ color: C.warn }}> 唔好喺確認之前買</b> —— 咁做等於用一個未驗證過嘅
+          規則取代已驗證嘅，而且你會系統性買到最後作廢嗰批（佢哋通常係繼續跌先作廢）。
+        </span>
         {dead > 0 && (
           <>
             <br /><span style={{ color: C.dim }}>
