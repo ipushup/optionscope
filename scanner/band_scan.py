@@ -57,6 +57,7 @@ WATCHLIST_HK = [
 ]
 
 OUT_PATH = os.environ.get("BAND_OUT", "frontend/public/band.json")
+LOG_PATH = os.environ.get("BAND_FORMING_LOG", "frontend/public/band_forming_log.json")
 VETO_DAYS = int(os.environ.get("BAND_VETO_DAYS", "7") or 7)
 
 _cache = {}
@@ -128,6 +129,57 @@ def load_earnings_veto():
     return out
 
 
+def resolve_forming_log(payload):
+    """
+    回填「形成中 → 確認」轉化率。
+
+    形成中訊號嘅 live bar 就係 bar_date 當日 —— 而今次 full scan 嘅
+    bar_date 正正就係佢。所以呢一刻可以判定：當日記錄過嘅每隻，
+    究竟有冇入到 confirmed。
+
+    輸出 summary 畀前端顯示。呢個數字決定咗盤中「守住」有幾可信 ——
+    高就可以當預告，低就只可以當參考。
+    """
+    if not os.path.exists(LOG_PATH):
+        return
+    try:
+        log = json.load(open(LOG_PATH))
+    except Exception:
+        return
+    day = payload.get("bar_date")
+    rec = (log.get("days") or {}).get(day)
+    if rec:
+        got = {r["symbol"] for r in payload["confirmed"]}
+        for sym, v in rec["symbols"].items():
+            v["confirmed"] = sym in got
+
+    # 只計「最後一次見到係守住」嗰啲 —— 中途已經作廢嘅唔應該計入分母，
+    # 因為你根本唔會當佢係候選。
+    tot = hit = 0
+    for d, r in (log.get("days") or {}).items():
+        for sym, v in r["symbols"].items():
+            if v.get("confirmed") is None or v.get("status") != "hold":
+                continue
+            tot += 1
+            hit += bool(v["confirmed"])
+    log["summary"] = {
+        "days": len(log.get("days") or {}),
+        "hold_resolved": tot,
+        "hold_confirmed": hit,
+        "rate": round(hit / tot * 100, 1) if tot else None,
+    }
+    try:
+        with open(LOG_PATH, "w") as f:
+            json.dump(log, f, indent=2)
+        if tot:
+            print(f"形成中→確認 轉化率: {hit}/{tot} = {log['summary']['rate']}% "
+                  f"（累積 {log['summary']['days']} 日）")
+        else:
+            print("形成中→確認 轉化率: 樣本未夠，繼續累積")
+    except Exception as e:
+        print(f"  forming log 回填失敗: {e}")
+
+
 def main():
     t0 = time.time()
     print(f"Triple Band scan · {len(WATCHLIST_US)} US + {len(WATCHLIST_HK)} HK")
@@ -150,6 +202,8 @@ def main():
     for r in payload["forming"]:
         print(f"  ⏳ {r['symbol']:<8} ext {r['ext']:.2f}  "
               f"跌穿 {r['kill_low']:.2f} 作廢 / 收高過 {r['kill_close']:.2f} 變 small")
+
+    resolve_forming_log(payload)
 
 
 if __name__ == "__main__":
