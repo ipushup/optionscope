@@ -56,7 +56,10 @@ SIZE_PCT       = 100.0 / 30      # 3.33%
 MAX_CONCURRENT = 30
 TRADE_MARKETS  = ("US",)         # 港股只觀察，唔出倉位
 
-_PIVOT_STRICT_RIGHT = True   # 見 module docstring 嘅校驗說明
+_PIVOT_STRICT_RIGHT = True
+# 形成中訊號嘅「仲有得救」門檻：今日收市要相對現價郁幾多先入到 big。
+# −3% = 今日跌 3% 之內都算有機會；差 20% 嗰啲就當死，收埋。
+FORMING_TOL = -3.0   # 見 module docstring 嘅校驗說明
 
 # 設咗 BAND_EQUITY（美元）就會多出「股數 / 金額」欄，唔設就淨係顯示 %
 ACCOUNT_EQUITY = float(os.getenv("BAND_EQUITY", "0") or 0)
@@ -754,7 +757,8 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
 
     confirmed.sort(key=lambda r: -r.get("ext", 0))
     # 有機會嘅排前，冇機會嘅（今日要崩先合格）沉底
-    forming.sort(key=lambda r: (not r.get("tier_ok", True), -r.get("ext", 0)))
+    forming.sort(key=lambda r: (r.get("tier_gap_pct", 0) <= FORMING_TOL,
+                                -r.get("ext", 0)))
     candidates.sort(key=lambda r: r["entry_date"], reverse=True)
     exits.sort(key=lambda r: -r.get("ret_pct", 0))
     observe.sort(key=lambda r: (r["market"] != "US", -r.get("ext", 0)))
@@ -789,7 +793,11 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
         "bar_date": str(max((r["date"] for grp in (confirmed, forming, candidates, exits)
                              for r in grp), default="")),
         "counts": {"confirmed": len(confirmed), "forming": len(forming),
-                   "forming_live": sum(1 for r in forming if r.get("tier_ok")),
+                   # 用 −3% 容差，唔用嚴格 tier_ok —— 前端個表都係咁篩，
+                   # 兩邊唔一致就會「tab 寫 0，表入面有 4 行」。
+                   # META 差 −0.72% 係今日真做得到，唔應該當死。
+                   "forming_live": sum(1 for r in forming
+                                       if r.get("tier_gap_pct", 0) > FORMING_TOL),
                    "candidates": len(candidates), "candidates_capped": n_capped,
                    "exits": len(exits), "observe": len(observe),
                    "universe": len(watchlist_us) + len(watchlist_hk),
