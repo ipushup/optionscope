@@ -54,9 +54,17 @@ export default function BandView({ isMobile }) {
 
   const live = s => q[s]?.price ?? null;
   const cnt = band.counts;
+  // 訊號基準棒 vs 今日。基準棒嘅「下一個開市」已經過去 = confirmed 嗰批
+  // 執行窗口關咗 —— 盤中手動跑 full scan 就會出現呢種情況。
+  // 開市之後先睇到 = 窗口已關。淨係比日期唔夠 —— 今日就係「執行日 == 今日
+  // 但 13:30 UTC 開市已經過咗」嗰種情況。
+  const nowI = new Date().toISOString();
+  const exec = band.bar_date ? nextBiz(band.bar_date) : null;
+  const stalebar = exec && (nowI.slice(0, 10) > exec ||
+    (nowI.slice(0, 10) === exec && nowI.slice(11, 16) >= "13:35"));
   const TABS = [
     ["confirmed", "✅ 已確認", cnt.confirmed],
-    ["forming", "⏳ 形成中", cnt.forming],
+    ["forming", "⏳ 形成中", cnt.forming_live ?? cnt.forming],
     ["candidates", "● 有效候選", cnt.candidates],
     ["exits", "▼ 出場", cnt.exits],
     ["observe", "○ 觀察", cnt.observe],
@@ -77,7 +85,17 @@ export default function BandView({ isMobile }) {
         ))}
       </div>
 
-      {tab === "confirmed" && <Confirmed rows={band.confirmed} live={live} cfg={band.config} isMobile={isMobile} />}
+      {stalebar && (
+        <div style={{
+          background: "#2a1410", border: `1px solid ${C.dn}`, borderRadius: 6,
+          padding: "8px 10px", margin: "0 0 10px", fontSize: 10, lineHeight: 1.6, color: C.warn,
+        }}>
+          ⚠ <b>執行窗口已經過去。</b>訊號基準棒 {band.bar_date}，執行日 {exec} 開市 —
+          而嗰個開市已經過咗。呢批「已確認」淨係當紀錄睇 —— 唔好而家先
+          追入，你嘅成本會同回測完全脫節。等收市後嗰次掃描。
+        </div>
+      )}
+      {tab === "confirmed" && <Confirmed rows={band.confirmed} live={live} cfg={band.config} barDate={band.bar_date} isMobile={isMobile} />}
       {tab === "forming" && <Forming rows={band.forming} q={q} isMobile={isMobile} />}
       {tab === "candidates" && <Candidates rows={band.candidates} live={live} cnt={cnt} cfg={band.config} isMobile={isMobile} />}
       {tab === "exits" && <Exits rows={band.exits} isMobile={isMobile} />}
@@ -156,12 +174,19 @@ const Veto = ({ d }) => d == null
   : <Td c={C.dn} b>⛔{d}d</Td>;
 
 /* ─────────── ✅ 已確認 ─────────── */
-function Confirmed({ rows, live, cfg, isMobile }) {
+function nextBiz(d) {
+  const t = new Date(`${d}T00:00:00Z`);
+  do { t.setUTCDate(t.getUTCDate() + 1); } while (t.getUTCDay() === 0 || t.getUTCDay() === 6);
+  return t.toISOString().slice(0, 10);
+}
+
+function Confirmed({ rows, live, cfg, barDate, isMobile }) {
   if (!rows.length) return <Empty t="今日冇確認訊號" />;
   return (
     <>
       <Note>
-        pivot 窗口七支棒已經全部收咗市 —— <b style={{ color: C.up }}>呢啲訊號鎖死咗，唔會 repaint</b>。
+        訊號基準棒 <b>{barDate}</b> · 執行日 = <b>{barDate ? nextBiz(barDate) : "—"}</b> 開市。
+        <br />pivot 窗口七支棒已經全部收咗市 —— <b style={{ color: C.up }}>呢啲訊號鎖死咗，唔會 repaint</b>。
         回測規格係 <b>次日開市市價</b> 入場（平均跳空成本 +0.15%）。
         唔好掛限價等回到訊號價 —— 咁樣你只會買到繼續跌嗰啲，係另一個未驗證過嘅策略。
       </Note>
@@ -189,7 +214,13 @@ function Confirmed({ rows, live, cfg, isMobile }) {
 
 /* ─────────── ⏳ 形成中 ─────────── */
 function Forming({ rows, q, isMobile }) {
+  const [showDead, setShowDead] = useState(false);
   if (!rows.length) return <Empty t="今日冇形成中訊號" />;
+  // 用 −3% 容差，唔用 tier_ok 一刀切：差 1-2% 係今日真係做得到嘅
+  // （見過 NVDA 要 −1.6%），差 20% 先算死。
+  const live = r => (r.tier_gap_pct ?? 0) > -3;
+  const dead = rows.filter(r => !live(r)).length;
+  const shown = showDead ? rows : rows.filter(live);
   return (
     <>
       <Note>
@@ -197,19 +228,35 @@ function Forming({ rows, q, isMobile }) {
         <br />① 今日 Low 跌穿 pivot low → pivot 唔再係窗口唯一最低，訊號消失
         <br />② 今日收市高過門檻 → rU60 升穿 −5%，變 small tier，唔入場
         <br />ext 唔會變（用 pivot 當日嘅 m1/w1），冷卻同左邊三棒亦已封。
-        <b> 兩條線都守得住，收市就變「已確認」，明早開市買。</b>
+        <b> 兩條線都守得住，收市就變「已確認」，下個開市買。</b>
+        {dead > 0 && (
+          <>
+            <br /><span style={{ color: C.dim }}>
+              另外 {dead} 隻 rU60 距 −5% 太遠（要今日暴跌先入到 big），實際已經死，預設收埋。
+            </span>{" "}
+            <button onClick={() => setShowDead(v => !v)} style={{
+              background: "transparent", border: `1px solid ${C.mute}`, borderRadius: 4,
+              color: C.sub, fontSize: 9, padding: "1px 6px", cursor: "pointer", fontFamily: F,
+            }}>{showDead ? "收埋" : "照睇"}</button>
+          </>
+        )}
       </Note>
-      <Tbl isMobile={isMobile} cols={["標的", "ext", "今日Low", "跌穿即廢", "距離", "現價", "變small線", "距離", "狀態"]}>
-        {rows.map(r => {
+      <Tbl isMobile={isMobile} cols={["標的", "ext", "今日Low", "跌穿即廢", "距離", "現價", "變small線", "要郁", "狀態"]}>
+        {shown.map(r => {
           const d = q[r.symbol] || {};
           const lo = d.day_low, px = d.price;
           const dLow = lo != null ? (lo / r.kill_low - 1) * 100 : null;
-          const dCls = px != null ? (r.kill_close / px - 1) * 100 : null;
-          const dead = lo != null && lo <= r.kill_low;
-          const small = px != null && px > r.kill_close;
-          const st = dead ? ["作廢", C.dn] : small ? ["變 small", C.warn] : ["守住", C.up];
+          // 要郁 = 今日收市相對現價要變幾多先過到 rU60 關。冇即時價就用
+          // 掃描時計嘅 tier_gap_pct。大負數 = 今日冇可能做到。
+          const dCls = px != null ? (r.kill_close / px - 1) * 100 : r.tier_gap_pct;
+          const broke = lo != null && lo <= r.kill_low;
+          const small = px != null ? px > r.kill_close : r.tier_ok === false;
+          const st = broke ? ["作廢", C.dn] : small ? ["未夠跌", C.warn] : ["守住", C.up];
           return (
-            <tr key={r.symbol} style={{ background: dead ? "#1a0d14" : "transparent", opacity: dead ? 0.55 : 1 }}>
+            <tr key={r.symbol} style={{
+              background: broke ? "#1a0d14" : "transparent",
+              opacity: broke || (r.tier_gap_pct ?? 0) <= -3 ? 0.5 : 1,
+            }}>
               <Sym s={r.symbol} />
               <Td c={C.acc} b>{N(r.ext)}</Td>
               <Td>{N(lo)}</Td>
@@ -217,7 +264,7 @@ function Forming({ rows, q, isMobile }) {
               <Td b c={dLow == null ? C.mute : dLow < 1 ? C.warn : C.up}>{P(dLow)}</Td>
               <Td b>{N(px)}</Td>
               <Td c={C.warn}>{N(r.kill_close)}</Td>
-              <Td b c={dCls == null ? C.mute : dCls < 1 ? C.warn : C.up}>{P(dCls)}</Td>
+              <Td b c={dCls == null ? C.mute : dCls < -3 ? C.dn : dCls < 0 ? C.warn : C.up}>{P(dCls)}</Td>
               <Td b c={st[1]}>{st[0]}</Td>
             </tr>
           );
