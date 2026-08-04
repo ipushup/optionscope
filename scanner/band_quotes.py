@@ -28,6 +28,8 @@ IN_PATH = os.environ.get("BAND_OUT", "frontend/public/band.json")
 MARKETS = {m.strip().upper() for m in
            os.environ.get("QUOTE_MARKETS", "US,HK").split(",") if m.strip()}
 OUT_PATH = os.environ.get("BAND_QUOTES_OUT", "frontend/public/band_quotes.json")
+LOG_PATH = os.environ.get("BAND_FORMING_LOG", "frontend/public/band_forming_log.json")
+LOG_DAYS = 40
 CHUNK = 40
 
 
@@ -104,6 +106,61 @@ def grab(tickers):
     return out
 
 
+def log_forming(band, quotes):
+    """
+    每次報價 run 記低「形成中」嘅即時狀態，同一日同一隻覆寫（保留最新）。
+    第二日 band_scan.py 會回填 confirmed=true/false。
+
+    目的：量度「盤中見到守住」→「收市真係確認」嘅轉化率。呢個數字而家
+    完全冇人知 —— 如果九成，盤中睇到守住就可以放心預備；如果得五成，
+    就只可以當參考，唔可以當預告。
+
+    只記有真實分鐘線報價（bars>0）嗰啲 —— 港股時段跑嗰啲 run 冇美股即時
+    價，記低咗只會污染統計。
+    """
+    forming = band.get("forming") or []
+    if not forming:
+        return
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    log = {"days": {}}
+    if os.path.exists(LOG_PATH):
+        try:
+            log = json.load(open(LOG_PATH))
+        except Exception:
+            pass
+    log.setdefault("days", {})
+    rec = log["days"].setdefault(day, {"symbols": {}})
+
+    n = 0
+    for r in forming:
+        q = quotes.get(r["symbol"])
+        if not q or not q.get("bars"):
+            continue
+        lo, px = q.get("day_low"), q.get("price")
+        broke = lo is not None and lo <= r["kill_low"]
+        tier_bad = px is not None and px > r["kill_close"]
+        rec["symbols"][r["symbol"]] = {
+            "t": datetime.now(timezone.utc).strftime("%H:%M"),
+            "price": px, "day_low": lo,
+            "kill_low": r["kill_low"], "kill_close": r["kill_close"],
+            "ext": round(r.get("ext", 0), 2),
+            "status": "broke" if broke else "tier" if tier_bad else "hold",
+            # 由 band_scan.py 回填：收市後究竟有冇入到 confirmed
+            "confirmed": rec["symbols"].get(r["symbol"], {}).get("confirmed"),
+        }
+        n += 1
+
+    for d in sorted(log["days"])[:-LOG_DAYS]:
+        log["days"].pop(d, None)
+    try:
+        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+        with open(LOG_PATH, "w") as f:
+            json.dump(log, f, indent=2)
+        print(f"forming log: {day} · {n} 隻 → {LOG_PATH}")
+    except Exception as e:
+        print(f"  forming log 寫唔到: {e}")
+
+
 def main():
     if not os.path.exists(IN_PATH):
         sys.exit(f"搵唔到 {IN_PATH} —— 要先行 band_scan.py")
@@ -135,6 +192,7 @@ def main():
         json.dump(payload, f, indent=2)
     print(f"{len(tickers)} 隻 ({sorted(MARKETS)}) · 合共 {len(quotes)} quotes "
           f"({time.time() - t0:.0f}s) → {OUT_PATH}")
+    log_forming(band, quotes)
 
 
 if __name__ == "__main__":
