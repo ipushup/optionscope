@@ -92,7 +92,7 @@ function RadarListCard({ card, quote, onClick }) {
     }}>
       {/* header row */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 17, fontWeight: 900, color: "#fff", fontFamily: syne }}>{card.ticker}</span>
+        <span style={{ fontSize: 17, fontWeight: 900, color: c("#fff"), fontFamily: syne }}>{card.ticker}</span>
         <span style={{ fontSize: 14, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
         <span style={{ fontSize: 11, fontWeight: 700, fontFamily: mono,
                        color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
@@ -187,7 +187,7 @@ function RadarDetail({ card, quote, onClose }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={onClose} style={{ background: c("#0d3060"), border: "none", borderRadius: 7,
             color: c("#88bbee"), fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "4px 10px" }}>←</button>
-          <span style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: syne }}>{card.ticker}</span>
+          <span style={{ fontSize: 20, fontWeight: 900, color: c("#fff"), fontFamily: syne }}>{card.ticker}</span>
           <span style={{ fontSize: 16, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
           <span style={{ fontSize: 12, fontWeight: 700, fontFamily: mono,
                          color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
