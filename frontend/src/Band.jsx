@@ -56,6 +56,7 @@ export default function BandView({ isMobile, light }) {
   const [q, setQ] = useState({});
   const [qAt, setQAt] = useState(null);
   const [flog, setFlog] = useState(null);
+  const [, tick] = useState(0);        // 每 15s 迫一次 re-render，令「幾分鐘前」跳動
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("forming");
   C = light ? THEMES.light : THEMES.dark;   // 由 App 個掣統一控制
@@ -76,7 +77,10 @@ export default function BandView({ isMobile, light }) {
         .then(d => { setQ(d.quotes || {}); setQAt(d.quoted_at); })
         .catch(() => {});
     pull();
-    const id = setInterval(pull, 60_000);
+    // 15 秒 poll。⚠️ 唔會令價更新得快 —— band_quotes.json 係 Actions
+    // 每 15 分鐘（cron :05/:20/:35/:50）先重新生成。呢度 poll 密啲只係
+    // 令新一批數據一到就即刻見到，同埋令「幾分鐘前」個顯示跳得準。
+    const id = setInterval(() => { pull(); tick(n => n + 1); }, 15_000);
     return () => clearInterval(id);
   }, []);
 
@@ -143,9 +147,42 @@ const Empty = ({ t }) => (
   <div style={{ color: C.mute, fontSize: 12, padding: "28px 8px", textAlign: "center" }}>{t}</div>
 );
 
+/**
+ * 報價新鮮度。舊過兩個鐘就標黃 —— 唔係 bug，係 cron 分時段：
+ * 港股時段（01-07 UTC）嘅 run 只抽港股報價，美股要等 08:05Z 之後。
+ * 冇呢句提示，你就要靠個時間戳自己推算點解成版都係「—」。
+ */
+function quoteAge(qAt) {
+  if (!qAt) return null;
+  const now = new Date();
+  const mins = (now - new Date(qAt)) / 60000;
+  if (mins < 0 || !Number.isFinite(mins)) return null;
+  const h = mins / 60;
+  const ago = mins < 1 ? "啱啱" : h < 1 ? `${Math.round(mins)} 分鐘前` : `${h.toFixed(1)} 小時前`;
+
+  // 美股正常時段 13:30–20:00 UTC；之外冇即時價係預期之內
+  const u = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const usOpen = u >= 13.5 && u < 20;
+
+  // 下次報價：cron 固定 :05/:20/:35/:50，所以算得出。
+  // 只喺會真係抽美股嗰啲時段（08-23 UTC）先顯示 —— 港股時段（01-07）
+  // 嘅 run 唔會 touch 美股報價，講「下次 :35」會誤導。
+  const m = now.getUTCMinutes();
+  const slots = [5, 20, 35, 50];
+  const nx = slots.find(x => x > m);
+  const hh = nx == null ? (now.getUTCHours() + 1) % 24 : now.getUTCHours();
+  const next = now.getUTCHours() >= 8
+    ? `${String(hh).padStart(2, "0")}:${String(nx ?? 5).padStart(2, "0")}Z`
+    : null;
+  const nextIn = next ? Math.round(((nx ?? 65) - m + 60) % 60) || 15 : null;
+
+  return { stale: h >= 2, ago, next, nextIn, why: usOpen ? "報價可能有問題" : "美股未開市" };
+}
+
 function Head({ band, qAt, isMobile }) {
   const [open, setOpen] = useState(false);
   const c = band.config;
+  const age = quoteAge(qAt);
   return (
     <div style={{ borderLeft: `3px solid ${C.acc}`, paddingLeft: 9 }}>
       <div style={{
@@ -154,8 +191,16 @@ function Head({ band, qAt, isMobile }) {
         <span style={{ fontSize: isMobile ? 16 : 19, fontWeight: 800, letterSpacing: ".02em" }}>
           TRIPLE BAND
         </span>
-        <span style={{ fontSize: 10.5, color: C.mute, fontFamily: M }}>
+        <span style={{
+          fontSize: 10.5, fontFamily: M,
+          color: age?.stale ? C.warn : C.mute,
+        }}>
           {band.bar_date} · 報價 {qAt ? qAt.slice(11, 16) : "—"}Z
+          {age && ` · ${age.ago}`}
+          {age?.stale && ` · ${age.why}`}
+          {age?.next && !age.stale && (
+            <span style={{ color: C.mute }}> · 下次 ~{age.next}（{age.nextIn}分）</span>
+          )}
         </span>
         <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           <button onClick={() => setOpen(v => !v)} style={{
@@ -321,6 +366,20 @@ function Forming({ rows, q, flog, isMobile }) {
         <br />ext 唔會變，冷卻同左邊三棒已封。兩條線守得住，收市就變「已確認」。
         <br /><b style={{ color: C.warn }}>唔好喺確認之前買</b> —— 咁做係用未驗證嘅規則
         取代已驗證嘅，而且你會系統性買到最後作廢嗰批。越接近收市，「守住」越有約束力。
+
+        <div style={{
+          marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}`,
+        }}>
+          <b style={{ color: C.warn }}>ext 高唔代表值得做。</b>
+          ext 負責搵到「插得夠深」嘅位，rU60 負責篩走「已經升咗好耐先回一回」嘅。
+          <b> 後者先係真正嘅過濾器</b> —— 所以睇呢一頁嗰陣，<b>「要郁」比「ext」重要</b>。
+          <br />10 年數據：big tier（rU60 ≤ −5%）PF <b>2.03</b> vs small tier <b>1.64</b>；
+          而 ext 嘅 L1/L2 分級只差 1.64 vs 1.73，<b>基本上冇分辨力</b>。
+          <br /><span style={{ color: C.mute }}>
+            例：HOOD ext 5.07 同 COIN ext 5.12 幾乎一樣，但 HOOD 60 日升咗兩成，
+            要今日插 21.7% 先夠格 → 實際已死。
+          </span>
+        </div>
       </Info>
 
       {isMobile ? shown.map(r => {
