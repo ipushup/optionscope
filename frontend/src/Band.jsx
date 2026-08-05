@@ -51,16 +51,14 @@ const BAND_URL = `${BASE}/band.json`;
 const QUOTES_URL = `${BASE}/band_quotes.json`;
 const FLOG_URL = `${BASE}/band_forming_log.json`;
 
-export default function BandView({ isMobile }) {
+export default function BandView({ isMobile, light }) {
   const [band, setBand] = useState(null);
   const [q, setQ] = useState({});
   const [qAt, setQAt] = useState(null);
   const [flog, setFlog] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("forming");
-  const [theme, setTheme] = useState(
-    () => (typeof localStorage !== "undefined" && localStorage.getItem("bandTheme")) || "dark");
-  C = THEMES[theme] || THEMES.dark;   // 喺 render 之前切換，下面所有零件即刻跟
+  C = light ? THEMES.light : THEMES.dark;   // 由 App 個掣統一控制
 
   useEffect(() => {
     fetch(`${BAND_URL}?t=${Date.now()}`)
@@ -106,11 +104,7 @@ export default function BandView({ isMobile }) {
       background: C.bg, color: C.txt, fontFamily: F,
       padding: isMobile ? "8px 8px 24px" : 16, width: "100%", overflowX: "hidden",
     }}>
-      <Head band={band} qAt={qAt} isMobile={isMobile}
-        theme={theme} setTheme={t => {
-          setTheme(t);
-          try { localStorage.setItem("bandTheme", t); } catch { /* 私隱模式 */ }
-        }} />
+      <Head band={band} qAt={qAt} isMobile={isMobile} />
 
       <div style={{
         display: "flex", gap: 4, margin: "10px 0 8px",
@@ -149,7 +143,7 @@ const Empty = ({ t }) => (
   <div style={{ color: C.mute, fontSize: 12, padding: "28px 8px", textAlign: "center" }}>{t}</div>
 );
 
-function Head({ band, qAt, isMobile, theme, setTheme }) {
+function Head({ band, qAt, isMobile }) {
   const [open, setOpen] = useState(false);
   const c = band.config;
   return (
@@ -164,12 +158,6 @@ function Head({ band, qAt, isMobile, theme, setTheme }) {
           {band.bar_date} · 報價 {qAt ? qAt.slice(11, 16) : "—"}Z
         </span>
         <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            title="切換深／淺色" style={{
-              background: "transparent", border: `1px solid ${C.mute}`, borderRadius: 20,
-              color: C.sub, fontSize: 11, width: 24, height: 24, cursor: "pointer",
-              fontFamily: F, lineHeight: 1, padding: 0,
-            }}>{theme === "dark" ? "☀" : "🌙"}</button>
           <button onClick={() => setOpen(v => !v)} style={{
             background: "transparent", border: `1px solid ${C.mute}`, borderRadius: 20,
             color: C.sub, fontSize: 11, width: 24, height: 24,
