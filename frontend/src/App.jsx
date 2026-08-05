@@ -1,495 +1,1031 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  Radar.jsx — Turnaround Radar tab for OptionScope
-//  ---------------------------------------------------------------------
-//  Data flow (Solution A):
-//    radar.json        → indicator/GATE/SCORE/VETO cards (computed after close)
-//    radar_quotes.json → live prices incl. pre/post market (refreshed every few min)
-//  The card content is static (closed-candle truth); prices and all *distances*
-//  are recomputed live in the browser from the reference levels in card.levels.
-//
-//  Usage in App.jsx — 3 edits, see RADAR_INTEGRATION.md
-// ═══════════════════════════════════════════════════════════════════════════
-import { useState, useEffect, useCallback } from "react";
-import { c } from "./theme";
+import React, { useState, useEffect, useCallback } from "react";
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, BarChart, Bar } from "recharts";
+import RadarView from "./Radar";
+import BandView from "./Band";
+import { c, setLight, isLight } from "./theme";
 
-const BASE        = process.env.PUBLIC_URL || "";
-const RADAR_URL   = `${BASE}/radar.json`;
-const QUOTES_URL  = `${BASE}/radar_quotes.json`;
+// 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
+// filter、summary bar、loading spinner 都唔應該喺呢啲頁出現。
+const STANDALONE_VIEWS = ["radar", "band"];
 
-const SCEN_COLOR = {
-  S1: { c: c("#00d4aa"), bg: `${c("#00d4aa")}1a`, label: "S1 強勢延續" },
-  S2: { c: c("#f5a623"), bg: `${c("#f5a623")}1a`, label: "S2 強勢修復" },
-  S3: { c: c("#ff8c42"), bg: `${c("#ff8c42")}1a`, label: "S3 轉勢初期" },
-};
-const CONCL_COLOR = { "concl-green": c("#00d4aa"), "concl-amber": c("#f5a623"), "concl-gray": c("#6a8898") };
-const SESSION_BADGE = {
-  pre:     { t: "PRE",  c: c("#f5a623") },
-  regular: { t: "LIVE", c: c("#00d4aa") },
-  post:    { t: "POST", c: c("#3b9eff") },
-  closed:  { t: "CLS",  c: c("#3a5060") },
-};
-
-const mono = "DM Mono,monospace";
-const syne = "'Syne',sans-serif";
-
-// ── live derivation: everything that depends on the current price ──────────
-function derive(card, quote) {
-  const L = card.levels || {};
-  // effective live price: post > pre > regular > radar close
-  const live =
-    (quote?.post ?? null) ??
-    (quote?.pre ?? null) ??
-    (quote?.price ?? null) ??
-    card.close;
-  const session = quote?.post ? "post" : quote?.pre ? "pre" : (quote?.session || "closed");
-
-  const pct = (lvl) => (lvl ? ((live / lvl - 1) * 100) : null);
-
-  const stopDist   = pct(card.stop);
-  const stopBroken = stopDist !== null && stopDist <= 0;
-  const utDist     = pct(L.ut_stop);
-  const utBroken   = utDist !== null && utDist <= 0;
-  const ema10Dist  = pct(L.ema10d);
-  const ema20Dist  = pct(L.ema20d);
-
-  // 回踩 target for S1/S3 conclusions
-  const pullbackLvl = card.scen === "S1" ? L.ema10d : L.ema20d;
-  const pullbackDist = pct(pullbackLvl);
-  // "at the buy zone" = price within 1% above the pullback level (or below it)
-  const atBuyZone = pullbackDist !== null && pullbackDist <= 1.0 && !stopBroken;
-
-  const vsClose = card.close ? (live / card.close - 1) * 100 : 0;
-
-  // live status overrides the static conclusion when something material changed
-  let status = card.concl, statusColor = CONCL_COLOR[card.concl_cls] || c("#6a8898");
-  if (stopBroken)      { status = "🔴 已穿止蝕 — 離場";  statusColor = c("#ff5c5c"); }
-  else if (utBroken)   { status = "🟠 穿 UT Bot 止損";   statusColor = c("#ff8c42"); }
-  else if (atBuyZone)  { status = "🟢 已到買入區";       statusColor = c("#00d4aa"); }
-
-  // 距止蝕太遠 = 追高，risk/reward 差（止蝕位一觸即損失 >15%）
-  const chaseRisk = !stopBroken && stopDist !== null && stopDist > 15;
-
-  return { live, session, vsClose, stopDist, stopBroken, utDist, utBroken,
-           ema10Dist, ema20Dist, pullbackLvl, pullbackDist, atBuyZone, chaseRisk,
-           status, statusColor };
+/**
+ * 一個 view 掛咗唔應該拖冧成個 app —— 之前 Compass 崩嗰陣，整棵 React tree
+ * unmount，畫面淨返 body 底色（全黑、乜掣都撳唔到），連錯誤都睇唔到。
+ * 而家至少會印低係邊個 view、咩錯。
+ */
+class ViewBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { console.error("[view crash]", err, info); }
+  componentDidUpdate(prev) {
+    if (prev.viewKey !== this.props.viewKey && this.state.err) this.setState({ err: null });
+  }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div style={{ padding: 20, fontFamily: "DM Mono,monospace", fontSize: 12,
+                    color: c("#ff5c5c"), lineHeight: 1.7 }}>
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>
+          ⚠ 「{this.props.viewKey}」呢一頁掛咗
+        </div>
+        <div style={{ color: c("#8aaabb"), whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          {String(this.state.err?.message || this.state.err)}
+        </div>
+        <button onClick={() => this.setState({ err: null })} style={{
+          marginTop: 12, background: c("#0a1828"), border: `1px solid ${c("#1a2e40")}`,
+          borderRadius: 6, color: c("#8aaabb"), padding: "6px 12px", fontSize: 12,
+          cursor: "pointer", fontFamily: "DM Mono,monospace",
+        }}>再試</button>
+      </div>
+    );
+  }
 }
 
-const f2 = (v) => (v === null || v === undefined ? "—" : v.toFixed(2));
-const pctTxt = (v) => (v === null || v === undefined ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`);
+const RESULTS_URL = process.env.PUBLIC_URL ? `${process.env.PUBLIC_URL}/results.json` : "/results.json";
 
-// ── LIST CARD ─────────────────────────────────────────────────────────────
-function RadarListCard({ card, quote, onClick }) {
-  const d  = derive(card, quote);
-  const sc = SCEN_COLOR[card.scen];
-  const sb = SESSION_BADGE[d.session] || SESSION_BADGE.closed;
-  const gatePct = (card.gate_n / 4) * 100;
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function calcPremiumScore(stock) {
+  let score = 0;
+  score += Math.min(50, stock.iv_rank * 0.5);
+  score += Math.min(25, stock.adx * 0.6);
+  score += (stock.rsi >= 30 && stock.rsi <= 75) ? 15 : 0;
+  score += stock.volume_spike < 2.0 ? 10 : stock.volume_spike < 3.0 ? 5 : 0;
+  return Math.round(Math.min(100, score));
+}
+function getScoreColor(s) {
+  if (s >= 80) return c("#00d4aa"); if (s >= 60) return c("#3b9eff");
+  if (s >= 40) return c("#f5a623"); return c("#ff5c5c");
+}
+function getScoreLabel(s) {
+  if (s >= 80) return "SELL NOW"; if (s >= 60) return "GOOD";
+  if (s >= 40) return "FAIR"; return "AVOID";
+}
+function getSellType(stock) {
+  if (stock.trend === "bullish") return { type:"SELL PUT",      color:c("#00d4aa"), desc:"Stock trending up — sell below price" };
+  if (stock.trend === "bearish") return { type:"SELL CALL",     color:c("#ff8c42"), desc:"Stock trending down — sell above price" };
+  return                                 { type:"SELL STRANGLE", color:c("#cc77ff"), desc:"No clear trend — sell both sides" };
+}
+function getRealStrike(stock) { return stock.suggest_strike || null; }
+function getRealPremium(stock) {
+  if (!stock.suggest_premium_contract) return null;
+  return { perContract: stock.suggest_premium_contract, perShare: stock.suggest_premium, otmPct: stock.suggest_otm_pct };
+}
+
+const SIGNAL_CONFIG = {
+  STRONG_BULL: { label:"⚡ Strong Bull",  color:c("#00d4aa"), bg:c("#0a3d2e"), desc:"↑Price + Call Vol > OI + filled @Ask" },
+  BULL:        { label:"▲ Bullish",       color:c("#00d4aa"), bg:c("#0a2e20"), desc:"↑Price + unusual call activity" },
+  MILD_BULL:   { label:"↗ Mild Bull",     color:c("#3b9eff"), bg:c("#0a1f3d"), desc:"Uptrend, normal volume" },
+  STRONG_BEAR: { label:"⚡ Strong Bear",  color:c("#ff5c5c"), bg:c("#3d0a0a"), desc:"↓Price + Put Vol > OI + filled @Ask" },
+  BEAR:        { label:"▼ Bearish",       color:c("#ff8c42"), bg:c("#2e1a0a"), desc:"↓Price + unusual put activity" },
+  MILD_BEAR:   { label:"↘ Mild Bear",     color:c("#ff8c42"), bg:c("#2e1a0a"), desc:"Downtrend, normal volume" },
+  VOLATILE:    { label:"⚡ Volatile",     color:c("#f5a623"), bg:c("#2e2a0a"), desc:"High vol both sides — event play" },
+  NEUTRAL:     { label:"◆ Neutral",       color:c("#667788"), bg:c("#14222e"), desc:"No clear signal" },
+};
+
+const CATEGORY_ICON = {
+  meme:"🔥", crypto:"🪙", nuclear_energy:"⚛️", ai_quantum:"🤖",
+  ev_clean:"🚗", biotech:"💊", high_beta_tech:"📱", fintech:"🏦",
+  leveraged_etfs:"📊", sp100_core:"📈", other:"◆",
+};
+
+// ── SCORE RING ────────────────────────────────────────────────────────────────
+function ScoreRing({ score, size=56 }) {
+  const color = getScoreColor(score);
+  const r = (size/2)-5, circ = 2*Math.PI*r, dash = (score/100)*circ;
+  return (
+    <div style={{ position:"relative", width:size, height:size, flexShrink:0 }}>
+      <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={c("#1a2a3a")} strokeWidth={5} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={5}
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+      </svg>
+      <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ fontSize:15, fontWeight:900, color, fontFamily:"DM Mono,monospace", lineHeight:1 }}>{score}</div>
+        <div style={{ fontSize:8, color, fontFamily:"DM Mono,monospace" }}>{getScoreLabel(score)}</div>
+      </div>
+    </div>
+  );
+}
+
+function IVBar({ value }) {
+  const color = value>=75?c("#00d4aa"):value>=50?c("#3b9eff"):value>=25?c("#f5a623"):c("#ff5c5c");
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+        <span style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>IV RANK</span>
+        <span style={{ fontSize:12, fontWeight:700, color, fontFamily:"DM Mono,monospace" }}>{value.toFixed(1)}</span>
+      </div>
+      <div style={{ background:c("#162030"), borderRadius:3, height:6, width:"100%" }}>
+        <div style={{ width:`${Math.min(value,100)}%`, height:"100%", background:color, borderRadius:3, transition:"width 1s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+// ── PREMIUM CARD ──────────────────────────────────────────────────────────────
+function PremiumCard({ stock, isSelected, onClick }) {
+  const score    = calcPremiumScore(stock);
+  const scoreCol = getScoreColor(score);
+  const sell     = getSellType(stock);
+  const strike   = getRealStrike(stock);
+  const premium  = getRealPremium(stock);
+  const sig      = SIGNAL_CONFIG[stock.signal_matrix] || SIGNAL_CONFIG.NEUTRAL;
 
   return (
     <div onClick={onClick} style={{
-      background: c("#0a1828"), border: `1px solid ${d.stopBroken ? `${c("#ff5c5c")}55` : c("#1a2e40")}`,
-      borderRadius: 10, padding: "10px 12px", cursor: "pointer",
-      borderLeft: `3px solid ${sc.c}`,
+      background:isSelected?c("#0c1e34"):c("#080f1c"),
+      border:`1px solid ${isSelected?scoreCol:c("#0e1c28")}`,
+      borderRadius:14, padding:"14px 12px", cursor:"pointer",
+      transition:"all 0.2s ease", width:"100%", minWidth:0, overflow:"hidden",
+      boxShadow:isSelected?`0 0 0 2px ${scoreCol}22`:"none",
     }}>
-      {/* header row */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 17, fontWeight: 900, color: c("#fff"), fontFamily: syne }}>{card.ticker}</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
-        <span style={{ fontSize: 11, fontWeight: 700, fontFamily: mono,
-                       color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
-        <span style={{ fontSize: 8, fontWeight: 800, fontFamily: mono, color: sb.c,
-                       border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>
-        <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 9, fontWeight: 800, fontFamily: mono, color: sc.c,
-                       background: sc.bg, borderRadius: 5, padding: "2px 6px" }}>{card.scen}</span>
-      </div>
-
-      {/* live status */}
-      <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, fontFamily: mono, color: d.statusColor }}>
-        {d.status}
-        {card.downgraded && (
-          <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: c("#ff8c42") }}>
-            （{card.downgraded} 降級）
-          </span>
-        )}
-      </div>
-
-      {/* metrics strip */}
-      <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-        <Metric label="GATE" value={`${card.gate_n}/4`} color={card.gate_n === 4 ? c("#00d4aa") : c("#f5a623")} />
-        <Metric label="SCORE" value={`${card.score}/${card.max_score}`} color={c("#3b9eff")} />
-        <Metric label={card.scen === "S1" ? "vs EMA10" : "vs EMA20"}
-                value={pctTxt(d.pullbackDist)}
-                color={d.atBuyZone ? c("#00d4aa") : c("#8aaabb")} />
-        <Metric label="vs 止蝕" value={pctTxt(d.stopDist)}
-                color={d.stopBroken ? c("#ff5c5c") : d.chaseRisk ? c("#ff8c42")
-                       : (d.stopDist < 3 ? c("#f5a623") : c("#8aaabb"))} />
-        {d.chaseRisk && <Metric label="RISK" value="追高" color={c("#ff8c42")} />}
-        {card.warn_n > 0 && <Metric label="VETO" value={`⚠×${card.warn_n}`} color={c("#f5a623")} />}
-      </div>
-
-      {/* gate bar */}
-      <div style={{ marginTop: 8, height: 3, background: c("#162030"), borderRadius: 2 }}>
-        <div style={{ width: `${gatePct}%`, height: "100%", borderRadius: 2,
-                      background: card.gate_n === 4 ? c("#00d4aa") : c("#f5a623") }} />
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, color }) {
-  return (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: 8, color: c("#5a7a90"), fontFamily: mono, letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: mono }}>{value}</div>
-    </div>
-  );
-}
-
-// ── DETAIL OVERLAY ────────────────────────────────────────────────────────
-function CondRow({ ok, name, detail, scoreTxt }) {
-  return (
-    <div style={{ display: "flex", gap: 7, padding: "3px 0", borderBottom: `1px solid ${c("#0e1c28")}`, alignItems: "flex-start" }}>
-      <span style={{ width: 26, flexShrink: 0, fontSize: 10, fontFamily: mono, textAlign: "center",
-                     color: ok ? c("#00d4aa") : c("#4a6070") }}>
-        {scoreTxt ?? (ok ? "✅" : "❌")}
-      </span>
-      <span style={{ width: 108, flexShrink: 0, fontSize: 10.5, fontFamily: mono,
-                     color: ok ? c("#ccddee") : c("#5a7a90") }}>{name}</span>
-      <span style={{ flex: 1, fontSize: 10.5, fontFamily: mono, color: c("#7a9ab8"), lineHeight: 1.45 }}>{detail}</span>
-    </div>
-  );
-}
-
-function Block({ title, children }) {
-  return (
-    <div style={{ padding: "10px 12px", background: c("#0a1828"), borderRadius: 10, border: `1px solid ${c("#1a2e40")}`, marginBottom: 8 }}>
-      <div style={{ fontSize: 10, fontWeight: 800, color: c("#3b9eff"), fontFamily: mono,
-                    letterSpacing: 1, marginBottom: 6 }}>{title}</div>
-      {children}
-    </div>
-  );
-}
-
-function RadarDetail({ card, quote, onClose }) {
-  const d  = derive(card, quote);
-  const sc = SCEN_COLOR[card.scen];
-  const L  = card.levels || {};
-  const sb = SESSION_BADGE[d.session] || SESSION_BADGE.closed;
-
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: c("#040b14"), zIndex: 60,
-      display: "flex", flexDirection: "column", overflow: "hidden",
-      paddingTop: "env(safe-area-inset-top, 44px)",
-    }}>
-      {/* header */}
-      <div style={{ background: c("#050c18"), borderBottom: `1px solid ${c("#0a1826")}`, padding: "10px 12px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={onClose} style={{ background: c("#0d3060"), border: "none", borderRadius: 7,
-            color: c("#88bbee"), fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "4px 10px" }}>←</button>
-          <span style={{ fontSize: 20, fontWeight: 900, color: c("#fff"), fontFamily: syne }}>{card.ticker}</span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
-          <span style={{ fontSize: 12, fontWeight: 700, fontFamily: mono,
-                         color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
-          <span style={{ fontSize: 8, fontWeight: 800, fontFamily: mono, color: sb.c,
-                         border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>
-          <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 9, fontWeight: 800, color: sc.c, background: sc.bg,
-                         borderRadius: 6, padding: "3px 8px", fontFamily: mono }}>{card.scen_name}</span>
-        </div>
-
-        {/* live status banner */}
-        <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8,
-                      background: `${d.statusColor}18`, border: `1px solid ${d.statusColor}44`,
-                      fontSize: 12, fontWeight: 700, fontFamily: mono, color: d.statusColor }}>
-          {d.status}
-        </div>
-
-        {/* pre/post detail line */}
-        {(quote?.pre || quote?.post) && (
-          <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: c("#7a9ab8"), display: "flex", gap: 12 }}>
-            {quote.pre  && <span>PRE {f2(quote.pre)} <b style={{ color: quote.pre_pct >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(quote.pre_pct)}</b></span>}
-            {quote.price && <span>REG {f2(quote.price)} <b style={{ color: quote.chg_pct >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(quote.chg_pct)}</b></span>}
-            {quote.post && <span>POST {f2(quote.post)} <b style={{ color: quote.post_pct >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(quote.post_pct)}</b></span>}
+      {/* Row 1 */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+        <ScoreRing score={score} />
+        <div style={{ flex:1, minWidth:0, overflow:"hidden" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:4 }}>
+            <div style={{ display:"flex", alignItems:"baseline", gap:5, minWidth:0 }}>
+              <span style={{ fontSize:20, fontWeight:900, color:c("#fff"), fontFamily:"'Syne',sans-serif", flexShrink:0 }}>{stock.ticker}</span>
+              <span style={{ fontSize:13, fontWeight:700, color:c("#aaccee"), fontFamily:"DM Mono,monospace", flexShrink:0 }}>${stock.price.toFixed(2)}</span>
+            </div>
+            <span style={{ fontSize:10, fontWeight:800, color:sell.color, fontFamily:"DM Mono,monospace",
+              background:sell.color+"18", border:`1px solid ${sell.color}44`, borderRadius:6,
+              padding:"3px 6px", whiteSpace:"nowrap", flexShrink:0 }}>
+              {sell.type}
+            </span>
           </div>
-        )}
-      </div>
-
-      {/* body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px" }}>
-
-        {/* LIVE LEVELS — the whole point of the web version */}
-        <Block title="📍 現價位置 · LIVE LEVELS">
-          <LevelRow label="買入區"    lvl={d.pullbackLvl} dist={d.pullbackDist} live={d.live}
-                    note={card.scen === "S1" ? "Daily EMA10" : "Daily EMA20"} good={d.atBuyZone} />
-          <LevelRow label={card.stop_label} lvl={card.stop} dist={d.stopDist} live={d.live}
-                    note="止蝕" bad={d.stopBroken} />
-          <LevelRow label="UT Bot 止損" lvl={L.ut_stop} dist={d.utDist} live={d.live} bad={d.utBroken} />
-          <LevelRow label="Daily EMA20" lvl={L.ema20d} dist={d.ema20Dist} live={d.live} />
-          <LevelRow label="Daily EMA50" lvl={L.ema50d} dist={d.live && L.ema50d ? (d.live / L.ema50d - 1) * 100 : null} live={d.live} />
-          {L.ch_upper && <LevelRow label="下降通道上軌" lvl={L.ch_upper}
-                    dist={(d.live / L.ch_upper - 1) * 100} live={d.live} note="阻力" />}
-          <div style={{ marginTop: 7, fontSize: 9.5, color: c("#5a7a90"), fontFamily: mono, lineHeight: 1.5 }}>
-            指標數值（KDJ J={L.kdj_j ?? "—"} · CMF {L.cmf_d} · BigChing {L.bigching}/7）為收市值 —
-            價格與距離為即時。
+          <div style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:3 }}>
+            IV {stock.iv_current}% · ADX {stock.adx} · RSI {stock.rsi}
           </div>
-        </Block>
-
-        <Block title={`🎯 SCENARIO — ${card.scen} · 倉位 ${card.position}`}>
-          {card.scen_rows.map(([n, ok, v], i) => <CondRow key={i} ok={ok} name={n} detail={v} />)}
-        </Block>
-
-        <Block title={`🚪 GATE ${card.gate_n}/4`}>
-          {card.gates.map(([n, ok, v], i) => <CondRow key={i} ok={ok} name={n} detail={v} />)}
-        </Block>
-
-        <Block title={`⭐ SCORE ${card.score}/${card.max_score}`}>
-          {card.scores.map(([n, p, m, v], i) =>
-            <CondRow key={i} ok={p > 0} name={n} detail={v} scoreTxt={`${p}/${m}`} />)}
-        </Block>
-
-        {card.vetoes.length > 0 && (
-          <Block title={`⚠️ VETO — ${card.vetoes.length} 項`}>
-            {card.vetoes.map(([ic, n, v], i) =>
-              <CondRow key={i} ok={ic === "ℹ️"} name={n} detail={v} scoreTxt={ic} />)}
-          </Block>
-        )}
-
-        <div style={{ padding: "10px 12px", background: c("#0a1828"), borderRadius: 10,
-                      border: `1px solid ${c("#1a2e40")}`, marginBottom: 20 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: c("#3b9eff"), fontFamily: mono,
-                        letterSpacing: 1, marginBottom: 5 }}>💡 買入邏輯</div>
-          <div style={{ fontSize: 11.5, color: c("#ccddee"), fontFamily: mono, lineHeight: 1.6 }}>{card.buy_logic}</div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function LevelRow({ label, lvl, dist, live, note, good, bad }) {
-  if (!lvl) return null;
-  const color = bad ? c("#ff5c5c") : good ? c("#00d4aa") : (Math.abs(dist) < 2 ? c("#f5a623") : c("#7a9ab8"));
-  const above = live >= lvl;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0",
-                  borderBottom: `1px solid ${c("#0e1c28")}` }}>
-      <span style={{ width: 96, flexShrink: 0, fontSize: 10.5, fontFamily: mono, color: c("#8aaabb") }}>{label}</span>
-      <span style={{ width: 62, flexShrink: 0, fontSize: 11, fontFamily: mono, color: c("#ccddee") }}>{f2(lvl)}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, fontFamily: mono, color }}>
-        {above ? "▲" : "▼"} {pctTxt(dist)}
-      </span>
-      <div style={{ flex: 1 }} />
-      {note && <span style={{ fontSize: 9, fontFamily: mono, color: c("#5a7a90") }}>{note}</span>}
-    </div>
-  );
-}
-
-// ── MAIN RADAR VIEW ───────────────────────────────────────────────────────
-// ── MARKET REGIME BAR ─────────────────────────────────────────────────────
-const REGIME = {
-  on:      { c: c("#00d4aa"), bg: `${c("#00d4aa")}14`, label: "Risk On" },
-  mixed:   { c: c("#f5a623"), bg: `${c("#f5a623")}14`, label: "Mixed 輪轉" },
-  off:     { c: c("#ff5c5c"), bg: `${c("#ff5c5c")}14`, label: "Risk Off" },
-  unknown: { c: c("#6a8898"), bg: c("#0a1828"), label: "—" },
-};
-
-function BreadthNum({ label, v, prev }) {
-  const delta = prev === undefined ? null : v - prev;
-  const arrow = delta === null ? "" : delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
-  const col = v >= 60 ? c("#00d4aa") : v >= 45 ? c("#f5a623") : c("#ff5c5c");
-  return (
-    <span style={{ fontFamily: mono, fontSize: 10, color: c("#8aaabb") }}>
-      {label} <b style={{ color: col }}>{v}%</b>
-      {delta !== null && <span style={{ color: delta > 0 ? c("#00d4aa") : delta < 0 ? c("#ff5c5c") : c("#6a8898") }}>{arrow}</span>}
-    </span>
-  );
-}
-
-function MarketRow({ tag, data, indices, vix }) {
-  if (!data) return null;
-  const r = REGIME[data.regime] || REGIME.unknown;
-  const b = data.breadth || {};
-  return (
-    <div style={{ padding: "7px 10px", background: r.bg, borderLeft: `3px solid ${r.c}`,
-                  borderRadius: 8, marginBottom: 6 }}>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontFamily: syne, fontSize: 12, fontWeight: 800, color: c("#cdd7e3") }}>{tag}</span>
-        <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 800, color: r.c }}>
-          {data.regime === "on" ? "🟢" : data.regime === "off" ? "🔴" : data.regime === "mixed" ? "🟡" : "⚪"} {r.label}
-        </span>
-        {indices && Object.entries(indices).map(([nm, s]) => s && (
-          <span key={nm} style={{ fontFamily: mono, fontSize: 10, color: c("#8aaabb") }}>
-            {nm}<b style={{ color: s.st === "B" && s.above20 ? c("#00d4aa") : c("#ff5c5c") }}>{s.chg_pct >= 0 ? "▲" : "▼"}</b>
-          </span>
-        ))}
-        {vix && (
-          <span style={{ fontFamily: mono, fontSize: 10, color: c("#8aaabb") }}>
-            VIX <b style={{ color: vix.val >= 25 ? c("#ff5c5c") : vix.val >= 18 ? c("#f5a623") : c("#00d4aa") }}>{vix.val}</b>
-            {vix.up ? "↑" : "↓"}
-          </span>
-        )}
-        <div style={{ flex: 1 }} />
-        <BreadthNum label="ST=B" v={b.st_b} prev={b.st_b_prev} />
-        <BreadthNum label=">EMA50" v={b.e50} prev={b.e50_prev} />
-        <BreadthNum label=">EMA200" v={b.e200} prev={b.e200_prev} />
+      {/* Signal matrix badge */}
+      <div style={{ marginBottom:8, padding:"5px 10px", background:sig.bg, borderRadius:6, border:`1px solid ${sig.color}33`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <span style={{ fontSize:11, fontWeight:700, color:sig.color, fontFamily:"DM Mono,monospace" }}>{sig.label}</span>
+        <div style={{ display:"flex", gap:8 }}>
+          {stock.vol_oi_anomaly && <span style={{ fontSize:10, color:c("#f5a623"), fontFamily:"DM Mono,monospace" }}>⚡ Vol&gt;OI</span>}
+          {stock.pc_ratio && <span style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>P/C {stock.pc_ratio}</span>}
+        </div>
       </div>
-      {data.regime === "off" && (
-        <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 700, fontFamily: mono, color: c("#ff5c5c") }}>
-          ⚠️ 大盤轉弱，S1/S2 結論自動降級，只宜減倉
+
+      <IVBar value={stock.iv_rank} />
+
+      {/* Strike + Premium */}
+      <div style={{ display:"flex", gap:6, marginTop:10 }}>
+        <div style={{ flex:1, minWidth:0, padding:"8px 10px", background:c("#0a1828"), borderRadius:8, border:`1px solid ${c("#1a2e40")}` }}>
+          <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:3 }}>
+            {sell.type==="SELL PUT"?"PUT STRIKE":sell.type==="SELL CALL"?"CALL STRIKE":"STRANGLE"}
+          </div>
+          <div style={{ fontSize:16, fontWeight:700, color:sell.color, fontFamily:"DM Mono,monospace" }}>
+            {strike ? `$${strike}` : "—"}
+          </div>
+          <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:2 }}>
+            {premium ? `~${premium.otmPct}% OTM` : ""}
+          </div>
+        </div>
+        <div style={{ flex:1, minWidth:0, padding:"8px 10px", background:c("#071510"), borderRadius:8, border:`1px solid ${c("#0e2e1e")}` }}>
+          <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:3 }}>REAL PREMIUM</div>
+          <div style={{ fontSize:16, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>
+            {premium ? `$${premium.perContract}` : "—"}
+          </div>
+          <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:2 }}>
+            {stock.suggest_expiry
+              ? `Exp ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${stock.suggest_dte||35} DTE`
+              : `${stock.suggest_dte||35} DTE`}
+          </div>
+        </div>
+      </div>
+
+      {/* Safe zone */}
+      <div style={{ marginTop:8, padding:"8px 10px", background:c("#0a1828"), borderRadius:8, border:`1px solid ${c("#1a2e40")}` }}>
+        <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:5 }}>
+          SAFE ZONE THIS WEEK — keep strike outside
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ fontSize:12, fontWeight:700, color:c("#ff8c42"), fontFamily:"DM Mono,monospace", flexShrink:0 }}>${stock.range_1w.low}</span>
+          <div style={{ flex:1, height:4, background:c("#162030"), borderRadius:2, position:"relative", minWidth:0 }}>
+            <div style={{ position:"absolute", left:"20%", right:"20%", top:0, height:"100%", background:`${c("#00d4aa")}33`, borderRadius:2 }} />
+            <div style={{ position:"absolute", left:"50%", transform:"translateX(-50%)", top:-3, width:2, height:10, background:c("#3b9eff"), borderRadius:1 }} />
+          </div>
+          <span style={{ fontSize:12, fontWeight:700, color:c("#ff8c42"), fontFamily:"DM Mono,monospace", flexShrink:0 }}>${stock.range_1w.high}</span>
+        </div>
+        <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:4, textAlign:"center" }}>
+          1 week · 1 std dev · ~68% probability
+        </div>
+      </div>
+
+      {/* OI walls + spread summary */}
+      {(stock.call_wall || stock.put_wall || stock.spread?.net_contract) && (
+        <div style={{ marginTop:8, display:"flex", gap:6 }}>
+          {stock.put_wall && (
+            <div style={{ flex:1, padding:"6px 8px", background:c("#0a1828"), borderRadius:6, border:`1px solid ${c("#1a2e40")}` }}>
+              <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>PUT WALL</div>
+              <div style={{ fontSize:13, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>${stock.put_wall}</div>
+            </div>
+          )}
+          {stock.max_pain && (
+            <div style={{ flex:1, padding:"6px 8px", background:c("#0a1828"), borderRadius:6, border:`1px solid ${c("#1a2e40")}`, textAlign:"center" }}>
+              <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>MAX PAIN</div>
+              <div style={{ fontSize:13, fontWeight:700, color:c("#f5a623"), fontFamily:"DM Mono,monospace" }}>${stock.max_pain}</div>
+            </div>
+          )}
+          {stock.spread?.net_contract && (
+            <div style={{ flex:1, padding:"6px 8px", background:c("#071510"), borderRadius:6, border:`1px solid ${c("#0e2e1e")}`, textAlign:"right" }}>
+              <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>SPREAD NET</div>
+              <div style={{ fontSize:13, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>${stock.spread.net_contract}</div>
+            </div>
+          )}
         </div>
       )}
-      {data.regime === "mixed" && (
-        <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: c("#f5a623") }}>
-          板塊輪轉中 — S1 動能股結論降級，S2/S3 不受影響
+
+      {/* Footer */}
+      <div style={{ marginTop:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>
+          {stock.volume_spike>1.8 && <span style={{ color:c("#f5a623") }}>🔥 ×{stock.volume_spike} · </span>}
+          <span style={{ color:scoreCol, fontWeight:700 }}>Score {score}/100</span>
         </div>
-      )}
+        <div style={{ fontSize:10, color:c("#6a8898"), fontFamily:"DM Mono,monospace" }}>
+          {stock.scanned_at ? new Date(stock.scanned_at).toLocaleTimeString() : "demo"}
+        </div>
+      </div>
     </div>
   );
 }
 
-function MarketBar({ market }) {
-  if (!market) return null;
+// ── DETAIL PAGE ───────────────────────────────────────────────────────────────
+function DetailPage({ stock, onClose }) {
+  const [tab, setTab] = useState("signal");
+  const score   = calcPremiumScore(stock);
+  const sell    = getSellType(stock);
+  const strike  = getRealStrike(stock);
+  const premium = getRealPremium(stock);
+  const sig     = SIGNAL_CONFIG[stock.signal_matrix] || SIGNAL_CONFIG.NEUTRAL;
+  const scoreCol = getScoreColor(score);
+  const dailyTheta = premium ? (premium.perContract / (stock.suggest_dte || 35)) : 0;
+
+  const tabs = [
+    { id:"signal",  label:"Signal" },
+    { id:"spread",  label:"Spread" },
+    { id:"voloi",   label:"Vol/OI" },
+    { id:"maxpain", label:"Max Pain" },
+  ];
+
   return (
-    <div style={{ marginBottom: 10 }}>
-      <MarketRow tag="美股" data={market.US} indices={market.US?.indices} vix={market.vix} />
-      <MarketRow tag="港股" data={market.HK} indices={market.HK?.indices} />
+    <div style={{ position:"fixed", inset:0, background:c("#040b14"), zIndex:50, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+      {/* Header */}
+      <div style={{
+        background:c("#050c18"),
+        borderBottom:`1px solid ${c("#0a1826")}`,
+        flexShrink:0,
+        paddingTop:"env(safe-area-inset-top, 44px)",
+      }}>
+        <div style={{ padding:"12px 14px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+            <button onClick={onClose} style={{ background:c("#0a1520"), border:`1px solid ${c("#162030")}`, borderRadius:6, color:c("#8aaabb"), padding:"6px 12px", fontSize:12, cursor:"pointer", fontFamily:"DM Mono,monospace", flexShrink:0 }}>← Back</button>
+            <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
+              <ScoreRing score={score} size={48} />
+              <div style={{ minWidth:0 }}>
+                <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
+                  <span style={{ fontSize:24, fontWeight:900, color:c("#fff"), fontFamily:"'Syne',sans-serif" }}>{stock.ticker}</span>
+                  <span style={{ fontSize:16, color:c("#aaccee"), fontFamily:"DM Mono,monospace" }}>${stock.price.toFixed(2)}</span>
+                </div>
+                <div style={{ fontSize:11, padding:"2px 8px", borderRadius:12, background:sig.bg, color:sig.color, fontFamily:"DM Mono,monospace", display:"inline-block", marginTop:2 }}>{sig.label}</div>
+              </div>
+            </div>
+            <div style={{ textAlign:"right", flexShrink:0 }}>
+              <div style={{ fontSize:11, fontWeight:800, color:sell.color, background:sell.color+"18", border:`1px solid ${sell.color}44`, borderRadius:6, padding:"4px 8px", fontFamily:"DM Mono,monospace" }}>{sell.type}</div>
+              {premium && <div style={{ fontSize:14, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace", marginTop:4 }}>${premium.perContract}</div>}
+            </div>
+          </div>
+          {/* Tab bar */}
+          <div style={{ display:"flex", gap:4, background:c("#080f1c"), borderRadius:8, padding:3 }}>
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                flex:1, padding:"6px 4px", borderRadius:6, border:"none", cursor:"pointer",
+                fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
+                background:tab===t.id?c("#1a3555"):"transparent",
+                color:tab===t.id?c("#3b9eff"):c("#3a5060"),
+              }}>{t.label}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab content */}
+      <div style={{ flex:1, overflowY:"auto", padding:"14px" }}>
+
+        {/* ── TAB 1: SIGNAL MATRIX ── */}
+        {tab === "signal" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+
+            {/* Main signal */}
+            <div style={{ padding:"16px", background:sig.bg, borderRadius:10, border:`1px solid ${sig.color}44`, textAlign:"center" }}>
+              <div style={{ fontSize:24, fontWeight:900, color:sig.color, fontFamily:"DM Mono,monospace" }}>{sig.label}</div>
+              <div style={{ fontSize:12, color:sig.color+"aa", fontFamily:"DM Mono,monospace", marginTop:6 }}>{sig.desc}</div>
+            </div>
+
+            {/* Signal matrix grid */}
+            <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>SIGNAL MATRIX — CURRENT STATE</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                {[
+                  ["Price Trend", stock.trend?.toUpperCase(), stock.trend==="bullish"?c("#00d4aa"):stock.trend==="bearish"?c("#ff5c5c"):c("#8aaabb")],
+                  ["ADX Strength", stock.adx>=30?"STRONG":"WEAK", stock.adx>=30?c("#00d4aa"):c("#f5a623")],
+                  ["Vol Anomaly", stock.vol_oi_anomaly?"DETECTED":"NORMAL", stock.vol_oi_anomaly?c("#f5a623"):c("#8aaabb")],
+                  ["Anomaly Type", stock.anomaly_type?.replace("_"," ").toUpperCase()||"—", stock.anomaly_type==="call_heavy"?c("#00d4aa"):stock.anomaly_type==="put_heavy"?c("#ff5c5c"):c("#8aaabb")],
+                  ["Fill Side", stock.fill_side?.toUpperCase()||"—", stock.fill_side==="ask"?c("#f5a623"):stock.fill_side==="bid"?c("#8aaabb"):c("#667788")],
+                  ["P/C Ratio", stock.pc_ratio||"—", stock.pc_ratio>1.2?c("#ff8c42"):stock.pc_ratio<0.8?c("#00d4aa"):c("#8aaabb")],
+                  ["RSI", stock.rsi, stock.rsi>70?c("#ff5c5c"):stock.rsi<30?c("#00d4aa"):c("#8aaabb")],
+                  ["IV Rank", stock.iv_rank, stock.iv_rank>=75?c("#00d4aa"):stock.iv_rank>=50?c("#3b9eff"):c("#f5a623")],
+                ].map(([label, value, color]) => (
+                  <div key={label} style={{ padding:"8px 10px", background:c("#060e1a"), borderRadius:8, border:`1px solid ${c("#162030")}` }}>
+                    <div style={{ fontSize:9, color:c("#445566"), fontFamily:"DM Mono,monospace", marginBottom:3 }}>{label}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color, fontFamily:"DM Mono,monospace" }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Trade setup */}
+            <div style={{ padding:"12px", background:c("#060e1a"), borderRadius:10, border:`1px solid ${c("#162030")}` }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>TRADE SETUP</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                <div style={{ padding:"10px", background:c("#0a1828"), borderRadius:8, border:`1px solid ${c("#1a2e40")}`, textAlign:"center" }}>
+                  <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:4 }}>STRIKE</div>
+                  <div style={{ fontSize:20, fontWeight:800, color:sell.color, fontFamily:"DM Mono,monospace" }}>${strike||"—"}</div>
+                  <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>{premium?.otmPct}% OTM</div>
+                </div>
+                <div style={{ padding:"10px", background:c("#071510"), borderRadius:8, border:`1px solid ${c("#0e2e1e")}`, textAlign:"center" }}>
+                  <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:4 }}>PREMIUM</div>
+                  <div style={{ fontSize:20, fontWeight:800, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>${premium?.perContract||"—"}</div>
+                  <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>
+                    {stock.suggest_expiry
+                      ? `Exp ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · ${stock.suggest_dte} DTE`
+                      : `${stock.suggest_dte} DTE`}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop:8, padding:"10px", background:c("#071510"), borderRadius:8, border:`1px solid ${c("#0e2e1e")}` }}>
+                <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:4 }}>DAILY THETA DECAY</div>
+                <div style={{ fontSize:18, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>~${dailyTheta.toFixed(2)} / day</div>
+                <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:2 }}>Close at 50% profit (~${(premium?.perContract/2||0).toFixed(0)}) after ~{Math.round((stock.suggest_dte||35)/2)} days</div>
+              </div>
+            </div>
+
+            {/* Expected ranges */}
+            <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:8, letterSpacing:"0.1em" }}>EXPECTED MOVE — keep strike outside</div>
+              {[["1 Day",stock.range_1d],["1 Week",stock.range_1w],["1 Month",stock.range_1m]].map(([lbl,r])=>(
+                <div key={lbl} style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                  <span style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>{lbl}</span>
+                  <span style={{ fontSize:12, fontWeight:600, color:c("#ccddee"), fontFamily:"DM Mono,monospace" }}>${r.low} – ${r.high}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 2: SPREAD ANALYSIS ── */}
+        {tab === "spread" && (() => {
+          const sp = stock.spread;
+          const sell = getSellType(stock);
+          const strike = stock.suggest_strike;
+          const sellPremium = stock.suggest_premium_contract;
+          const isBull = stock.trend !== "bearish";
+
+          if (!sp || !sp.protect_strike) return (
+            <div style={{ padding:24, textAlign:"center", color:c("#445566"), fontFamily:"DM Mono,monospace" }}>
+              <div style={{ fontSize:14, marginBottom:8 }}>No Put Wall detected</div>
+              <div style={{ fontSize:11 }}>Spread requires a Put Wall as protection strike. No high-OI put below current price found.</div>
+            </div>
+          );
+
+          const scenarios = [
+            { price: stock.price,          label: "Stock stays here",    pnl: sp.max_profit,          note: "Best case — full premium" },
+            { price: strike,               label: `Stock hits sell $${strike}`, pnl: sp.max_profit,   note: "Still max profit at expiry" },
+            { price: sp.breakeven,         label: `Breakeven $${sp.breakeven}`, pnl: 0,               note: "Zero profit/loss point" },
+            { price: sp.halfway_price,     label: `Halfway $${sp.halfway_price}`, pnl: Math.round(sp.max_profit / 2 * -1), note: "Partial loss zone" },
+            { price: sp.protect_strike,    label: `Protection $${sp.protect_strike}`, pnl: -sp.max_loss, note: "Max loss — spread fully ITM" },
+            { price: sp.protect_strike * 0.8, label: "Big crash", pnl: -sp.max_loss, note: "Still capped at max loss" },
+          ];
+
+          return (
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+
+              {/* Strategy header */}
+              <div style={{ padding:"14px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:12, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>
+                  {isBull ? "BULL PUT SPREAD" : "BEAR CALL SPREAD"} — USING PUT WALL AS PROTECTION
+                </div>
+
+                {/* Sell leg */}
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 12px", background:c("#071510"), borderRadius:8, border:`1px solid ${c("#0e2e1e")}`, marginBottom:6 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>SELL {isBull?"PUT":"CALL"} (collect)</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>${strike}</div>
+                    <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>{stock.suggest_otm_pct}% OTM</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>PREMIUM RECEIVED</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>+${sellPremium}</div>
+                    <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>
+                      {stock.suggest_expiry
+                        ? `Exp ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+                        : `${stock.suggest_dte} DTE`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buy leg */}
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 12px", background:c("#1a0a0a"), borderRadius:8, border:`1px solid ${c("#2e0e0e")}`, marginBottom:10 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>BUY {isBull?"PUT":"CALL"} (protection)</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:c("#ff8c42"), fontFamily:"DM Mono,monospace" }}>${sp.protect_strike}</div>
+                    <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>at Put Wall</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace" }}>PREMIUM PAID</div>
+                    <div style={{ fontSize:20, fontWeight:800, color:c("#ff5c5c"), fontFamily:"DM Mono,monospace" }}>-${sp.protect_contract}</div>
+                    <div style={{ fontSize:10, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>per contract</div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height:1, background:c("#1a2e40"), marginBottom:10 }} />
+
+                {/* Net result */}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                  <div style={{ padding:"10px", background:c("#071510"), borderRadius:8, border:`1px solid ${c("#0e2e1e")}`, textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:3 }}>NET PREMIUM</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>${sp.net_contract}</div>
+                    <div style={{ fontSize:9, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>yours to keep</div>
+                  </div>
+                  <div style={{ padding:"10px", background:c("#1a0a0a"), borderRadius:8, border:`1px solid ${c("#2e0e0e")}`, textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:3 }}>MAX LOSS</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:c("#ff5c5c"), fontFamily:"DM Mono,monospace" }}>-${sp.max_loss}</div>
+                    <div style={{ fontSize:9, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>if fully ITM</div>
+                  </div>
+                  <div style={{ padding:"10px", background:c("#0a1828"), borderRadius:8, border:`1px solid ${c("#1a2e40")}`, textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:3 }}>RETURN/RISK</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:c("#f5a623"), fontFamily:"DM Mono,monospace" }}>{sp.return_on_risk}%</div>
+                    <div style={{ fontSize:9, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>on capital at risk</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakeven */}
+              <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}`, textAlign:"center" }}>
+                <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:4 }}>BREAKEVEN PRICE</div>
+                <div style={{ fontSize:28, fontWeight:900, color:c("#3b9eff"), fontFamily:"DM Mono,monospace" }}>${sp.breakeven}</div>
+                <div style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:4 }}>
+                  Stock must stay above ${sp.breakeven} to profit · currently ${stock.price.toFixed(2)} ({((stock.price - sp.breakeven)/stock.price*100).toFixed(1)}% buffer)
+                </div>
+              </div>
+
+              {/* Scenario table */}
+              <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>SCENARIO ANALYSIS AT EXPIRY</div>
+                {scenarios.map((s, i) => (
+                  <div key={i} style={{
+                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                    padding:"8px 10px", marginBottom:4, borderRadius:8,
+                    background: s.pnl > 0 ? c("#071510") : s.pnl === 0 ? c("#0a1828") : c("#1a0a0a"),
+                    border: `1px solid ${s.pnl > 0 ? c("#0e2e1e") : s.pnl === 0 ? c("#1a3555") : c("#2e0e0e")}`,
+                  }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:c("#ccddee"), fontFamily:"DM Mono,monospace" }}>{s.label}</div>
+                      <div style={{ fontSize:10, color:c("#445566"), fontFamily:"DM Mono,monospace" }}>{s.note}</div>
+                    </div>
+                    <div style={{ fontSize:16, fontWeight:800, fontFamily:"DM Mono,monospace",
+                      color: s.pnl > 0 ? c("#00d4aa") : s.pnl === 0 ? c("#3b9eff") : c("#ff5c5c") }}>
+                      {s.pnl > 0 ? `+$${s.pnl}` : s.pnl === 0 ? "$0" : `-$${Math.abs(s.pnl)}`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* vs Naked comparison */}
+              <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:10, letterSpacing:"0.1em" }}>SPREAD vs NAKED SELL PUT</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  {[
+                    ["Net Premium",    `$${sp.net_contract}`,  `$${sellPremium}`,  false],
+                    ["Max Loss",       `-$${sp.max_loss}`,      "Unlimited",        true],
+                    ["Capital Needed", `-$${sp.max_loss}`,      `~$${Math.round(strike*100*0.2)}`, true],
+                    ["Return/Risk",    `${sp.return_on_risk}%`, `${(sellPremium/Math.round(strike*100*0.2)*100).toFixed(1)}%`, false],
+                  ].map(([label, spread, naked, spreadBetter]) => (
+                    <div key={label} style={{ gridColumn:"1/-1", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:`1px solid ${c("#0e1c28")}` }}>
+                      <span style={{ fontSize:11, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", flex:1 }}>{label}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace", flex:1, textAlign:"center" }}>
+                        Spread: {spread}
+                      </span>
+                      <span style={{ fontSize:12, fontWeight:700, color:c("#ff8c42"), fontFamily:"DM Mono,monospace", flex:1, textAlign:"right" }}>
+                        Naked: {naked}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommendation */}
+              <div style={{ padding:"12px", background: sp.return_on_risk > 50 ? c("#071510") : c("#0a1828"), borderRadius:10, border:`1px solid ${sp.return_on_risk > 50 ? c("#0e2e1e") : c("#1a2e40")}` }}>
+                <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:6 }}>RECOMMENDATION</div>
+                <div style={{ fontSize:12, color:c("#ccddee"), fontFamily:"DM Mono,monospace", lineHeight:1.7 }}>
+                  {sp.return_on_risk > 80
+                    ? `Spread is highly efficient. ${sp.return_on_risk}% return on risk with capped downside. Recommended over naked sell.`
+                    : sp.return_on_risk > 40
+                    ? `Decent spread setup. Consider spread if account is small or stock is volatile. Naked sell if you want more premium.`
+                    : `Put Wall too close to sell strike — spread premium is low. Naked sell may be better if you accept the risk.`}
+                </div>
+                <div style={{ fontSize:11, color:c("#00d4aa"), fontFamily:"DM Mono,monospace", marginTop:8 }}>
+                  Close at 50% profit = ${Math.round(sp.net_contract/2)} after ~{Math.round((stock.suggest_dte||35)/2)} days
+                  {stock.suggest_expiry ? ` · Expiry ${new Date(stock.suggest_expiry).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}` : ""}
+                </div>
+              </div>
+
+            </div>
+          );
+        })()}
+        {tab === "voloi" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+
+            {/* Vol anomaly summary */}
+            <div style={{ padding:"14px", background: stock.vol_oi_anomaly?c("#2a1a06"):c("#0a1828"), borderRadius:10, border:`1px solid ${stock.vol_oi_anomaly?c("#f5a623"):c("#1a2e40")}` }}>
+              <div style={{ fontSize:14, fontWeight:700, color:stock.vol_oi_anomaly?c("#f5a623"):c("#8aaabb"), fontFamily:"DM Mono,monospace", marginBottom:4 }}>
+                {stock.vol_oi_anomaly ? "⚡ Volume Anomaly Detected" : "○ No Volume Anomaly"}
+              </div>
+              <div style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>
+                {stock.vol_oi_anomaly
+                  ? `${stock.anomaly_type?.replace("_"," ")} — unusual activity today. Someone is opening new positions.`
+                  : "Today's volume is within normal range. No smart money signal detected."}
+              </div>
+            </div>
+
+            {/* Fill side */}
+            <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:8 }}>BID/ASK FILL ANALYSIS</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                {[
+                  ["Filled @Ask", "Urgent buyer\nNew position\nBullish signal", stock.fill_side==="ask"],
+                  ["Filled @Mid", "Normal fill\nNo urgency\nNeutral", stock.fill_side==="mid"],
+                  ["Filled @Bid", "Closing position\nSeller dominant\nBearish signal", stock.fill_side==="bid"],
+                ].map(([label, desc, active]) => (
+                  <div key={label} style={{ padding:"8px", background:active?c("#1a3020"):c("#060e1a"), borderRadius:8, border:`1px solid ${active?c("#00d4aa"):c("#162030")}`, textAlign:"center" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:active?c("#00d4aa"):c("#445566"), fontFamily:"DM Mono,monospace", marginBottom:4 }}>{label}</div>
+                    {desc.split("\n").map((d,i) => (
+                      <div key={i} style={{ fontSize:9, color:active?c("#8aaabb"):c("#334455"), fontFamily:"DM Mono,monospace" }}>{d}</div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* P/C Ratio */}
+            <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:8 }}>PUT/CALL RATIO AT EXPIRY</div>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ fontSize:36, fontWeight:900, color:stock.pc_ratio>1.2?c("#ff8c42"):stock.pc_ratio<0.8?c("#00d4aa"):c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>
+                  {stock.pc_ratio||"—"}
+                </div>
+                <div>
+                  <div style={{ fontSize:12, color:c("#8aaabb"), fontFamily:"DM Mono,monospace" }}>
+                    {stock.pc_ratio>1.5?"Heavily bearish — lots of put buying":
+                     stock.pc_ratio>1.2?"Bearish lean — more puts than calls":
+                     stock.pc_ratio<0.6?"Heavily bullish — lots of call buying":
+                     stock.pc_ratio<0.8?"Bullish lean — more calls than puts":
+                     "Balanced — neutral sentiment"}
+                  </div>
+                  <div style={{ fontSize:10, color:c("#445566"), fontFamily:"DM Mono,monospace", marginTop:4 }}>
+                    &gt;1.2 = bearish · &lt;0.8 = bullish · ~1.0 = neutral
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vol > OI anomaly strikes */}
+            {stock.vol_anomaly_strikes?.length > 0 && (
+              <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:8 }}>⚡ VOL &gt; OI STRIKES (new positions being opened)</div>
+                {stock.vol_anomaly_strikes.map((s,i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${c("#0e1c28")}` }}>
+                    <div>
+                      <span style={{ fontSize:12, fontWeight:700, color:s.type==="call"?c("#00d4aa"):c("#ff8c42"), fontFamily:"DM Mono,monospace" }}>
+                        ${s.strike} {s.type.toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:11, color:c("#f5a623"), fontFamily:"DM Mono,monospace" }}>×{s.vol_oi_ratio} Vol/OI</div>
+                      <div style={{ fontSize:10, color:c("#445566"), fontFamily:"DM Mono,monospace" }}>Vol:{s.volume.toLocaleString()} OI:{s.oi.toLocaleString()}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB 3: MAX PAIN & OI WALLS ── */}
+        {tab === "maxpain" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+
+            {/* Max pain */}
+            <div style={{ padding:"16px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}`, textAlign:"center" }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:6 }}>MAX PAIN PRICE ({stock.suggest_dte} DTE expiry)</div>
+              <div style={{ fontSize:40, fontWeight:900, color:c("#f5a623"), fontFamily:"DM Mono,monospace" }}>${stock.max_pain||"—"}</div>
+              <div style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginTop:6 }}>
+                {stock.max_pain && stock.price > stock.max_pain
+                  ? `Stock is $${(stock.price-stock.max_pain).toFixed(1)} ABOVE max pain → bearish pull expected`
+                  : stock.max_pain && stock.price < stock.max_pain
+                  ? `Stock is $${(stock.max_pain-stock.price).toFixed(1)} BELOW max pain → bullish pull expected`
+                  : "Price near max pain — low directional pull"}
+              </div>
+            </div>
+
+            {/* Price map */}
+            <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+              <div style={{ fontSize:10, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", marginBottom:10 }}>PRICE MAP — OI WALLS & LEVELS</div>
+
+              {/* Visual price ladder */}
+              <div style={{ position:"relative", padding:"0 8px" }}>
+                {[
+                  { label:"CALL WALL",     price:stock.call_wall,       color:c("#ff8c42"), desc:"Resistance — call writers defend here" },
+                  { label:"CURRENT PRICE", price:stock.price,           color:c("#3b9eff"), desc:"Where stock trades now", highlight:true },
+                  { label:"MAX PAIN",      price:stock.max_pain,        color:c("#f5a623"), desc:"Option writers' target price" },
+                  { label:"YOUR STRIKE",   price:stock.suggest_strike,  color:c("#00d4aa"), desc:"Suggested sell strike" },
+                  { label:"PUT WALL",      price:stock.put_wall,        color:c("#00d4aa"), desc:"Support — put writers defend here" },
+                ].filter(l => l.price).sort((a,b) => b.price-a.price).map((level,i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8,
+                    padding:"8px 10px", background:level.highlight?c("#0d1f35"):c("#060e1a"),
+                    borderRadius:8, border:`1px solid ${level.highlight?c("#3b9eff"):c("#162030")}` }}>
+                    <div style={{ width:3, height:36, background:level.color, borderRadius:2, flexShrink:0 }} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:9, color:c("#445566"), fontFamily:"DM Mono,monospace" }}>{level.label}</div>
+                      <div style={{ fontSize:16, fontWeight:700, color:level.color, fontFamily:"DM Mono,monospace" }}>${level.price}</div>
+                      <div style={{ fontSize:10, color:c("#556677"), fontFamily:"DM Mono,monospace" }}>{level.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top OI strikes */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {/* Top call OI */}
+              <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:10, color:c("#ff8c42"), fontFamily:"DM Mono,monospace", marginBottom:8 }}>TOP CALL OI</div>
+                {stock.oi_top_calls?.slice(0,3).map((c,i) => (
+                  <div key={i} style={{ marginBottom:6 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between" }}>
+                      <span style={{ fontSize:13, fontWeight:700, color:c("#ff8c42"), fontFamily:"DM Mono,monospace" }}>${c.strike}</span>
+                      <span style={{ fontSize:10, color:c("#445566"), fontFamily:"DM Mono,monospace" }}>{(c.oi/1000).toFixed(0)}K OI</span>
+                    </div>
+                    <div style={{ height:4, background:c("#162030"), borderRadius:2, marginTop:3 }}>
+                      <div style={{ width:`${Math.min(100, c.oi / (stock.oi_top_calls[0]?.oi||1) * 100)}%`, height:"100%", background:c("#ff8c42"), borderRadius:2 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Top put OI */}
+              <div style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:10, color:c("#00d4aa"), fontFamily:"DM Mono,monospace", marginBottom:8 }}>TOP PUT OI</div>
+                {stock.oi_top_puts?.slice(0,3).map((p,i) => (
+                  <div key={i} style={{ marginBottom:6 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between" }}>
+                      <span style={{ fontSize:13, fontWeight:700, color:c("#00d4aa"), fontFamily:"DM Mono,monospace" }}>${p.strike}</span>
+                      <span style={{ fontSize:10, color:c("#445566"), fontFamily:"DM Mono,monospace" }}>{(p.oi/1000).toFixed(0)}K OI</span>
+                    </div>
+                    <div style={{ height:4, background:c("#162030"), borderRadius:2, marginTop:3 }}>
+                      <div style={{ width:`${Math.min(100, p.oi / (stock.oi_top_puts[0]?.oi||1) * 100)}%`, height:"100%", background:c("#00d4aa"), borderRadius:2 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 4: GUIDE ── */}
+        {tab === "guide" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+
+            {[
+              {
+                title:"📊 Signal Matrix",
+                items:[
+                  ["STRONG BULL","↑Price + Call Vol>OI + filled @Ask → smart money buying calls aggressively"],
+                  ["BULL","↑Price + unusual call volume → directional bias up"],
+                  ["STRONG BEAR","↓Price + Put Vol>OI + filled @Ask → smart money buying puts aggressively"],
+                  ["BEAR","↓Price + unusual put volume → directional bias down"],
+                  ["VOLATILE","High vol on both calls and puts → event play, big move expected"],
+                  ["NEUTRAL","No unusual activity, trade IV rank only"],
+                ]
+              },
+              {
+                title:"⚡ Vol > OI (Most Important Signal)",
+                items:[
+                  ["What it means","Today's volume EXCEEDS existing open interest → someone opened a brand new large position today"],
+                  ["Why it matters","OI builds over days/weeks. Vol>OI in one day = urgent conviction trade by smart money"],
+                  ["Call Vol>OI","Bullish — someone expects price to rise, buying calls urgently"],
+                  ["Put Vol>OI","Bearish — someone expects price to fall, buying puts urgently"],
+                  ["Combined with @Ask fill","Strongest signal — paid full ask price = very urgent, not waiting for better fill"],
+                ]
+              },
+              {
+                title:"🧱 OI Walls & Max Pain",
+                items:[
+                  ["Call Wall","High OI call strike above price = resistance. Market makers hedged here, will sell stock to hedge if price approaches"],
+                  ["Put Wall","High OI put strike below price = support. Market makers buy stock to hedge puts if price falls here"],
+                  ["Max Pain","Price where most options expire worthless. On expiry day price often drifts toward max pain"],
+                  ["Your strike vs max pain","If your put strike is BELOW max pain = safer. Stock pulled toward max pain = away from your strike"],
+                ]
+              },
+              {
+                title:"❌ 4 Common Mistakes",
+                items:[
+                  ["Selling high IV blindly","Always check Vol/OI — if put Vol>OI with @Ask fills, market knows something. Avoid selling puts."],
+                  ["Ignoring P/C ratio","P/C > 1.5 means heavy put buying. Even if trend is bullish, wait for ratio to normalize."],
+                  ["Strike below put wall","Put wall = strong support. Strike ABOVE put wall is safer — stock defended there."],
+                  ["Holding to expiry","Always close at 50% profit. Last 2 weeks have max gamma risk — small move = big loss."],
+                ]
+              },
+            ].map(section => (
+              <div key={section.title} style={{ padding:"12px", background:c("#0a1828"), borderRadius:10, border:`1px solid ${c("#1a2e40")}` }}>
+                <div style={{ fontSize:13, fontWeight:700, color:c("#3b9eff"), fontFamily:"'Syne',sans-serif", marginBottom:10 }}>{section.title}</div>
+                {section.items.map(([term, desc]) => (
+                  <div key={term} style={{ marginBottom:8, paddingBottom:8, borderBottom:`1px solid ${c("#0e1c28")}` }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:c("#ccddee"), fontFamily:"DM Mono,monospace", marginBottom:2 }}>{term}</div>
+                    <div style={{ fontSize:11, color:c("#7a9ab8"), fontFamily:"DM Mono,monospace", lineHeight:1.5 }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
 
-export default function RadarView({ isMobile }) {
-  const [radar, setRadar]     = useState(null);
-  const [quotes, setQuotes]   = useState({});
-  const [detail, setDetail]   = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [filterScen, setFilterScen] = useState("all");
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+export default function App() {
+  const [view, setView]               = useState("premium");
+  const [data, setData]               = useState(null);
+  const [selected, setSelected]       = useState(null);
+  const [detailStock, setDetailStock] = useState(null);
+  const [light, setLightState] = useState(isLight());
+  setLight(light);   // module flag，c() 靠佢決定查唔查表
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [filterScore, setFilterScore] = useState(0);
+  const [filterCat, setFilterCat]     = useState("all");
+  const [isMobile, setIsMobile]       = useState(window.innerWidth < 768);
 
-  const loadRadar = useCallback(async () => {
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+
+  const loadResults = useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const r = await fetch(`${RADAR_URL}?t=${Date.now()}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      setRadar(await r.json());
-      setError(null);
-    } catch { setError("No radar data yet."); }
+      const res  = await fetch(`${RESULTS_URL}?t=${Date.now()}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json);
+      if (json.results?.length > 0) {
+        const sorted = [...json.results].sort((a,b) => calcPremiumScore(b)-calcPremiumScore(a));
+        setSelected(sorted[0]);
+      }
+    } catch (e) { setError("No scan data yet."); }
     finally { setLoading(false); }
   }, []);
 
-  const loadQuotes = useCallback(async () => {
-    try {
-      const r = await fetch(`${QUOTES_URL}?t=${Date.now()}`);
-      if (r.ok) { const j = await r.json(); setQuotes(j.quotes || {}); }
-    } catch { /* quotes are optional — cards still render on close price */ }
-  }, []);
+  useEffect(() => { loadResults(); }, [loadResults]);
+  useEffect(() => { const t = setInterval(loadResults, 5*60*1000); return () => clearInterval(t); }, [loadResults]);
 
-  useEffect(() => { loadRadar(); loadQuotes(); }, [loadRadar, loadQuotes]);
-  // radar itself changes once a day; quotes refresh often
-  useEffect(() => {
-    const t = setInterval(loadQuotes, 5 * 60 * 1000);   // quotes.json refreshes ~15 min server-side
-    return () => clearInterval(t);
-  }, [loadQuotes]);
+  const allStocks  = data?.results || [];
+  const categories = ["all", ...new Set(allStocks.map(s => s.category).filter(Boolean))];
+  const stocks     = allStocks
+    .map(s => ({ ...s, _score: calcPremiumScore(s) }))
+    .filter(s => s._score >= filterScore)
+    .filter(s => filterCat==="all" || s.category===filterCat)
+    .sort((a,b) => b._score - a._score);
 
-  const cards = (radar?.cards || []).filter(c => filterScen === "all" || c.scen === filterScen);
-
-  // ⚠️ ALERTS — anything that broke its stop / UT Bot floats to the top.
-  // These are positions you may already hold: most urgent info, so it goes first.
-  const alerts = cards.filter(c => {
-    const d = derive(c, quotes[c.ticker]);
-    return d.stopBroken || d.utBroken;
-  });
-  const alertSet = new Set(alerts.map(c => c.ticker));
-  const rest = cards.filter(c => !alertSet.has(c.ticker));
-  const grouped = ["S1", "S2", "S3"]
-    .map(s => [s, rest.filter(c => c.scen === s)])
-    .filter(([, a]) => a.length);
-
-  if (loading) return (
-    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: 34, height: 34, border: `3px solid ${c("#0e1c28")}`, borderTopColor: c("#3b9eff"),
-                    borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-    </div>
-  );
-
-  if (error) return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-                  justifyContent: "center", gap: 12, padding: 24 }}>
-      <div style={{ fontSize: 40 }}>📡</div>
-      <div style={{ color: c("#3b9eff"), fontFamily: syne, fontSize: 16, fontWeight: 700 }}>No radar data yet</div>
-      <div style={{ color: c("#8aaabb"), fontFamily: mono, fontSize: 11, textAlign: "center", lineHeight: 1.8 }}>
-        GitHub Actions → Turnaround Radar → Run workflow
-      </div>
-    </div>
-  );
-
-  const sc = radar.scen_counts || {};
+  const sellNow  = stocks.filter(s => s._score >= 80).length;
+  const avgIV    = stocks.length ? (stocks.reduce((a,s)=>a+s.iv_rank,0)/stocks.length).toFixed(0) : 0;
+  const topPicks = stocks.slice(0,3).map(s=>s.ticker).join(", ");
+  const anomalies = stocks.filter(s => s.vol_oi_anomaly).length;
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "10px 10px 20px" }}>
-      {detail && <RadarDetail card={detail} quote={quotes[detail.ticker]} onClose={() => setDetail(null)} />}
+    <div style={{ minHeight:"100vh", background:c("#040b14"), color:c("#ddeeff"), fontFamily:"'Syne',sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", maxWidth:"100vw" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{overflow-x:hidden;max-width:100vw;background:${c("#040b14")}}
+        ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:${c("#040b14")}} ::-webkit-scrollbar-thumb{background:${c("#162030")};border-radius:3px}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        /* iPhone safe area support */
+        :root {
+          --sat: env(safe-area-inset-top, 44px);
+          --sab: env(safe-area-inset-bottom, 0px);
+          --sal: env(safe-area-inset-left, 0px);
+          --sar: env(safe-area-inset-right, 0px);
+        }
+      `}</style>
 
-      {/* market regime bar */}
-      <MarketBar market={radar.market} />
+      {/* Detail page overlay */}
+      {detailStock && <DetailPage stock={detailStock} onClose={() => setDetailStock(null)} />}
 
-      {/* funnel summary */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
-        {[["all", `全部 ${radar.total_cards}`, c("#3b9eff")],
-          ["S1", `S1 ${sc.S1 || 0}`, SCEN_COLOR.S1.c],
-          ["S2", `S2 ${sc.S2 || 0}`, SCEN_COLOR.S2.c],
-          ["S3", `S3 ${sc.S3 || 0}`, SCEN_COLOR.S3.c]].map(([id, label, color]) => (
-          <button key={id} onClick={() => setFilterScen(id)} style={{
-            padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: mono,
-            fontSize: 10, fontWeight: 700,
-            border: `1px solid ${filterScen === id ? color : c("#1a2e40")}`,
-            background: filterScen === id ? `${color}22` : c("#080f1c"),
-            color: filterScen === id ? color : c("#5a7a90"),
-          }}>{label}</button>
-        ))}
-        <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 9, color: c("#5a7a90"), fontFamily: mono }}>
-          Universe {radar.universe} · 收市 {radar.scanned_at ? new Date(radar.scanned_at).toLocaleDateString() : "—"}
-        </span>
+      {/* TOPBAR */}
+      <div style={{
+        background:c("#050c18"),
+        borderBottom:`1px solid ${c("#0a1826")}`,
+        flexShrink:0,
+        overflow:"hidden",
+        paddingTop:"env(safe-area-inset-top, 44px)",
+      }}>
+        <div style={{ height:52, display:"flex", alignItems:"center", padding:"0 10px", gap:8 }}>
+        <div style={{ width:28, height:28, background:`linear-gradient(135deg,${c("#0d4080")},${c("#00b894")})`, borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>⚡</div>
+        {!isMobile && <span style={{ fontSize:14, fontWeight:900, letterSpacing:"-0.5px", background:`linear-gradient(90deg,${c("#3b9eff")},${c("#00d4aa")})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>OptionScope</span>}
+        <div style={{ display:"flex", gap:3, background:c("#080f1c"), borderRadius:8, padding:3 }}>
+          {[["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"],["band","🎯","🎯 Band"]].map(([id,icon,label])=>(
+            <button key={id} onClick={()=>setView(id)} style={{
+              padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer",
+              fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
+              background:view===id?c("#1a3555"):"transparent", color:view===id?c("#3b9eff"):c("#3a5060"),
+            }}>{isMobile?icon:label}</button>
+          ))}
+        </div>
+        <div style={{ flex:1 }} />
+        <button onClick={()=>setLightState(v=>!v)} title="切換深／淺色" style={{
+          background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6,
+          color:c("#8aaabb"), padding:"4px 8px", fontSize:12, cursor:"pointer",
+          flexShrink:0, lineHeight:1,
+        }}>{light?"🌙":"☀"}</button>
+        {STANDALONE_VIEWS.indexOf(view)<0 && <>
+        <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6, color:c("#667788"), padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer", maxWidth:90 }}>
+          {categories.map(c=><option key={c} value={c}>{c==="all"?"All":CATEGORY_ICON[c]+" "+c.replace("_"," ")}</option>)}
+        </select>
+        <select value={filterScore} onChange={e=>setFilterScore(+e.target.value)} style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6, color:c("#667788"), padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer" }}>
+          <option value={0}>All</option>
+          <option value={60}>≥60</option>
+          <option value={80}>≥80</option>
+        </select>
+        <button onClick={loadResults} style={{ padding:"5px 10px", background:c("#0d3060"), border:"none", borderRadius:7, color:c("#88bbee"), fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif", cursor:"pointer", flexShrink:0 }}>↻</button>
+        </>}
+        </div>
       </div>
 
-      {alerts.length > 0 && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: c("#ff5c5c"), fontFamily: mono,
-                        letterSpacing: 1, marginBottom: 6, paddingLeft: 2 }}>
-            ⚠️ 警報 · {alerts.length} 隻 — 已穿止蝕或 UT Bot 止損
-          </div>
-          <div style={{ display: "grid", gap: 8,
-                        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(320px,1fr))" }}>
-            {alerts.map(c => (
-              <RadarListCard key={c.ticker} card={c} quote={quotes[c.ticker]} onClick={() => setDetail(c)} />
-            ))}
-          </div>
+      {/* SUMMARY BAR — OptionScope scanner only */}
+      {STANDALONE_VIEWS.indexOf(view)<0 && !loading && !error && data && (
+        <div style={{ background:c("#050c18"), borderBottom:`1px solid ${c("#0a1826")}`, padding:"5px 12px", display:"flex", gap:14, alignItems:"center", flexShrink:0, flexWrap:"wrap" }}>
+          <span style={{ fontSize:11, fontFamily:"DM Mono,monospace" }}>
+            <span style={{ color:c("#8aaabb") }}>SELL NOW </span>
+            <span style={{ color:c("#00d4aa"), fontWeight:700 }}>{sellNow}</span>
+          </span>
+          <span style={{ fontSize:11, fontFamily:"DM Mono,monospace" }}>
+            <span style={{ color:c("#8aaabb") }}>AVG IV </span>
+            <span style={{ color:c("#3b9eff"), fontWeight:700 }}>{avgIV}</span>
+          </span>
+          {anomalies > 0 && (
+            <span style={{ fontSize:11, fontFamily:"DM Mono,monospace" }}>
+              <span style={{ color:c("#f5a623") }}>⚡ {anomalies} Vol Anomalies</span>
+            </span>
+          )}
+          {!isMobile && <span style={{ fontSize:11, fontFamily:"DM Mono,monospace" }}>
+            <span style={{ color:c("#8aaabb") }}>TOP </span>
+            <span style={{ color:c("#f5a623"), fontWeight:700 }}>{topPicks}</span>
+          </span>}
+          <span style={{ fontSize:10, color:c("#6a8898"), fontFamily:"DM Mono,monospace", marginLeft:"auto" }}>
+            {data.scanned_at ? `Scanned ${new Date(data.scanned_at).toLocaleString()}` : ""}
+          </span>
         </div>
       )}
 
-      {grouped.length === 0 && alerts.length === 0 && (
-        <div style={{ color: c("#5a7a90"), fontFamily: mono, fontSize: 12, textAlign: "center", padding: 30 }}>
-          今日無符合條件嘅股票
-        </div>
-      )}
+      {/* BODY */}
+      <div style={{ flex:1, display:"flex", overflow:"hidden", position:"relative" }}>
 
-      {grouped.map(([s, list]) => (
-        <div key={s} style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: SCEN_COLOR[s].c, fontFamily: mono,
-                        letterSpacing: 1, marginBottom: 6, paddingLeft: 2 }}>
-            {SCEN_COLOR[s].label} · {list.length} 隻 · 倉位 {radar.scen_meta?.[s]?.pos}
+        {STANDALONE_VIEWS.indexOf(view)<0 && loading && (
+          <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:c("#040b14"), zIndex:30, gap:14 }}>
+            <div style={{ width:34, height:34, border:`3px solid ${c("#0e1c28")}`, borderTopColor:c("#3b9eff"), borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+            <div style={{ color:c("#8aaabb"), fontFamily:"DM Mono,monospace", fontSize:12 }}>Loading scan results…</div>
           </div>
-          <div style={{ display: "grid", gap: 8,
-                        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(320px,1fr))" }}>
-            {list.map(c => (
-              <RadarListCard key={c.ticker} card={c} quote={quotes[c.ticker]} onClick={() => setDetail(c)} />
-            ))}
-          </div>
-        </div>
-      ))}
+        )}
 
-      <div style={{ fontSize: 9, color: c("#3a5060"), fontFamily: mono, textAlign: "center",
-                    marginTop: 14, lineHeight: 1.6 }}>
-        指標為 closed candle 收市值 · 價格及距離每 15 分鐘更新<br />
-        🔴 已穿止蝕 · 🟢 已到買入區 · 🟠 追高（距止蝕 &gt;15%，risk/reward 差）
+        {STANDALONE_VIEWS.indexOf(view)<0 && !loading && error && (
+          <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:14, padding:24 }}>
+            <div style={{ fontSize:40 }}>📡</div>
+            <div style={{ color:c("#3b9eff"), fontFamily:"'Syne',sans-serif", fontSize:16, fontWeight:700 }}>No scan data yet</div>
+            <div style={{ color:c("#8aaabb"), fontFamily:"DM Mono,monospace", fontSize:11, textAlign:"center", maxWidth:300, lineHeight:1.8 }}>
+              GitHub Actions → OptionScope Scanner → Run workflow
+            </div>
+            <button onClick={loadResults} style={{ padding:"8px 20px", background:c("#0d3060"), border:"none", borderRadius:8, color:c("#3b9eff"), fontSize:12, fontWeight:700, fontFamily:"'Syne',sans-serif", cursor:"pointer" }}>Try Again</button>
+          </div>
+        )}
+
+        <ViewBoundary viewKey={view}>
+
+        {/* PREMIUM VIEW */}
+        {!loading && !error && view==="premium" && (
+          <div style={{ flex:1, overflowY:"auto", overflowX:"hidden", padding:"12px 10px" }}>
+            <div style={{ fontSize:11, color:c("#8aaabb"), fontFamily:"DM Mono,monospace", marginBottom:10 }}>
+              {stocks.length} stocks · tap any card for full analysis
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(300px,1fr))", gap:10, width:"100%" }}>
+              {stocks.map((s,i) => (
+                <div key={s.ticker} style={{ animation:`fadeUp 0.3s ease ${i*0.03}s both`, minWidth:0 }}>
+                  <PremiumCard
+                    stock={s}
+                    isSelected={selected?.ticker===s.ticker}
+                    onClick={() => { setSelected(s); setDetailStock(s); }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* COMPASS VIEW */}
+        {!loading && !error && view==="compass" && (
+          <div style={{ flex:1, padding:14, overflowY:"auto" }}>
+            <div style={{ fontSize:13, fontWeight:700, color:c("#667788"), textAlign:"center", marginBottom:10, fontFamily:"'Syne',sans-serif" }}>Premium Opportunity Compass</div>
+            <ResponsiveContainer width="100%" height={360}>
+              <ScatterChart margin={{ top:20, right:20, bottom:40, left:10 }}>
+                <CartesianGrid stroke={c("#0a1826")} strokeDasharray="4 4" />
+                <XAxis dataKey="risk_reversal" type="number" domain={[0,100]} stroke={c("#0e1c28")}
+                  tick={{ fill:c("#3a5060"), fontSize:10, fontFamily:"DM Mono,monospace" }}
+                  label={{ value:"Bullish ← Trend → Bearish", position:"insideBottom", offset:-24, fill:c("#3a5060"), fontSize:10 }} />
+                <YAxis dataKey="iv_rank" type="number" domain={[0,100]} stroke={c("#0e1c28")}
+                  tick={{ fill:c("#3a5060"), fontSize:10, fontFamily:"DM Mono,monospace" }}
+                  label={{ value:"IV Rank", angle:-90, position:"insideLeft", fill:c("#3a5060"), fontSize:10 }} />
+                <ReferenceLine x={50} stroke={c("#0e1c28")} strokeWidth={1.5} />
+                <ReferenceLine y={50} stroke={c("#0e1c28")} strokeWidth={1.5} />
+                <Tooltip content={({ payload }) => {
+                  if (!payload?.length) return null;
+                  const d = payload[0].payload;
+                  const sc = calcPremiumScore(d);
+                  const sig = SIGNAL_CONFIG[d.signal_matrix]||SIGNAL_CONFIG.NEUTRAL;
+                  return (
+                    <div style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:8, padding:"10px 14px", fontFamily:"DM Mono,monospace" }}>
+                      <div style={{ color:c("#ddeeff"), fontWeight:700 }}>{d.ticker} · ${d.price}</div>
+                      <div style={{ color:c("#3a5060"), fontSize:11, marginTop:4 }}>IV Rank: <span style={{ color:getScoreColor(sc) }}>{d.iv_rank}</span></div>
+                      <div style={{ color:sig.color, fontSize:11 }}>{sig.label}</div>
+                      {d.vol_oi_anomaly && <div style={{ color:c("#f5a623"), fontSize:11 }}>⚡ Vol Anomaly</div>}
+                    </div>
+                  );
+                }} />
+                <Scatter data={stocks} shape={(props) => {
+                  const { cx, cy, payload } = props;
+                  const sel = selected?.ticker===payload.ticker;
+                  const sc  = calcPremiumScore(payload);
+                  const c   = getScoreColor(sc);
+                  const hasAnomaly = payload.vol_oi_anomaly;
+                  return (
+                    <g onClick={() => { setSelected(payload); setDetailStock(payload); }} style={{ cursor:"pointer" }}>
+                      {hasAnomaly && <circle cx={cx} cy={cy} r={sel?24:17} fill={c("#f5a623")} fillOpacity={0.15} />}
+                      <circle cx={cx} cy={cy} r={sel?20:12} fill={c} fillOpacity={0.12} />
+                      <circle cx={cx} cy={cy} r={sel?10:6}  fill={c} fillOpacity={sel?1:0.75} />
+                      <text x={cx} y={cy-14} textAnchor="middle" fill={c("#a8bece")} fontSize={10} fontFamily="DM Mono,monospace" fontWeight={600}>{payload.ticker}</text>
+                    </g>
+                  );
+                }} />
+              </ScatterChart>
+            </ResponsiveContainer>
+            <div style={{ display:"flex", justifyContent:"center", gap:14, marginTop:8, flexWrap:"wrap" }}>
+              {[["≥80 Sell Now",c("#00d4aa")],["≥60 Good",c("#3b9eff")],["≥40 Fair",c("#f5a623")],["<40 Avoid",c("#ff5c5c")],["⚡ Vol Anomaly",c("#f5a623")]].map(([lbl,c])=>(
+                <div key={lbl} style={{ display:"flex", alignItems:"center", gap:4 }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:c }} />
+                  <span style={{ fontSize:10, color:c, fontFamily:"DM Mono,monospace" }}>{lbl}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* RADAR VIEW — self-contained: own data fetch, loading & error states */}
+        {view==="radar" && <RadarView isMobile={isMobile} />}
+
+        {/* BAND VIEW — self-contained too (band.json + band_quotes.json) */}
+        {view==="band" && <BandView isMobile={isMobile} light={light} />}
+
+        </ViewBoundary>
+
+      </div>
+
+      {/* STATUS BAR */}
+      <div style={{ height:24, background:c("#030910"), borderTop:`1px solid ${c("#08141e")}`, display:"flex", alignItems:"center", padding:"0 14px", gap:16, flexShrink:0 }}>
+        <span style={{ fontSize:10, color:(STANDALONE_VIEWS.indexOf(view)>=0||data)?c("#00d4aa"):c("#2e4055"), fontFamily:"DM Mono,monospace" }}>
+          {view==="radar"
+            ? "● Turnaround Radar · 報價 1min 刷新"
+            : view==="band"
+            ? "● Triple Band · 美股 big only · 報價 1min 刷新"
+            : (data?`● ${data.total_results} stocks · auto-refresh 5min`:"○ Waiting")}
+        </span>
+        <span style={{ fontSize:10, color:c("#6a8898"), fontFamily:"DM Mono,monospace", marginLeft:"auto" }}>{new Date().toLocaleTimeString()}</span>
       </div>
     </div>
   );
