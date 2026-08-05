@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, BarChart, Bar } from "recharts";
 import RadarView from "./Radar";
 import BandView from "./Band";
@@ -7,6 +7,39 @@ import { c, setLight, isLight } from "./theme";
 // 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
 // filter、summary bar、loading spinner 都唔應該喺呢啲頁出現。
 const STANDALONE_VIEWS = ["radar", "band"];
+
+/**
+ * 一個 view 掛咗唔應該拖冧成個 app —— 之前 Compass 崩嗰陣，整棵 React tree
+ * unmount，畫面淨返 body 底色（全黑、乜掣都撳唔到），連錯誤都睇唔到。
+ * 而家至少會印低係邊個 view、咩錯。
+ */
+class ViewBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { console.error("[view crash]", err, info); }
+  componentDidUpdate(prev) {
+    if (prev.viewKey !== this.props.viewKey && this.state.err) this.setState({ err: null });
+  }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div style={{ padding: 20, fontFamily: "DM Mono,monospace", fontSize: 12,
+                    color: c("#ff5c5c"), lineHeight: 1.7 }}>
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>
+          ⚠ 「{this.props.viewKey}」呢一頁掛咗
+        </div>
+        <div style={{ color: c("#8aaabb"), whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          {String(this.state.err?.message || this.state.err)}
+        </div>
+        <button onClick={() => this.setState({ err: null })} style={{
+          marginTop: 12, background: c("#0a1828"), border: `1px solid ${c("#1a2e40")}`,
+          borderRadius: 6, color: c("#8aaabb"), padding: "6px 12px", fontSize: 12,
+          cursor: "pointer", fontFamily: "DM Mono,monospace",
+        }}>再試</button>
+      </div>
+    );
+  }
+}
 
 const RESULTS_URL = process.env.PUBLIC_URL ? `${process.env.PUBLIC_URL}/results.json` : "/results.json";
 
@@ -112,7 +145,7 @@ function PremiumCard({ stock, isSelected, onClick }) {
         <div style={{ flex:1, minWidth:0, overflow:"hidden" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:4 }}>
             <div style={{ display:"flex", alignItems:"baseline", gap:5, minWidth:0 }}>
-              <span style={{ fontSize:20, fontWeight:900, color:"#fff", fontFamily:"'Syne',sans-serif", flexShrink:0 }}>{stock.ticker}</span>
+              <span style={{ fontSize:20, fontWeight:900, color:c("#fff"), fontFamily:"'Syne',sans-serif", flexShrink:0 }}>{stock.ticker}</span>
               <span style={{ fontSize:13, fontWeight:700, color:c("#aaccee"), fontFamily:"DM Mono,monospace", flexShrink:0 }}>${stock.price.toFixed(2)}</span>
             </div>
             <span style={{ fontSize:10, fontWeight:800, color:sell.color, fontFamily:"DM Mono,monospace",
@@ -254,7 +287,7 @@ function DetailPage({ stock, onClose }) {
               <ScoreRing score={score} size={48} />
               <div style={{ minWidth:0 }}>
                 <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
-                  <span style={{ fontSize:24, fontWeight:900, color:"#fff", fontFamily:"'Syne',sans-serif" }}>{stock.ticker}</span>
+                  <span style={{ fontSize:24, fontWeight:900, color:c("#fff"), fontFamily:"'Syne',sans-serif" }}>{stock.ticker}</span>
                   <span style={{ fontSize:16, color:c("#aaccee"), fontFamily:"DM Mono,monospace" }}>${stock.price.toFixed(2)}</span>
                 </div>
                 <div style={{ fontSize:11, padding:"2px 8px", borderRadius:12, background:sig.bg, color:sig.color, fontFamily:"DM Mono,monospace", display:"inline-block", marginTop:2 }}>{sig.label}</div>
@@ -894,6 +927,8 @@ export default function App() {
           </div>
         )}
 
+        <ViewBoundary viewKey={view}>
+
         {/* PREMIUM VIEW */}
         {!loading && !error && view==="premium" && (
           <div style={{ flex:1, overflowY:"auto", overflowX:"hidden", padding:"12px 10px" }}>
@@ -976,6 +1011,8 @@ export default function App() {
 
         {/* BAND VIEW — self-contained too (band.json + band_quotes.json) */}
         {view==="band" && <BandView isMobile={isMobile} light={light} />}
+
+        </ViewBoundary>
 
       </div>
 
