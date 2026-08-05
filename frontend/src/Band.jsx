@@ -29,6 +29,11 @@ function nextBiz(d) {
   return t.toISOString().slice(0, 10);
 }
 
+const BASE = process.env.PUBLIC_URL || "";
+const BAND_URL = `${BASE}/band.json`;
+const QUOTES_URL = `${BASE}/band_quotes.json`;
+const FLOG_URL = `${BASE}/band_forming_log.json`;
+
 export default function BandView({ isMobile }) {
   const [band, setBand] = useState(null);
   const [q, setQ] = useState({});
@@ -37,27 +42,25 @@ export default function BandView({ isMobile }) {
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("forming");
 
-  const base = import.meta.env?.BASE_URL || "/";
-
   useEffect(() => {
-    fetch(`${base}band.json?t=${Date.now()}`)
+    fetch(`${BAND_URL}?t=${Date.now()}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setBand)
       .catch(e => setErr(`攞唔到 band.json（${e.message}）— 未行過 band_scan.py，或者部署未完成`));
-    fetch(`${base}band_forming_log.json?t=${Date.now()}`)
+    fetch(`${FLOG_URL}?t=${Date.now()}`)
       .then(r => r.json()).then(d => setFlog(d.summary || null)).catch(() => {});
-  }, [base]);
+  }, []);
 
   useEffect(() => {
     const pull = () =>
-      fetch(`${base}band_quotes.json?t=${Date.now()}`)
+      fetch(`${QUOTES_URL}?t=${Date.now()}`)
         .then(r => r.json())
         .then(d => { setQ(d.quotes || {}); setQAt(d.quoted_at); })
         .catch(() => {});
     pull();
     const id = setInterval(pull, 60_000);
     return () => clearInterval(id);
-  }, [base]);
+  }, []);
 
   if (err) return <Msg t={err} />;
   if (!band) return <Msg t="載入緊…" />;
