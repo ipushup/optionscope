@@ -10,22 +10,23 @@
 //  Usage in App.jsx — 3 edits, see RADAR_INTEGRATION.md
 // ═══════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback } from "react";
+import { c } from "./theme";
 
 const BASE        = process.env.PUBLIC_URL || "";
 const RADAR_URL   = `${BASE}/radar.json`;
 const QUOTES_URL  = `${BASE}/radar_quotes.json`;
 
 const SCEN_COLOR = {
-  S1: { c: "#00d4aa", bg: "#00d4aa1a", label: "S1 強勢延續" },
-  S2: { c: "#f5a623", bg: "#f5a6231a", label: "S2 強勢修復" },
-  S3: { c: "#ff8c42", bg: "#ff8c421a", label: "S3 轉勢初期" },
+  S1: { c: c("#00d4aa"), bg: `${c("#00d4aa")}1a`, label: "S1 強勢延續" },
+  S2: { c: c("#f5a623"), bg: `${c("#f5a623")}1a`, label: "S2 強勢修復" },
+  S3: { c: c("#ff8c42"), bg: `${c("#ff8c42")}1a`, label: "S3 轉勢初期" },
 };
-const CONCL_COLOR = { "concl-green": "#00d4aa", "concl-amber": "#f5a623", "concl-gray": "#6a8898" };
+const CONCL_COLOR = { "concl-green": c("#00d4aa"), "concl-amber": c("#f5a623"), "concl-gray": c("#6a8898") };
 const SESSION_BADGE = {
-  pre:     { t: "PRE",  c: "#f5a623" },
-  regular: { t: "LIVE", c: "#00d4aa" },
-  post:    { t: "POST", c: "#3b9eff" },
-  closed:  { t: "CLS",  c: "#3a5060" },
+  pre:     { t: "PRE",  c: c("#f5a623") },
+  regular: { t: "LIVE", c: c("#00d4aa") },
+  post:    { t: "POST", c: c("#3b9eff") },
+  closed:  { t: "CLS",  c: c("#3a5060") },
 };
 
 const mono = "DM Mono,monospace";
@@ -60,10 +61,10 @@ function derive(card, quote) {
   const vsClose = card.close ? (live / card.close - 1) * 100 : 0;
 
   // live status overrides the static conclusion when something material changed
-  let status = card.concl, statusColor = CONCL_COLOR[card.concl_cls] || "#6a8898";
-  if (stopBroken)      { status = "🔴 已穿止蝕 — 離場";  statusColor = "#ff5c5c"; }
-  else if (utBroken)   { status = "🟠 穿 UT Bot 止損";   statusColor = "#ff8c42"; }
-  else if (atBuyZone)  { status = "🟢 已到買入區";       statusColor = "#00d4aa"; }
+  let status = card.concl, statusColor = CONCL_COLOR[card.concl_cls] || c("#6a8898");
+  if (stopBroken)      { status = "🔴 已穿止蝕 — 離場";  statusColor = c("#ff5c5c"); }
+  else if (utBroken)   { status = "🟠 穿 UT Bot 止損";   statusColor = c("#ff8c42"); }
+  else if (atBuyZone)  { status = "🟢 已到買入區";       statusColor = c("#00d4aa"); }
 
   // 距止蝕太遠 = 追高，risk/reward 差（止蝕位一觸即損失 >15%）
   const chaseRisk = !stopBroken && stopDist !== null && stopDist > 15;
@@ -85,16 +86,16 @@ function RadarListCard({ card, quote, onClick }) {
 
   return (
     <div onClick={onClick} style={{
-      background: "#0a1828", border: `1px solid ${d.stopBroken ? "#ff5c5c55" : "#1a2e40"}`,
+      background: c("#0a1828"), border: `1px solid ${d.stopBroken ? `${c("#ff5c5c")}55` : c("#1a2e40")}`,
       borderRadius: 10, padding: "10px 12px", cursor: "pointer",
       borderLeft: `3px solid ${sc.c}`,
     }}>
       {/* header row */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
         <span style={{ fontSize: 17, fontWeight: 900, color: "#fff", fontFamily: syne }}>{card.ticker}</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#aaccee", fontFamily: mono }}>{f2(d.live)}</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
         <span style={{ fontSize: 11, fontWeight: 700, fontFamily: mono,
-                       color: d.vsClose >= 0 ? "#00d4aa" : "#ff5c5c" }}>{pctTxt(d.vsClose)}</span>
+                       color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
         <span style={{ fontSize: 8, fontWeight: 800, fontFamily: mono, color: sb.c,
                        border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>
         <div style={{ flex: 1 }} />
@@ -106,7 +107,7 @@ function RadarListCard({ card, quote, onClick }) {
       <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, fontFamily: mono, color: d.statusColor }}>
         {d.status}
         {card.downgraded && (
-          <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: "#ff8c42" }}>
+          <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 700, color: c("#ff8c42") }}>
             （{card.downgraded} 降級）
           </span>
         )}
@@ -114,22 +115,22 @@ function RadarListCard({ card, quote, onClick }) {
 
       {/* metrics strip */}
       <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-        <Metric label="GATE" value={`${card.gate_n}/4`} color={card.gate_n === 4 ? "#00d4aa" : "#f5a623"} />
-        <Metric label="SCORE" value={`${card.score}/${card.max_score}`} color="#3b9eff" />
+        <Metric label="GATE" value={`${card.gate_n}/4`} color={card.gate_n === 4 ? c("#00d4aa") : c("#f5a623")} />
+        <Metric label="SCORE" value={`${card.score}/${card.max_score}`} color={c("#3b9eff")} />
         <Metric label={card.scen === "S1" ? "vs EMA10" : "vs EMA20"}
                 value={pctTxt(d.pullbackDist)}
-                color={d.atBuyZone ? "#00d4aa" : "#8aaabb"} />
+                color={d.atBuyZone ? c("#00d4aa") : c("#8aaabb")} />
         <Metric label="vs 止蝕" value={pctTxt(d.stopDist)}
-                color={d.stopBroken ? "#ff5c5c" : d.chaseRisk ? "#ff8c42"
-                       : (d.stopDist < 3 ? "#f5a623" : "#8aaabb")} />
-        {d.chaseRisk && <Metric label="RISK" value="追高" color="#ff8c42" />}
-        {card.warn_n > 0 && <Metric label="VETO" value={`⚠×${card.warn_n}`} color="#f5a623" />}
+                color={d.stopBroken ? c("#ff5c5c") : d.chaseRisk ? c("#ff8c42")
+                       : (d.stopDist < 3 ? c("#f5a623") : c("#8aaabb"))} />
+        {d.chaseRisk && <Metric label="RISK" value="追高" color={c("#ff8c42")} />}
+        {card.warn_n > 0 && <Metric label="VETO" value={`⚠×${card.warn_n}`} color={c("#f5a623")} />}
       </div>
 
       {/* gate bar */}
-      <div style={{ marginTop: 8, height: 3, background: "#162030", borderRadius: 2 }}>
+      <div style={{ marginTop: 8, height: 3, background: c("#162030"), borderRadius: 2 }}>
         <div style={{ width: `${gatePct}%`, height: "100%", borderRadius: 2,
-                      background: card.gate_n === 4 ? "#00d4aa" : "#f5a623" }} />
+                      background: card.gate_n === 4 ? c("#00d4aa") : c("#f5a623") }} />
       </div>
     </div>
   );
@@ -138,7 +139,7 @@ function RadarListCard({ card, quote, onClick }) {
 function Metric({ label, value, color }) {
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: 8, color: "#5a7a90", fontFamily: mono, letterSpacing: 0.5 }}>{label}</div>
+      <div style={{ fontSize: 8, color: c("#5a7a90"), fontFamily: mono, letterSpacing: 0.5 }}>{label}</div>
       <div style={{ fontSize: 11, fontWeight: 700, color, fontFamily: mono }}>{value}</div>
     </div>
   );
@@ -147,22 +148,22 @@ function Metric({ label, value, color }) {
 // ── DETAIL OVERLAY ────────────────────────────────────────────────────────
 function CondRow({ ok, name, detail, scoreTxt }) {
   return (
-    <div style={{ display: "flex", gap: 7, padding: "3px 0", borderBottom: "1px solid #0e1c28", alignItems: "flex-start" }}>
+    <div style={{ display: "flex", gap: 7, padding: "3px 0", borderBottom: `1px solid ${c("#0e1c28")}`, alignItems: "flex-start" }}>
       <span style={{ width: 26, flexShrink: 0, fontSize: 10, fontFamily: mono, textAlign: "center",
-                     color: ok ? "#00d4aa" : "#4a6070" }}>
+                     color: ok ? c("#00d4aa") : c("#4a6070") }}>
         {scoreTxt ?? (ok ? "✅" : "❌")}
       </span>
       <span style={{ width: 108, flexShrink: 0, fontSize: 10.5, fontFamily: mono,
-                     color: ok ? "#ccddee" : "#5a7a90" }}>{name}</span>
-      <span style={{ flex: 1, fontSize: 10.5, fontFamily: mono, color: "#7a9ab8", lineHeight: 1.45 }}>{detail}</span>
+                     color: ok ? c("#ccddee") : c("#5a7a90") }}>{name}</span>
+      <span style={{ flex: 1, fontSize: 10.5, fontFamily: mono, color: c("#7a9ab8"), lineHeight: 1.45 }}>{detail}</span>
     </div>
   );
 }
 
 function Block({ title, children }) {
   return (
-    <div style={{ padding: "10px 12px", background: "#0a1828", borderRadius: 10, border: "1px solid #1a2e40", marginBottom: 8 }}>
-      <div style={{ fontSize: 10, fontWeight: 800, color: "#3b9eff", fontFamily: mono,
+    <div style={{ padding: "10px 12px", background: c("#0a1828"), borderRadius: 10, border: `1px solid ${c("#1a2e40")}`, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, color: c("#3b9eff"), fontFamily: mono,
                     letterSpacing: 1, marginBottom: 6 }}>{title}</div>
       {children}
     </div>
@@ -177,19 +178,19 @@ function RadarDetail({ card, quote, onClose }) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "#040b14", zIndex: 60,
+      position: "fixed", inset: 0, background: c("#040b14"), zIndex: 60,
       display: "flex", flexDirection: "column", overflow: "hidden",
       paddingTop: "env(safe-area-inset-top, 44px)",
     }}>
       {/* header */}
-      <div style={{ background: "#050c18", borderBottom: "1px solid #0a1826", padding: "10px 12px", flexShrink: 0 }}>
+      <div style={{ background: c("#050c18"), borderBottom: `1px solid ${c("#0a1826")}`, padding: "10px 12px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={onClose} style={{ background: "#0d3060", border: "none", borderRadius: 7,
-            color: "#88bbee", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "4px 10px" }}>←</button>
+          <button onClick={onClose} style={{ background: c("#0d3060"), border: "none", borderRadius: 7,
+            color: c("#88bbee"), fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "4px 10px" }}>←</button>
           <span style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: syne }}>{card.ticker}</span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: "#aaccee", fontFamily: mono }}>{f2(d.live)}</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
           <span style={{ fontSize: 12, fontWeight: 700, fontFamily: mono,
-                         color: d.vsClose >= 0 ? "#00d4aa" : "#ff5c5c" }}>{pctTxt(d.vsClose)}</span>
+                         color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
           <span style={{ fontSize: 8, fontWeight: 800, fontFamily: mono, color: sb.c,
                          border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>
           <div style={{ flex: 1 }} />
@@ -206,10 +207,10 @@ function RadarDetail({ card, quote, onClose }) {
 
         {/* pre/post detail line */}
         {(quote?.pre || quote?.post) && (
-          <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: "#7a9ab8", display: "flex", gap: 12 }}>
-            {quote.pre  && <span>PRE {f2(quote.pre)} <b style={{ color: quote.pre_pct >= 0 ? "#00d4aa" : "#ff5c5c" }}>{pctTxt(quote.pre_pct)}</b></span>}
-            {quote.price && <span>REG {f2(quote.price)} <b style={{ color: quote.chg_pct >= 0 ? "#00d4aa" : "#ff5c5c" }}>{pctTxt(quote.chg_pct)}</b></span>}
-            {quote.post && <span>POST {f2(quote.post)} <b style={{ color: quote.post_pct >= 0 ? "#00d4aa" : "#ff5c5c" }}>{pctTxt(quote.post_pct)}</b></span>}
+          <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: c("#7a9ab8"), display: "flex", gap: 12 }}>
+            {quote.pre  && <span>PRE {f2(quote.pre)} <b style={{ color: quote.pre_pct >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(quote.pre_pct)}</b></span>}
+            {quote.price && <span>REG {f2(quote.price)} <b style={{ color: quote.chg_pct >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(quote.chg_pct)}</b></span>}
+            {quote.post && <span>POST {f2(quote.post)} <b style={{ color: quote.post_pct >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(quote.post_pct)}</b></span>}
           </div>
         )}
       </div>
@@ -228,7 +229,7 @@ function RadarDetail({ card, quote, onClose }) {
           <LevelRow label="Daily EMA50" lvl={L.ema50d} dist={d.live && L.ema50d ? (d.live / L.ema50d - 1) * 100 : null} live={d.live} />
           {L.ch_upper && <LevelRow label="下降通道上軌" lvl={L.ch_upper}
                     dist={(d.live / L.ch_upper - 1) * 100} live={d.live} note="阻力" />}
-          <div style={{ marginTop: 7, fontSize: 9.5, color: "#5a7a90", fontFamily: mono, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 7, fontSize: 9.5, color: c("#5a7a90"), fontFamily: mono, lineHeight: 1.5 }}>
             指標數值（KDJ J={L.kdj_j ?? "—"} · CMF {L.cmf_d} · BigChing {L.bigching}/7）為收市值 —
             價格與距離為即時。
           </div>
@@ -254,11 +255,11 @@ function RadarDetail({ card, quote, onClose }) {
           </Block>
         )}
 
-        <div style={{ padding: "10px 12px", background: "#0a1828", borderRadius: 10,
-                      border: "1px solid #1a2e40", marginBottom: 20 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#3b9eff", fontFamily: mono,
+        <div style={{ padding: "10px 12px", background: c("#0a1828"), borderRadius: 10,
+                      border: `1px solid ${c("#1a2e40")}`, marginBottom: 20 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: c("#3b9eff"), fontFamily: mono,
                         letterSpacing: 1, marginBottom: 5 }}>💡 買入邏輯</div>
-          <div style={{ fontSize: 11.5, color: "#ccddee", fontFamily: mono, lineHeight: 1.6 }}>{card.buy_logic}</div>
+          <div style={{ fontSize: 11.5, color: c("#ccddee"), fontFamily: mono, lineHeight: 1.6 }}>{card.buy_logic}</div>
         </div>
       </div>
     </div>
@@ -267,18 +268,18 @@ function RadarDetail({ card, quote, onClose }) {
 
 function LevelRow({ label, lvl, dist, live, note, good, bad }) {
   if (!lvl) return null;
-  const color = bad ? "#ff5c5c" : good ? "#00d4aa" : (Math.abs(dist) < 2 ? "#f5a623" : "#7a9ab8");
+  const color = bad ? c("#ff5c5c") : good ? c("#00d4aa") : (Math.abs(dist) < 2 ? c("#f5a623") : c("#7a9ab8"));
   const above = live >= lvl;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0",
-                  borderBottom: "1px solid #0e1c28" }}>
-      <span style={{ width: 96, flexShrink: 0, fontSize: 10.5, fontFamily: mono, color: "#8aaabb" }}>{label}</span>
-      <span style={{ width: 62, flexShrink: 0, fontSize: 11, fontFamily: mono, color: "#ccddee" }}>{f2(lvl)}</span>
+                  borderBottom: `1px solid ${c("#0e1c28")}` }}>
+      <span style={{ width: 96, flexShrink: 0, fontSize: 10.5, fontFamily: mono, color: c("#8aaabb") }}>{label}</span>
+      <span style={{ width: 62, flexShrink: 0, fontSize: 11, fontFamily: mono, color: c("#ccddee") }}>{f2(lvl)}</span>
       <span style={{ fontSize: 11, fontWeight: 700, fontFamily: mono, color }}>
         {above ? "▲" : "▼"} {pctTxt(dist)}
       </span>
       <div style={{ flex: 1 }} />
-      {note && <span style={{ fontSize: 9, fontFamily: mono, color: "#5a7a90" }}>{note}</span>}
+      {note && <span style={{ fontSize: 9, fontFamily: mono, color: c("#5a7a90") }}>{note}</span>}
     </div>
   );
 }
@@ -286,20 +287,20 @@ function LevelRow({ label, lvl, dist, live, note, good, bad }) {
 // ── MAIN RADAR VIEW ───────────────────────────────────────────────────────
 // ── MARKET REGIME BAR ─────────────────────────────────────────────────────
 const REGIME = {
-  on:      { c: "#00d4aa", bg: "#00d4aa14", label: "Risk On" },
-  mixed:   { c: "#f5a623", bg: "#f5a62314", label: "Mixed 輪轉" },
-  off:     { c: "#ff5c5c", bg: "#ff5c5c14", label: "Risk Off" },
-  unknown: { c: "#6a8898", bg: "#0a1828", label: "—" },
+  on:      { c: c("#00d4aa"), bg: `${c("#00d4aa")}14`, label: "Risk On" },
+  mixed:   { c: c("#f5a623"), bg: `${c("#f5a623")}14`, label: "Mixed 輪轉" },
+  off:     { c: c("#ff5c5c"), bg: `${c("#ff5c5c")}14`, label: "Risk Off" },
+  unknown: { c: c("#6a8898"), bg: c("#0a1828"), label: "—" },
 };
 
 function BreadthNum({ label, v, prev }) {
   const delta = prev === undefined ? null : v - prev;
   const arrow = delta === null ? "" : delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
-  const col = v >= 60 ? "#00d4aa" : v >= 45 ? "#f5a623" : "#ff5c5c";
+  const col = v >= 60 ? c("#00d4aa") : v >= 45 ? c("#f5a623") : c("#ff5c5c");
   return (
-    <span style={{ fontFamily: mono, fontSize: 10, color: "#8aaabb" }}>
+    <span style={{ fontFamily: mono, fontSize: 10, color: c("#8aaabb") }}>
       {label} <b style={{ color: col }}>{v}%</b>
-      {delta !== null && <span style={{ color: delta > 0 ? "#00d4aa" : delta < 0 ? "#ff5c5c" : "#6a8898" }}>{arrow}</span>}
+      {delta !== null && <span style={{ color: delta > 0 ? c("#00d4aa") : delta < 0 ? c("#ff5c5c") : c("#6a8898") }}>{arrow}</span>}
     </span>
   );
 }
@@ -312,18 +313,18 @@ function MarketRow({ tag, data, indices, vix }) {
     <div style={{ padding: "7px 10px", background: r.bg, borderLeft: `3px solid ${r.c}`,
                   borderRadius: 8, marginBottom: 6 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontFamily: syne, fontSize: 12, fontWeight: 800, color: "#cdd7e3" }}>{tag}</span>
+        <span style={{ fontFamily: syne, fontSize: 12, fontWeight: 800, color: c("#cdd7e3") }}>{tag}</span>
         <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 800, color: r.c }}>
           {data.regime === "on" ? "🟢" : data.regime === "off" ? "🔴" : data.regime === "mixed" ? "🟡" : "⚪"} {r.label}
         </span>
         {indices && Object.entries(indices).map(([nm, s]) => s && (
-          <span key={nm} style={{ fontFamily: mono, fontSize: 10, color: "#8aaabb" }}>
-            {nm}<b style={{ color: s.st === "B" && s.above20 ? "#00d4aa" : "#ff5c5c" }}>{s.chg_pct >= 0 ? "▲" : "▼"}</b>
+          <span key={nm} style={{ fontFamily: mono, fontSize: 10, color: c("#8aaabb") }}>
+            {nm}<b style={{ color: s.st === "B" && s.above20 ? c("#00d4aa") : c("#ff5c5c") }}>{s.chg_pct >= 0 ? "▲" : "▼"}</b>
           </span>
         ))}
         {vix && (
-          <span style={{ fontFamily: mono, fontSize: 10, color: "#8aaabb" }}>
-            VIX <b style={{ color: vix.val >= 25 ? "#ff5c5c" : vix.val >= 18 ? "#f5a623" : "#00d4aa" }}>{vix.val}</b>
+          <span style={{ fontFamily: mono, fontSize: 10, color: c("#8aaabb") }}>
+            VIX <b style={{ color: vix.val >= 25 ? c("#ff5c5c") : vix.val >= 18 ? c("#f5a623") : c("#00d4aa") }}>{vix.val}</b>
             {vix.up ? "↑" : "↓"}
           </span>
         )}
@@ -333,12 +334,12 @@ function MarketRow({ tag, data, indices, vix }) {
         <BreadthNum label=">EMA200" v={b.e200} prev={b.e200_prev} />
       </div>
       {data.regime === "off" && (
-        <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 700, fontFamily: mono, color: "#ff5c5c" }}>
+        <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 700, fontFamily: mono, color: c("#ff5c5c") }}>
           ⚠️ 大盤轉弱，S1/S2 結論自動降級，只宜減倉
         </div>
       )}
       {data.regime === "mixed" && (
-        <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: "#f5a623" }}>
+        <div style={{ marginTop: 5, fontSize: 10, fontFamily: mono, color: c("#f5a623") }}>
           板塊輪轉中 — S1 動能股結論降級，S2/S3 不受影響
         </div>
       )}
@@ -404,7 +405,7 @@ export default function RadarView({ isMobile }) {
 
   if (loading) return (
     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ width: 34, height: 34, border: "3px solid #0e1c28", borderTopColor: "#3b9eff",
+      <div style={{ width: 34, height: 34, border: `3px solid ${c("#0e1c28")}`, borderTopColor: c("#3b9eff"),
                     borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
     </div>
   );
@@ -413,8 +414,8 @@ export default function RadarView({ isMobile }) {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
                   justifyContent: "center", gap: 12, padding: 24 }}>
       <div style={{ fontSize: 40 }}>📡</div>
-      <div style={{ color: "#3b9eff", fontFamily: syne, fontSize: 16, fontWeight: 700 }}>No radar data yet</div>
-      <div style={{ color: "#8aaabb", fontFamily: mono, fontSize: 11, textAlign: "center", lineHeight: 1.8 }}>
+      <div style={{ color: c("#3b9eff"), fontFamily: syne, fontSize: 16, fontWeight: 700 }}>No radar data yet</div>
+      <div style={{ color: c("#8aaabb"), fontFamily: mono, fontSize: 11, textAlign: "center", lineHeight: 1.8 }}>
         GitHub Actions → Turnaround Radar → Run workflow
       </div>
     </div>
@@ -431,27 +432,27 @@ export default function RadarView({ isMobile }) {
 
       {/* funnel summary */}
       <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
-        {[["all", `全部 ${radar.total_cards}`, "#3b9eff"],
+        {[["all", `全部 ${radar.total_cards}`, c("#3b9eff")],
           ["S1", `S1 ${sc.S1 || 0}`, SCEN_COLOR.S1.c],
           ["S2", `S2 ${sc.S2 || 0}`, SCEN_COLOR.S2.c],
           ["S3", `S3 ${sc.S3 || 0}`, SCEN_COLOR.S3.c]].map(([id, label, color]) => (
           <button key={id} onClick={() => setFilterScen(id)} style={{
             padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: mono,
             fontSize: 10, fontWeight: 700,
-            border: `1px solid ${filterScen === id ? color : "#1a2e40"}`,
-            background: filterScen === id ? `${color}22` : "#080f1c",
-            color: filterScen === id ? color : "#5a7a90",
+            border: `1px solid ${filterScen === id ? color : c("#1a2e40")}`,
+            background: filterScen === id ? `${color}22` : c("#080f1c"),
+            color: filterScen === id ? color : c("#5a7a90"),
           }}>{label}</button>
         ))}
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 9, color: "#5a7a90", fontFamily: mono }}>
+        <span style={{ fontSize: 9, color: c("#5a7a90"), fontFamily: mono }}>
           Universe {radar.universe} · 收市 {radar.scanned_at ? new Date(radar.scanned_at).toLocaleDateString() : "—"}
         </span>
       </div>
 
       {alerts.length > 0 && (
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#ff5c5c", fontFamily: mono,
+          <div style={{ fontSize: 10, fontWeight: 800, color: c("#ff5c5c"), fontFamily: mono,
                         letterSpacing: 1, marginBottom: 6, paddingLeft: 2 }}>
             ⚠️ 警報 · {alerts.length} 隻 — 已穿止蝕或 UT Bot 止損
           </div>
@@ -465,7 +466,7 @@ export default function RadarView({ isMobile }) {
       )}
 
       {grouped.length === 0 && alerts.length === 0 && (
-        <div style={{ color: "#5a7a90", fontFamily: mono, fontSize: 12, textAlign: "center", padding: 30 }}>
+        <div style={{ color: c("#5a7a90"), fontFamily: mono, fontSize: 12, textAlign: "center", padding: 30 }}>
           今日無符合條件嘅股票
         </div>
       )}
@@ -485,7 +486,7 @@ export default function RadarView({ isMobile }) {
         </div>
       ))}
 
-      <div style={{ fontSize: 9, color: "#3a5060", fontFamily: mono, textAlign: "center",
+      <div style={{ fontSize: 9, color: c("#3a5060"), fontFamily: mono, textAlign: "center",
                     marginTop: 14, lineHeight: 1.6 }}>
         指標為 closed candle 收市值 · 價格及距離每 15 分鐘更新<br />
         🔴 已穿止蝕 · 🟢 已到買入區 · 🟠 追高（距止蝕 &gt;15%，risk/reward 差）
