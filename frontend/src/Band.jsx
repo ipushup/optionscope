@@ -11,11 +11,28 @@ import { useEffect, useState } from "react";
  * 所有長篇說明預設收埋 —— 每個 tab 一打開就見到數據，唔係先讀三行字。
  */
 
-const C = {
-  bg: "#050d18", card: "#0b1725", line: "#16283c",
-  txt: "#d4e2f0", dim: "#5c7a99", sub: "#8fa6bd", mute: "#3a5060",
-  up: "#22c98a", dn: "#ff4d6a", warn: "#ffa94d", acc: "#3b9eff",
+/**
+ * 主題。深色版嘅次要文字特登調亮咗好多 —— 原本 dim #5c7a99 喺 #0b1725
+ * 上面對比度只有 3.5:1，低過可讀標準，「訊號 / stop / 距」嗰行根本睇唔清。
+ * 而家 dim / sub / mute 全部提高到 7:1 以上。
+ */
+const THEMES = {
+  dark: {
+    bg: "#050d18", card: "#101f31", line: "#23394f", chip: "#0e1c2c",
+    txt: "#eaf2fa", dim: "#a8bdd2", sub: "#c3d3e3", mute: "#7b93aa",
+    up: "#2ee89a", dn: "#ff6b83", warn: "#ffb35c", acc: "#5cb3ff",
+    tabOn: "#1e4270", flagBg: "#2a1119", flagLine: "#5c2434",
+    staleBg: "#3a1a0c",
+  },
+  light: {
+    bg: "#f4f7fb", card: "#ffffff", line: "#d5e0ec", chip: "#e8eef6",
+    txt: "#0e1c2c", dim: "#4a6480", sub: "#33506e", mute: "#7b93aa",
+    up: "#00875a", dn: "#d1234a", warn: "#b56100", acc: "#0b6bcb",
+    tabOn: "#cfe3fa", flagBg: "#fdeaee", flagLine: "#f0bcc7",
+    staleBg: "#fff1e0",
+  },
 };
+let C = THEMES.dark;
 const F = "'Syne',system-ui,sans-serif";
 const M = "'DM Mono',ui-monospace,monospace";
 
@@ -41,6 +58,9 @@ export default function BandView({ isMobile }) {
   const [flog, setFlog] = useState(null);
   const [err, setErr] = useState(null);
   const [tab, setTab] = useState("forming");
+  const [theme, setTheme] = useState(
+    () => (typeof localStorage !== "undefined" && localStorage.getItem("bandTheme")) || "dark");
+  C = THEMES[theme] || THEMES.dark;   // 喺 render 之前切換，下面所有零件即刻跟
 
   useEffect(() => {
     fetch(`${BAND_URL}?t=${Date.now()}`)
@@ -86,7 +106,11 @@ export default function BandView({ isMobile }) {
       background: C.bg, color: C.txt, fontFamily: F,
       padding: isMobile ? "8px 8px 24px" : 16, width: "100%", overflowX: "hidden",
     }}>
-      <Head band={band} qAt={qAt} isMobile={isMobile} />
+      <Head band={band} qAt={qAt} isMobile={isMobile}
+        theme={theme} setTheme={t => {
+          setTheme(t);
+          try { localStorage.setItem("bandTheme", t); } catch { /* 私隱模式 */ }
+        }} />
 
       <div style={{
         display: "flex", gap: 4, margin: "10px 0 8px",
@@ -98,7 +122,7 @@ export default function BandView({ isMobile }) {
             flexShrink: 0, padding: isMobile ? "6px 10px" : "5px 12px",
             borderRadius: 7, border: "none", cursor: "pointer", fontFamily: F,
             fontSize: isMobile ? 12 : 11, fontWeight: 700,
-            background: tab === id ? "#1a3555" : "#0a1420",
+            background: tab === id ? C.tabOn : C.chip,
             color: tab === id ? C.acc : C.mute,
           }}>
             {ic} {label} <span style={{ opacity: .75 }}>{n}</span>
@@ -125,7 +149,7 @@ const Empty = ({ t }) => (
   <div style={{ color: C.mute, fontSize: 12, padding: "28px 8px", textAlign: "center" }}>{t}</div>
 );
 
-function Head({ band, qAt, isMobile }) {
+function Head({ band, qAt, isMobile, theme, setTheme }) {
   const [open, setOpen] = useState(false);
   const c = band.config;
   return (
@@ -136,17 +160,25 @@ function Head({ band, qAt, isMobile }) {
         <span style={{ fontSize: isMobile ? 16 : 19, fontWeight: 800, letterSpacing: ".02em" }}>
           TRIPLE BAND
         </span>
-        <span style={{ fontSize: 9, color: C.mute, fontFamily: M }}>
+        <span style={{ fontSize: 10.5, color: C.mute, fontFamily: M }}>
           {band.bar_date} · 報價 {qAt ? qAt.slice(11, 16) : "—"}Z
         </span>
-        <button onClick={() => setOpen(v => !v)} style={{
-          marginLeft: "auto", background: "transparent", border: `1px solid ${C.mute}`,
-          borderRadius: 20, color: C.sub, fontSize: 10, width: 20, height: 20,
-          cursor: "pointer", fontFamily: F, lineHeight: 1, padding: 0,
-        }}>{open ? "×" : "i"}</button>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title="切換深／淺色" style={{
+              background: "transparent", border: `1px solid ${C.mute}`, borderRadius: 20,
+              color: C.sub, fontSize: 11, width: 24, height: 24, cursor: "pointer",
+              fontFamily: F, lineHeight: 1, padding: 0,
+            }}>{theme === "dark" ? "☀" : "🌙"}</button>
+          <button onClick={() => setOpen(v => !v)} style={{
+            background: "transparent", border: `1px solid ${C.mute}`, borderRadius: 20,
+            color: C.sub, fontSize: 11, width: 24, height: 24,
+            cursor: "pointer", fontFamily: F, lineHeight: 1, padding: 0,
+          }}>{open ? "×" : "i"}</button>
+        </span>
       </div>
       {open && (
-        <div style={{ fontSize: 10, color: C.sub, marginTop: 5, lineHeight: 1.65 }}>
+        <div style={{ fontSize: 11.5, color: C.sub, marginTop: 6, lineHeight: 1.7 }}>
           美股 only · rU60 ≤ {c.ru_thr}% · ext ≥ {c.stretch_k} · UT KV{c.ut_key}/ATR{c.ut_atr} ·
           每注 {c.size_pct}% · cap {c.cap} fifo · <b style={{ color: C.warn }}>次日開市入場</b>
           <div style={{ color: C.mute, marginTop: 3 }}>{c.verified}</div>
@@ -160,8 +192,8 @@ function Stale({ bar, exec, isMobile }) {
   const [open, setOpen] = useState(!isMobile);
   return (
     <div onClick={() => setOpen(v => !v)} style={{
-      background: "#2a1208", border: `1px solid ${C.dn}`, borderRadius: 8,
-      padding: "7px 10px", marginBottom: 8, fontSize: 10.5, lineHeight: 1.6,
+      background: C.staleBg, border: `1px solid ${C.dn}`, borderRadius: 8,
+      padding: "7px 10px", marginBottom: 8, fontSize: 12, lineHeight: 1.65,
       color: C.warn, cursor: "pointer",
     }}>
       <b>⚠ 執行窗口已過</b> · {exec} 開市已收
@@ -182,10 +214,10 @@ function Info({ children, label = "點解／點睇" }) {
     <div style={{ marginBottom: 8 }}>
       <button onClick={() => setOpen(v => !v)} style={{
         background: "transparent", border: "none", color: C.dim, cursor: "pointer",
-        fontSize: 10, fontFamily: F, padding: "2px 0",
+        fontSize: 11.5, fontFamily: F, padding: "3px 0",
       }}>{open ? "▾" : "▸"} {label}</button>
       {open && (
-        <div style={{ fontSize: 10, color: C.sub, lineHeight: 1.7, paddingTop: 4 }}>
+        <div style={{ fontSize: 11.5, color: C.sub, lineHeight: 1.75, paddingTop: 5 }}>
           {children}
         </div>
       )}
@@ -197,25 +229,25 @@ function Info({ children, label = "點解／點睇" }) {
 function Card({ sym, tag, main, mainSub, rows, flag, dim, strike }) {
   return (
     <div style={{
-      background: flag ? "#1c0f14" : C.card,
-      border: `1px solid ${flag ? "#3a1a24" : C.line}`,
-      borderRadius: 9, padding: "9px 11px", marginBottom: 6,
+      background: flag ? C.flagBg : C.card,
+      border: `1px solid ${flag ? C.flagLine : C.line}`,
+      borderRadius: 10, padding: "11px 13px", marginBottom: 7,
       opacity: dim ?? 1, textDecoration: strike ? "line-through" : "none",
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: ".01em" }}>{sym}</span>
+        <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: ".01em", color: C.txt }}>{sym}</span>
         {tag}
         <span style={{ marginLeft: "auto", textAlign: "right" }}>
-          <span style={{ fontSize: 18, fontWeight: 800, fontFamily: M, letterSpacing: "-.02em" }}>
+          <span style={{ fontSize: 21, fontWeight: 800, fontFamily: M, letterSpacing: "-.02em", color: C.txt }}>
             {main}
           </span>
-          {mainSub && <span style={{ fontSize: 12, fontWeight: 700, fontFamily: M, marginLeft: 6 }}>{mainSub}</span>}
+          {mainSub && <span style={{ fontSize: 14, fontWeight: 700, fontFamily: M, marginLeft: 7 }}>{mainSub}</span>}
         </span>
       </div>
       {rows?.map((r, i) => (
         <div key={i} style={{
-          display: "flex", gap: 10, marginTop: 4, fontSize: 10.5,
-          fontFamily: M, color: C.dim, flexWrap: "wrap",
+          display: "flex", gap: 13, marginTop: 6, fontSize: 12.5,
+          fontFamily: M, color: C.dim, flexWrap: "wrap", lineHeight: 1.5,
         }}>{r}</div>
       ))}
     </div>
@@ -228,16 +260,16 @@ const K = ({ l, v, c, b }) => (
 
 const Pill = ({ t, c }) => (
   <span style={{
-    fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 10,
-    background: `${c}22`, color: c, fontFamily: F,
+    fontSize: 10.5, fontWeight: 700, padding: "2px 7px", borderRadius: 10,
+    background: `${c}26`, color: c, fontFamily: F,
   }}>{t}</span>
 );
 
 /* 桌面表格 */
 const Tbl = ({ cols, children }) => (
   <div style={{ overflowX: "auto" }}>
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
-      <thead><tr style={{ color: C.mute, fontSize: 9.5 }}>
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+      <thead><tr style={{ color: C.mute, fontSize: 10.5 }}>
         {cols.map((h, i) => (
           <th key={i} style={{
             padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 700,
@@ -281,7 +313,7 @@ function Forming({ rows, q, flog, isMobile }) {
     <>
       {flog?.rate != null ? (
         <div style={{
-          fontSize: 10.5, marginBottom: 8, fontFamily: M,
+          fontSize: 12, marginBottom: 9, fontFamily: M,
           color: flog.rate >= 80 ? C.up : flog.rate >= 60 ? C.warn : C.dn,
         }}>
           📊 守住 → 確認 <b>{flog.hold_confirmed}/{flog.hold_resolved} = {flog.rate}%</b>
@@ -289,7 +321,7 @@ function Forming({ rows, q, flog, isMobile }) {
             {flog.hold_resolved < 20 && " · 樣本細，未讀得"}</span>
         </div>
       ) : (
-        <div style={{ fontSize: 10, color: C.mute, marginBottom: 8, fontFamily: M }}>
+        <div style={{ fontSize: 11.5, color: C.mute, marginBottom: 9, fontFamily: M }}>
           📊 轉化率累積緊
         </div>
       )}
@@ -332,7 +364,7 @@ function Forming({ rows, q, flog, isMobile }) {
             const st = c.broke ? ["作廢", C.dn] : c.small ? ["未夠跌", C.warn] : ["守住", C.up];
             return (
               <tr key={r.symbol} style={{
-                background: c.broke ? "#1a0d14" : "transparent",
+                background: c.broke ? C.flagBg : "transparent",
                 opacity: c.broke ? .4 : 1, textDecoration: c.broke ? "line-through" : "none",
               }}>
                 <Td l b>{r.symbol}</Td>
@@ -369,7 +401,7 @@ function Confirmed({ rows, live, exec, isMobile }) {
   if (!rows?.length) return <Empty t="今日冇確認訊號" />;
   return (
     <>
-      <div style={{ fontSize: 10.5, color: C.sub, marginBottom: 8, fontFamily: M }}>
+      <div style={{ fontSize: 12, color: C.sub, marginBottom: 9, fontFamily: M }}>
         執行日 <b style={{ color: C.warn }}>{exec || "—"}</b> 開市市價
       </div>
       <Info>
@@ -399,7 +431,7 @@ function Confirmed({ rows, live, exec, isMobile }) {
             const p = live(r.symbol);
             const gap = p ? (p / r.price - 1) * 100 : null;
             return (
-              <tr key={r.symbol} style={{ background: r.veto_days != null ? "#1a0d14" : "transparent" }}>
+              <tr key={r.symbol} style={{ background: r.veto_days != null ? C.flagBg : "transparent" }}>
                 <Td l b>{r.symbol}</Td>
                 <Td c={C.dim}>{N(r.price)}</Td>
                 <Td b>{N(p)}</Td>
@@ -423,7 +455,7 @@ function Candidates({ rows, live, cnt, band, isMobile }) {
   if (!rows?.length) return <Empty t="而家冇未出場嘅候選" />;
   return (
     <>
-      <div style={{ fontSize: 10.5, color: C.sub, marginBottom: 8, fontFamily: M }}>
+      <div style={{ fontSize: 12, color: C.sub, marginBottom: 9, fontFamily: M }}>
         {cnt.candidates} 隻 · cap {band.config.cap} 之下會係 {cnt.candidates_capped} 隻
       </div>
       <Info>
@@ -441,7 +473,7 @@ function Candidates({ rows, live, cnt, band, isMobile }) {
         return (
           <Card key={`${r.symbol}${r.entry_date}`} sym={r.symbol}
             tag={<>
-              <span style={{ fontSize: 10, color: C.mute, fontFamily: M }}>{r.entry_date?.slice(5)}</span>
+              <span style={{ fontSize: 11.5, color: C.mute, fontFamily: M }}>{r.entry_date?.slice(5)}</span>
               {r.veto_days != null && <Pill t={`⛔${r.veto_days}d`} c={C.dn} />}
             </>}
             main={N(p)} mainSub={<span style={{ color: gapC(gap) }}>{P(gap)}</span>}
@@ -462,7 +494,7 @@ function Candidates({ rows, live, cnt, band, isMobile }) {
             const gap = p ? (p / r.entry_price - 1) * 100 : null;
             const ds = p && r.ut_pos === 1 ? (p - r.ut_stop) / p * 100 : null;
             return (
-              <tr key={`${r.symbol}${r.entry_date}`} style={{ background: r.veto_days != null ? "#1a0d14" : "transparent" }}>
+              <tr key={`${r.symbol}${r.entry_date}`} style={{ background: r.veto_days != null ? C.flagBg : "transparent" }}>
                 <Td l b>{r.symbol}</Td>
                 <Td c={C.dim}>{r.entry_date?.slice(5)}</Td>
                 <Td c={C.dim}>{N(r.entry_price)}</Td>
@@ -491,7 +523,7 @@ function Exits({ rows, isMobile }) {
       <Info>UT Bot 由非空翻落空 —— 當日收市價平倉。冇止蝕、冇止賺、冇時間止蝕。</Info>
       {isMobile ? rows.map(r => (
         <Card key={`${r.symbol}${r.entry_date}`} sym={r.symbol}
-          tag={<span style={{ fontSize: 10, color: C.mute, fontFamily: M }}>{r.entry_date?.slice(5)}</span>}
+          tag={<span style={{ fontSize: 11.5, color: C.mute, fontFamily: M }}>{r.entry_date?.slice(5)}</span>}
           main={N(r.price)}
           mainSub={<span style={{ color: r.ret_pct >= 0 ? C.up : C.dn }}>{P(r.ret_pct)}</span>}
           rows={[<>
@@ -521,7 +553,7 @@ function Observe({ rows, live, isMobile }) {
   if (!rows?.length) return <Empty t="今日觀察組冇訊號" />;
   return (
     <>
-      <div style={{ fontSize: 10.5, color: C.warn, marginBottom: 8, fontWeight: 700 }}>
+      <div style={{ fontSize: 12, color: C.warn, marginBottom: 9, fontWeight: 700 }}>
         唔喺已驗證配置入面 — 唔落注
       </div>
       <Info>
