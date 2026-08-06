@@ -161,37 +161,75 @@ def log_forming(band, quotes):
         print(f"  forming log 寫唔到: {e}")
 
 
+def load_prev_quotes():
+    """保留另一邊市場上次嘅報價，唔好抹走。"""
+    if os.path.exists(OUT_PATH):
+        try:
+            return json.load(open(OUT_PATH)).get("quotes", {})
+        except Exception:
+            pass
+    return {}
+
+
+def write_payload(quotes, scanned_at, note=None):
+    """
+    唯一嘅寫檔案入口。band_quotes.json 係前端同下游步驟嘅必需檔案，
+    所以任何情況都要寫出去 —— 攞唔到報價就寫個空 quotes + note，
+    前端見到 quotes:{} 至少知係「攞唔到報價」，唔係「檔案唔存在」。
+
+    2026-08-06：舊版喺 QUOTE_MARKETS 過濾後冇 ticker 嗰陣直接 return，
+    exit 0 但冇檔案，令下游 `ls` 以 exit 2 殺死成個 workflow。
+    """
+    payload = {
+        "quoted_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "band_scanned_at": scanned_at,      # 前端用嚟偵測 JSON 過期
+        "quotes": quotes,
+    }
+    if note:
+        payload["note"] = note
+    os.makedirs(os.path.dirname(OUT_PATH) or ".", exist_ok=True)
+    with open(OUT_PATH, "w") as f:
+        json.dump(payload, f, indent=2)
+    return payload
+
+
 def main():
     if not os.path.exists(IN_PATH):
+        # band.json 都冇 —— 呢個真係要 fail，唔好寫個假檔案掩蓋問題
         sys.exit(f"搵唔到 {IN_PATH} —— 要先行 band_scan.py")
+
     band = json.load(open(IN_PATH))
     tickers = band.get("tickers", [])
+    scanned_at = band.get("scanned_at")
+
     if not tickers:
-        sys.exit("band.json 冇 tickers")
-    tickers = [t for t in tickers
-               if ("HK" if t.endswith(".HK") else "US") in MARKETS]
-    if not tickers:
-        print(f"QUOTE_MARKETS={sorted(MARKETS)} 之下冇 ticker 要抽")
+        # 唔再 sys.exit：可能係 band_scan.py 改咗 key 名，
+        # 冧咗成個 workflow 好過先寫返個檔案再大聲提示。
+        print(f"⚠ band.json 冇 tickers（keys: {sorted(band.keys())}）")
+        write_payload(load_prev_quotes(), scanned_at, note="band.json 冇 tickers")
+        print(f"→ 寫咗 {OUT_PATH}（沿用舊報價）")
+        return
+
+    sel = [t for t in tickers
+           if ("HK" if t.endswith(".HK") else "US") in MARKETS]
+    if not sel:
+        print(f"QUOTE_MARKETS={sorted(MARKETS)} 之下冇 ticker 要抽"
+              f"（band.json 有 {len(tickers)} 隻）")
+        write_payload(load_prev_quotes(), scanned_at,
+                      note=f"QUOTE_MARKETS={sorted(MARKETS)} 冇對應 ticker")
+        print(f"→ 寫咗 {OUT_PATH}（沿用舊報價）")
         return
 
     t0 = time.time()
-    quotes = {}
-    if os.path.exists(OUT_PATH):
-        try:                      # 保留另一邊市場上次嘅報價，唔好抹走
-            quotes = json.load(open(OUT_PATH)).get("quotes", {})
-        except Exception:
-            pass
-    quotes.update(grab(tickers))
-    payload = {
-        "quoted_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "band_scanned_at": band.get("scanned_at"),   # 前端用嚟偵測 JSON 過期
-        "quotes": quotes,
-    }
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    with open(OUT_PATH, "w") as f:
-        json.dump(payload, f, indent=2)
-    print(f"{len(tickers)} 隻 ({sorted(MARKETS)}) · 合共 {len(quotes)} quotes "
-          f"({time.time() - t0:.0f}s) → {OUT_PATH}")
+    quotes = load_prev_quotes()
+    fresh = grab(sel)
+    quotes.update(fresh)
+    if not fresh:
+        print("⚠ 今次一個報價都攞唔到（Yahoo throttle？）—— 沿用舊報價")
+    write_payload(quotes, scanned_at,
+                  note=None if fresh else "今次 run 攞唔到新報價")
+    print(f"{len(sel)} 隻 ({sorted(MARKETS)}) · 今次新 {len(fresh)} · "
+          f"合共 {len(quotes)} quotes ({time.time() - t0:.0f}s) → {OUT_PATH}")
     log_forming(band, quotes)
 
 
