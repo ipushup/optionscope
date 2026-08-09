@@ -175,7 +175,7 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
     in_pos = False
     entry_i = None
     entry_px = None
-    entry_tier = None
+    pos_tier = None
     last_buy_bar = -10 ** 6
     events = []
     # 完整交易序列，畀 compute_band_scan 做全局 cap 重放用
@@ -204,7 +204,7 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
                     "kind": "EXIT",
                     "entry_date": idx[entry_i].date(),
                     "entry_price": float(entry_px),
-                    "tier": entry_tier,
+                    "tier": pos_tier,
                     "bars": i - entry_i,
                     "ret_pct": (close[i] / entry_px - 1) * 100,
                 })
@@ -230,12 +230,12 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
             in_pos = True
             entry_i = i
             entry_px = close[i]
-            entry_tier = _tier(close, i, market)
+            pos_tier = _tier(close, i, market)
             if is_last:
                 events.append({
                     "kind": "ENTRY",
                     "ext": float(ext),
-                    "tier": entry_tier,
+                    "tier": pos_tier,
                     "pivot_date": idx[pi].date(),
                     "re_entry": exited_today,
                 })
@@ -249,7 +249,7 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
             "kind": "HOLD",
             "entry_date": idx[entry_i].date(),
             "entry_price": float(entry_px),
-            "tier": entry_tier,
+            "tier": pos_tier,
             "bars": (n - 1) - entry_i,
             "ret_pct": (close[-1] / entry_px - 1) * 100,
         })
