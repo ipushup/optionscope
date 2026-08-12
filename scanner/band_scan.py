@@ -18,6 +18,7 @@ Repo layout（跟 radar_scan.py 同一個 pattern）：
    成套方法係 closed-candle based。
 """
 import json
+import math
 import os
 import sys
 import time
@@ -204,6 +205,40 @@ def resolve_forming_log(payload):
         print(f"  forming log 回填失敗: {e}")
 
 
+# ── JSON sanitization ───────────────────────────────────────────────────
+# 2026-08-12：三隻港股（1299/0857/0883）最後一支棒 close 攞唔到，
+# price/stop_dist_pct/ru60 計出 NaN。Python json.dump 預設 allow_nan=True
+# 照寫，Python 讀返冇事，但瀏覽器 JSON.parse 對裸 NaN 會直接拋
+#   "The string did not match the expected pattern."
+# 前端 catch 咗呢個 exception 之後一律當「未行過 band_scan.py」，
+# 完全掩蓋咗真正原因。呢度轉做 null（合法 JSON，前端 ?? 處理得到），
+# 並且 allow_nan=False：萬一未來有新欄位漏咗清理，喺 CI 度直接見到，
+# 好過出個壞檔案畀前端。
+def clean_nan(o):
+    """遞迴把 NaN / ±Infinity 轉做 None。"""
+    if isinstance(o, dict):
+        return {k: clean_nan(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [clean_nan(v) for v in o]
+    if isinstance(o, float) and not math.isfinite(o):
+        return None
+    return o
+
+
+def find_nan(o, path=""):
+    """報邊個欄位有 NaN，寫落 log 方便追蹤邊隻股出事。"""
+    hits = []
+    if isinstance(o, dict):
+        for k, v in o.items():
+            hits.extend(find_nan(v, f"{path}.{k}" if path else k))
+    elif isinstance(o, (list, tuple)):
+        for i, v in enumerate(o):
+            hits.extend(find_nan(v, f"{path}[{i}]"))
+    elif isinstance(o, float) and not math.isfinite(o):
+        hits.append(path)
+    return hits
+
+
 def main():
     t0 = time.time()
     print(f"Triple Band scan · {len(WATCHLIST_US)} US + {len(WATCHLIST_HK)} HK")
@@ -211,9 +246,18 @@ def main():
     payload = compute_band_radar(WATCHLIST_US, WATCHLIST_HK, fetch_df,
                                  earnings_veto=load_earnings_veto())
 
+    bad = find_nan(payload)
+    if bad:
+        print(f"⚠ {len(bad)} 個 NaN/Inf 欄位 → 轉 null（唔會累計佢地嘅原始股票代號,只印路徑）:")
+        for b in bad[:20]:
+            print("   ", b)
+        if len(bad) > 20:
+            print(f"    …仲有 {len(bad) - 20} 個")
+        payload = clean_nan(payload)
+
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w") as f:
-        json.dump(payload, f, indent=2, ensure_ascii=False)
+        json.dump(payload, f, indent=2, ensure_ascii=False, allow_nan=False)
 
     c = payload["counts"]
     print(f"\n確認 {c['confirmed']} · 形成中 {c['forming']} · "
