@@ -45,7 +45,7 @@ WATCHLIST_US = [
     "RKLB","ASTS","LUNR","SPCE","UGL","AGQ","ACHR","LMT",
     "SOUN","APP","DUOL","BBAI","GEV","BE","VST","PEG","NNE","OKLO","SMR",
     "KTOS","AVAV","JOBY","QS","PLUG","RIVN","NIO","XPEV","BABA","AXTI","PDD",
-    "FUTU","NET","TQQQ","SQQQ","WDC","GLD","NEM","F","T","LUMN","NOK","RCAT","NEE","UMAC","CIEN","PCG",
+    "FUTU","NET","TQQQ","SQQQ","WDC","GLD","NEM","F","T","LUMN","NOK","RCAT","UMAC","CIEN","PCG",
     "AAL","NKE","MSTR","IBIT","PFE","VKTX","TEM","DRNZ","ZETA","SPCX","SKHY","TER","SYM","HIMS",
 ]
 # WATCHLIST_HK — 72 原有 + 19 由 TradingView watchlist 補上 = 91
