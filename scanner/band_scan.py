@@ -50,9 +50,9 @@ WATCHLIST_US = [
     "SOFI","COIN","CEG","CCJ","TSM","AVGO","INTC","ARM","LITE","COHR","AAOI",
     "POET","CRDO","ALAB","SMTC","NBIS","IREN","APLD","CRWV",
     "VRT","EQIX","AMT","IONQ","RGTI","QBTS","QUBT",
-    "RKLB","ASTS","LUNR","SPCE","UGL","AGQ","ACHR","LMT",
-    "SOUN","APP","DUOL","BBAI","GEV","BE","VST","PEG","OKLO","SMR",
-    "KTOS","AVAV","JOBY","QS","PLUG","RIVN","NIO","XPEV","BABA","AXTI","PDD",
+    "RKLB","ASTS","LUNR","SPCE","ACHR","UGL","AGQ","SPOT","LMT",
+    "SOUN","APP","DUOL","BBAI","GEV","BE","VST","PEG","NNE","OKLO","SMR",
+    "KTOS","AVAV","JOBY","QS","PLUG","RIVN","NIO","XPEV","BABA","PDD",
     "FUTU","NET","TQQQ","SQQQ","WDC","GLD","NEM","F","T","LUMN","NOK","RCAT","NNE","UMAC","CIEN","PCG",
     "AAL","NKE","MSTR","IBIT","PFE","VKTX","TEM","DRNZ","ZETA","SPCX","SKHY","TER","SYM","HIMS",
 ]
