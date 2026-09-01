@@ -52,6 +52,7 @@ WATCHLIST_US = [
     "QTEX","INOD","BLSH","CRCL","GLXY","BMNR","SBET","NU","CHYM","FIGR",
     "NVT","CRS","MTRN","ATI","OKLL","XE","SERV","AEVA","DPRO","ONDS","FCEL","EOSE","FLUC",
     "REMX","MP","UUUU","USAR","CRML","UAMY","LAC","TMQ","IE","FCX","SCCO","ERO","NVO","CNC","OSCR","TMDX","VEEV","ILMN","PACB","OKTA","S","RBRK","BULL","GRAB","OPEN","LI",
+    "CNH","PATH","ABEV","HSBC","PURR","ROIV","CDE","BTG","CSGP","STNE",
 ]
 # WATCHLIST_HK — 72 原有 + 19 由 TradingView watchlist 補上 = 91
 # 新增（19）：0354 中國軟件國際 / 0568 山東墨龍 / 0728 中國電信 / 0902 華能國際
