@@ -45,8 +45,13 @@ WATCHLIST_US = [
     "RKLB","ASTS","LUNR","SPCE","ACHR","UGL","AGQ","SPOT","LMT",
     "SOUN","APP","DUOL","BBAI","GEV","BE","VST","PEG","NNE","OKLO","SMR",
     "KTOS","AVAV","JOBY","QS","PLUG","RIVN","NIO","XPEV","BABA","PDD",
-    "FUTU","NET","TQQQ","SQQQ","WDC","GLD","NEM","F","T","LUMN","NOK","RCAT","NNE","UMAC","CIEN","PCG",
+    "FUTU","NET","TQQQ","SQQQ","WDC","GLD","NEM","F","T","LUMN","NOK","RCAT","UMAC","CIEN","PCG",
     "AAL","NKE","MSTR","IBIT","PFE","VKTX","TEM","DRNZ","ZETA","SPCX","SKHY","TER","SYM","HIMS",
+    "INTW","NVDL","GLW","AXTI",
+    "CORZ","VRTL","IONX","RGTX","QBTX","INFQ","XNDU","QNT","GSAT","PL","RDW",
+    "QTEX","INOD","BLSH","CRCL","GLXY","BMNR","SBET","NU","CHYM","FIGR",
+    "NVT","CRS","MTRN","ATI","OKLL","XE","SERV","AEVA","DPRO","ONDS","FCEL","EOSE","FLUC",
+    "REMX","MP","UUUU","USAR","CRML","UAMY","LAC","TMQ","IE","FCX","SCCO","ERO","NVO","CNC","OSCR","TMDX","VEEV","ILMN","PACB","OKTA","S","RBRK","BULL","GRAB","OPEN","LI",
 ]
 # WATCHLIST_HK — 72 原有 + 19 由 TradingView watchlist 補上 = 91
 # 新增（19）：0354 中國軟件國際 / 0568 山東墨龍 / 0728 中國電信 / 0902 華能國際
