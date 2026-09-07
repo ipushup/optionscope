@@ -1,12 +1,12 @@
 {
-  "scanned_at": "2026-09-04T22:22:52.953129Z",
+  "scanned_at": "2026-09-07T22:52:44.943548Z",
   "universe": 392,
   "scen_counts": {
     "S1": 25,
-    "S2": 8,
+    "S2": 7,
     "S3": 1
   },
-  "truncated": 4,
+  "truncated": 3,
   "total_cards": 30,
   "max_cards": 30,
   "market": {
@@ -17,59 +17,59 @@
           "st": "B",
           "above20": true,
           "above50": true,
-          "chg_pct": 1.06
+          "chg_pct": -0.38
         },
         "NAS": {
           "st": "B",
           "above20": true,
           "above50": true,
-          "chg_pct": 1.4
+          "chg_pct": -0.29
         },
         "DOW": {
           "st": "B",
           "above20": true,
           "above50": true,
-          "chg_pct": 1.18
+          "chg_pct": -0.51
         }
       },
       "breadth": {
-        "st_b": 52,
-        "e50": 49,
+        "st_b": 50,
+        "e50": 53,
         "e200": 56,
         "n": 294,
         "st_b_prev": 52,
-        "e50_prev": 43,
-        "e200_prev": 53
+        "e50_prev": 49,
+        "e200_prev": 56
       }
     },
     "HK": {
-      "regime": "off",
+      "regime": "on",
       "indices": {
         "HSI": {
           "st": "B",
-          "above20": false,
-          "above50": false,
-          "chg_pct": -0.39
+          "above20": true,
+          "above50": true,
+          "chg_pct": 1.74
         },
         "HSCE": {
           "st": "B",
-          "above20": false,
-          "above50": false,
-          "chg_pct": -0.77
+          "above20": true,
+          "above50": true,
+          "chg_pct": 2.02
         }
       },
       "breadth": {
         "st_b": 48,
-        "e50": 39,
-        "e200": 39,
+        "e50": 48,
+        "e200": 40,
         "n": 90,
-        "st_b_prev": 52,
-        "e50_prev": 40,
-        "e200_prev": 40
+        "st_b_prev": 48,
+        "e50_prev": 39,
+        "e200_prev": 39
       }
     },
     "vix": {
-      "val": 14.5,
+      "val": 15.3,
       "up": true
     }
   },
@@ -95,14 +95,14 @@
   },
   "cards": [
     {
-      "ticker": "DE",
-      "market": "US",
+      "ticker": "3968.HK",
+      "market": "HK",
       "scen": "S1",
       "scen_name": "S1 強勢延續",
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 694.41,
+      "close": 53.35,
       "gate_n": 4,
       "score": 14,
       "max_score": 14,
@@ -110,65 +110,65 @@
       "concl": "🟡 等回踩",
       "concl_cls": "concl-amber",
       "downgraded": null,
-      "stop": 613.6015,
+      "stop": 49.2714,
       "stop_label": "Weekly EMA10",
-      "rs_now": 11.24,
-      "rs_slope": 0.612,
+      "rs_now": 9.4,
+      "rs_slope": 0.513,
       "w_stack": true,
       "levels": {
-        "ema10d": 657.6716,
-        "ema20d": 640.088,
-        "ema50d": 619.2014,
-        "ema250d": 561.0926,
-        "ema10w": 613.6015,
-        "ema20w": 597.5173,
-        "ema89w": 525.4324,
-        "ut_stop": 653.6099,
-        "st_line_d": 628.549,
+        "ema10d": 50.9986,
+        "ema20d": 50.1089,
+        "ema50d": 49.0068,
+        "ema250d": 48.0647,
+        "ema10w": 49.2714,
+        "ema20w": 48.7016,
+        "ema89w": 46.8789,
+        "ut_stop": 50.25,
+        "st_line_d": 49.133,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 110.6,
-        "cmf_d": 0.073,
+        "kdj_j": 115.6,
+        "cmf_d": 0.326,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 613.60 > E20w 597.52"
+          "P > E10w 49.27 > E20w 48.70"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 102 週"
+          "buy line，連續 1 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +11.2"
+          "Mansfield RS +9.4"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 10 日"
+          "連續 5 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 653.61"
+          "stop 50.25"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.073 流入✅"
+          "+0.326 超流入🚀🚀"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 657.67 > E20 640.09"
+          "E10 51.00 > E20 50.11"
         ]
       ],
       "scores": [
@@ -176,7 +176,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.61/日 ✓ · RS +11.2"
+          "斜率 +0.51/日 ✓ · RS +9.4"
         ],
         [
           "BigChing 7 條件",
@@ -200,7 +200,7 @@
           "Volume 確認",
           2,
           2,
-          "ST B日 vol 1.98x"
+          "ST B日 vol 2.39x"
         ],
         [
           "BSP 綠x粉",
@@ -213,370 +213,7 @@
         [
           "⚠️",
           "KDJ 超買",
-          "J=110.6 > 80 → 等回落"
-        ]
-      ]
-    },
-    {
-      "ticker": "HOOD",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 124.72,
-      "gate_n": 4,
-      "score": 13,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "🟢 回踩 EMA10 即買",
-      "concl_cls": "concl-green",
-      "downgraded": null,
-      "stop": 98.6517,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 25.6,
-      "rs_slope": 1.384,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 108.1207,
-        "ema20d": 104.2442,
-        "ema50d": 99.9785,
-        "ema250d": 92.6418,
-        "ema10w": 98.6517,
-        "ema20w": 95.6052,
-        "ema89w": 82.7561,
-        "ut_stop": 100.86,
-        "st_line_d": 95.6335,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 78.8,
-        "cmf_d": 0.091,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 98.65 > E20w 95.61"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 11 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +25.6"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 10 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 100.86"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.091 流入✅"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 108.12 > E20 104.24"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          3,
-          3,
-          "斜率 +1.38/日 ✓ · RS +25.6"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          1,
-          2,
-          "-0.031 改善中"
-        ],
-        [
-          "Volume 確認",
-          2,
-          2,
-          "ST B日 vol 2.57x"
-        ],
-        [
-          "BSP 綠x粉",
-          2,
-          2,
-          "綠線在上升緊"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
-      "ticker": "OKTA",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 170.42,
-      "gate_n": 4,
-      "score": 13,
-      "max_score": 14,
-      "warn_n": 1,
-      "concl": "🟡 等回踩",
-      "concl_cls": "concl-amber",
-      "downgraded": null,
-      "stop": 140.7173,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 53.97,
-      "rs_slope": 0.659,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 159.0714,
-        "ema20d": 152.7994,
-        "ema50d": 141.8431,
-        "ema250d": 108.2821,
-        "ema10w": 140.7173,
-        "ema20w": 126.105,
-        "ema89w": 101.4364,
-        "ut_stop": 155.48,
-        "st_line_d": 139.475,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 101.2,
-        "cmf_d": 0.128,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 140.72 > E20w 126.10"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 14 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +54.0"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 6 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 155.48"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.128 流入✅"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 159.07 > E20 152.80"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          3,
-          3,
-          "斜率 +0.66/日 ✓ · RS +54.0"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.149"
-        ],
-        [
-          "Volume 確認",
-          2,
-          2,
-          "ST B日 vol 4.70x"
-        ],
-        [
-          "BSP 綠x粉",
-          1,
-          2,
-          "5 bar 前上穿"
-        ]
-      ],
-      "vetoes": [
-        [
-          "⚠️",
-          "KDJ 超買",
-          "J=101.2 > 80 → 等回落"
-        ]
-      ]
-    },
-    {
-      "ticker": "AAPL",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 328.21,
-      "gate_n": 4,
-      "score": 13,
-      "max_score": 14,
-      "warn_n": 1,
-      "concl": "🟡 等回踩",
-      "concl_cls": "concl-amber",
-      "downgraded": null,
-      "stop": 311.2518,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 6.95,
-      "rs_slope": 0.387,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 319.4096,
-        "ema20d": 316.5876,
-        "ema50d": 312.2155,
-        "ema250d": 280.1739,
-        "ema10w": 311.2518,
-        "ema20w": 302.0831,
-        "ema89w": 260.533,
-        "ut_stop": 315.22,
-        "st_line_d": 307.132,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 112.5,
-        "cmf_d": 0.117,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 311.25 > E20w 302.08"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 18 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +7.0"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 3 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 315.22"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.117 流入✅"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 319.41 > E20 316.59"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          3,
-          3,
-          "斜率 +0.39/日 ✓ · RS +7.0"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.251"
-        ],
-        [
-          "Volume 確認",
-          1,
-          2,
-          "ST B日 vol 1.31x"
-        ],
-        [
-          "BSP 綠x粉",
-          2,
-          2,
-          "綠線在上升緊"
-        ]
-      ],
-      "vetoes": [
-        [
-          "⚠️",
-          "KDJ 超買",
-          "J=112.5 > 80 → 等回落"
+          "J=115.6 > 80 → 等回落"
         ]
       ]
     },
@@ -588,73 +225,73 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 278.43,
+      "close": 275.23,
       "gate_n": 4,
       "score": 13,
       "max_score": 14,
-      "warn_n": 0,
-      "concl": "🟢 回踩 EMA10 即買",
-      "concl_cls": "concl-green",
+      "warn_n": 1,
+      "concl": "🟡 等回踩",
+      "concl_cls": "concl-amber",
       "downgraded": null,
-      "stop": 258.5111,
+      "stop": 261.5509,
       "stop_label": "Weekly EMA10",
-      "rs_now": 7.8,
-      "rs_slope": 0.27,
+      "rs_now": 6.89,
+      "rs_slope": 0.249,
       "w_stack": true,
       "levels": {
-        "ema10d": 271.1612,
-        "ema20d": 267.9411,
-        "ema50d": 260.023,
-        "ema250d": 228.0053,
-        "ema10w": 258.5111,
-        "ema20w": 249.5934,
-        "ema89w": 209.6109,
-        "ut_stop": 266.97,
+        "ema10d": 271.901,
+        "ema20d": 268.6353,
+        "ema50d": 260.6194,
+        "ema250d": 228.3816,
+        "ema10w": 261.5509,
+        "ema20w": 252.035,
+        "ema89w": 211.0691,
+        "ut_stop": 267.87,
         "st_line_d": 261.277,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 78.0,
-        "cmf_d": 0.162,
+        "kdj_j": 83.6,
+        "cmf_d": 0.169,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 258.51 > E20w 249.59"
+          "P > E10w 261.55 > E20w 252.04"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 80 週"
+          "buy line，連續 81 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +7.8"
+          "Mansfield RS +6.9"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 72 日"
+          "連續 73 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 266.97"
+          "stop 267.87"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.162 強流入🚀"
+          "+0.169 強流入🚀"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 271.16 > E20 267.94"
+          "E10 271.90 > E20 268.64"
         ]
       ],
       "scores": [
@@ -662,7 +299,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.27/日 ✓ · RS +7.8"
+          "斜率 +0.25/日 ✓ · RS +6.9"
         ],
         [
           "BigChing 7 條件",
@@ -680,7 +317,7 @@
           "Weekly CMF",
           2,
           2,
-          "+0.053"
+          "+0.069"
         ],
         [
           "Volume 確認",
@@ -695,124 +332,13 @@
           "綠線在上升緊"
         ]
       ],
-      "vetoes": []
-    },
-    {
-      "ticker": "ELV",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 414.78,
-      "gate_n": 4,
-      "score": 13,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "🟢 回踩 EMA10 即買",
-      "concl_cls": "concl-green",
-      "downgraded": null,
-      "stop": 392.1735,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 6.4,
-      "rs_slope": 0.157,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 402.2006,
-        "ema20d": 398.9049,
-        "ema50d": 394.0738,
-        "ema250d": 371.0527,
-        "ema10w": 392.1735,
-        "ema20w": 382.6263,
-        "ema89w": 378.5067,
-        "ut_stop": 393.7,
-        "st_line_d": 383.57,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 71.3,
-        "cmf_d": 0.0,
-        "bigching": 7
-      },
-      "scen_rows": [
+      "vetoes": [
         [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 392.17 > E20w 382.63"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 18 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +6.4"
+          "⚠️",
+          "KDJ 超買",
+          "J=83.6 > 80 → 等回落"
         ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 1 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 393.70"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.000 中性"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 402.20 > E20 398.90"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          3,
-          3,
-          "斜率 +0.16/日 ✓ · RS +6.4"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.207"
-        ],
-        [
-          "Volume 確認",
-          1,
-          2,
-          "ST B日 vol 1.41x"
-        ],
-        [
-          "BSP 綠x粉",
-          2,
-          2,
-          "綠線在上升緊"
-        ]
-      ],
-      "vetoes": []
+      ]
     },
     {
       "ticker": "2388.HK",
@@ -822,7 +348,7 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 52.1,
+      "close": 52.85,
       "gate_n": 4,
       "score": 13,
       "max_score": 14,
@@ -830,65 +356,65 @@
       "concl": "🟡 等回踩",
       "concl_cls": "concl-amber",
       "downgraded": null,
-      "stop": 49.3857,
+      "stop": 50.0156,
       "stop_label": "Weekly EMA10",
-      "rs_now": 18.41,
-      "rs_slope": 0.09,
+      "rs_now": 17.84,
+      "rs_slope": 0.118,
       "w_stack": true,
       "levels": {
-        "ema10d": 51.4826,
-        "ema20d": 50.9106,
-        "ema50d": 49.4901,
-        "ema250d": 43.1588,
-        "ema10w": 49.3857,
-        "ema20w": 47.6176,
-        "ema89w": 39.2469,
-        "ut_stop": 50.65,
-        "st_line_d": 49.017,
+        "ema10d": 51.7312,
+        "ema20d": 51.0953,
+        "ema50d": 49.6219,
+        "ema250d": 43.233,
+        "ema10w": 50.0156,
+        "ema20w": 48.1159,
+        "ema89w": 39.5492,
+        "ut_stop": 50.85,
+        "st_line_d": 49.437,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 103.6,
-        "cmf_d": 0.357,
+        "kdj_j": 103.9,
+        "cmf_d": 0.295,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 49.39 > E20w 47.62"
+          "P > E10w 50.02 > E20w 48.12"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 126 週"
+          "buy line，連續 127 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +18.4"
+          "Mansfield RS +17.8"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 37 日"
+          "連續 38 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 50.65"
+          "stop 50.85"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.357 超流入🚀🚀"
+          "+0.295 超流入🚀🚀"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 51.48 > E20 50.91"
+          "E10 51.73 > E20 51.10"
         ]
       ],
       "scores": [
@@ -896,7 +422,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.09/日 ✓ · RS +18.4"
+          "斜率 +0.12/日 ✓ · RS +17.8"
         ],
         [
           "BigChing 7 條件",
@@ -914,136 +440,13 @@
           "Weekly CMF",
           2,
           2,
-          "+0.299"
+          "+0.312"
         ],
         [
           "Volume 確認",
           2,
           2,
           "UT Bot B日 vol 2.94x"
-        ],
-        [
-          "BSP 綠x粉",
-          1,
-          2,
-          "4 bar 前上穿"
-        ]
-      ],
-      "vetoes": [
-        [
-          "⚠️",
-          "KDJ 超買",
-          "J=103.6 > 80 → 等回落"
-        ]
-      ]
-    },
-    {
-      "ticker": "2018.HK",
-      "market": "HK",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 42.32,
-      "gate_n": 4,
-      "score": 13,
-      "max_score": 14,
-      "warn_n": 1,
-      "concl": "🟡 等回踩",
-      "concl_cls": "concl-amber",
-      "downgraded": null,
-      "stop": 40.9085,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 9.12,
-      "rs_slope": 0.013,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 42.1954,
-        "ema20d": 41.7117,
-        "ema50d": 41.3592,
-        "ema250d": 40.0348,
-        "ema10w": 40.9085,
-        "ema20w": 40.5884,
-        "ema89w": 38.1241,
-        "ut_stop": 41.2,
-        "st_line_d": 38.634,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 81.0,
-        "cmf_d": 0.135,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 40.91 > E20w 40.59"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 16 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +9.1"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 14 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 41.20"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.135 流入✅"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 42.20 > E20 41.71"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          3,
-          3,
-          "斜率 +0.01/日 ✓ · RS +9.1"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.012"
-        ],
-        [
-          "Volume 確認",
-          2,
-          2,
-          "UT Bot B日 vol 2.65x"
         ],
         [
           "BSP 綠x粉",
@@ -1056,19 +459,19 @@
         [
           "⚠️",
           "KDJ 超買",
-          "J=81.0 > 80 → 等回落"
+          "J=103.9 > 80 → 等回落"
         ]
       ]
     },
     {
-      "ticker": "AMGN",
+      "ticker": "OKTA",
       "market": "US",
       "scen": "S1",
       "scen_name": "S1 強勢延續",
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 444.12,
+      "close": 170.6,
       "gate_n": 4,
       "score": 12,
       "max_score": 14,
@@ -1076,65 +479,65 @@
       "concl": "🟡 等回踩",
       "concl_cls": "concl-amber",
       "downgraded": null,
-      "stop": 398.6065,
+      "stop": 146.1505,
       "stop_label": "Weekly EMA10",
-      "rs_now": 13.86,
-      "rs_slope": 0.402,
+      "rs_now": 54.2,
+      "rs_slope": 0.878,
       "w_stack": true,
       "levels": {
-        "ema10d": 436.7925,
-        "ema20d": 427.4982,
-        "ema50d": 402.5878,
-        "ema250d": 353.2758,
-        "ema10w": 398.6065,
-        "ema20w": 378.9781,
-        "ema89w": 333.548,
-        "ut_stop": 428.64,
-        "st_line_d": 416.84,
+        "ema10d": 161.1675,
+        "ema20d": 154.4947,
+        "ema50d": 142.9709,
+        "ema250d": 108.7786,
+        "ema10w": 146.1505,
+        "ema20w": 130.3426,
+        "ema89w": 102.9733,
+        "ut_stop": 159.64,
+        "st_line_d": 139.475,
         "st_line_w": null,
-        "ch_upper": 239.1656,
-        "ch_lower": 212.417,
-        "kdj_j": 80.2,
-        "cmf_d": 0.283,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 105.3,
+        "cmf_d": 0.125,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 398.61 > E20w 378.98"
+          "P > E10w 146.15 > E20w 130.34"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 43 週"
+          "buy line，連續 15 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +13.9"
+          "Mansfield RS +54.2"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 64 日"
+          "連續 7 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 428.64"
+          "stop 159.64"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.283 超流入🚀🚀"
+          "+0.125 流入✅"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 436.79 > E20 427.50"
+          "E10 161.17 > E20 154.49"
         ]
       ],
       "scores": [
@@ -1142,7 +545,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.40/日 ✓ · RS +13.9"
+          "斜率 +0.88/日 ✓ · RS +54.2"
         ],
         [
           "BigChing 7 條件",
@@ -1160,7 +563,253 @@
           "Weekly CMF",
           2,
           2,
-          "+0.170"
+          "+0.245"
+        ],
+        [
+          "Volume 確認",
+          2,
+          2,
+          "ST B日 vol 4.70x"
+        ],
+        [
+          "BSP 綠x粉",
+          0,
+          2,
+          "綠線在下"
+        ]
+      ],
+      "vetoes": [
+        [
+          "⚠️",
+          "KDJ 超買",
+          "J=105.3 > 80 → 等回落"
+        ]
+      ]
+    },
+    {
+      "ticker": "AAPL",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 319.97,
+      "gate_n": 4,
+      "score": 12,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "🟡 等回踩",
+      "concl_cls": "concl-amber",
+      "downgraded": null,
+      "stop": 312.8369,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 4.65,
+      "rs_slope": 0.41,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 319.5115,
+        "ema20d": 316.9097,
+        "ema50d": 312.5196,
+        "ema250d": 280.491,
+        "ema10w": 312.8369,
+        "ema20w": 303.7866,
+        "ema89w": 261.8538,
+        "ut_stop": 315.22,
+        "st_line_d": 307.132,
+        "st_line_w": null,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 105.0,
+        "cmf_d": 0.094,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 312.84 > E20w 303.79"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 19 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +4.7"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 4 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 315.22"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.094 流入✅"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 319.51 > E20 316.91"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          3,
+          3,
+          "斜率 +0.41/日 ✓ · RS +4.7"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          2,
+          2,
+          "+0.210"
+        ],
+        [
+          "Volume 確認",
+          1,
+          2,
+          "ST B日 vol 1.31x"
+        ],
+        [
+          "BSP 綠x粉",
+          1,
+          2,
+          "5 bar 前上穿"
+        ]
+      ],
+      "vetoes": [
+        [
+          "⚠️",
+          "KDJ 超買",
+          "J=105.0 > 80 → 等回落"
+        ]
+      ]
+    },
+    {
+      "ticker": "AMGN",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 437.23,
+      "gate_n": 4,
+      "score": 12,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "🟡 等回踩",
+      "concl_cls": "concl-amber",
+      "downgraded": null,
+      "stop": 405.6289,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 12.42,
+      "rs_slope": 0.331,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 436.872,
+        "ema20d": 428.425,
+        "ema50d": 403.9464,
+        "ema250d": 353.9447,
+        "ema10w": 405.6289,
+        "ema20w": 384.5259,
+        "ema89w": 335.8521,
+        "ut_stop": 428.64,
+        "st_line_d": 416.84,
+        "st_line_w": null,
+        "ch_upper": 237.9863,
+        "ch_lower": 211.2378,
+        "kdj_j": 80.9,
+        "cmf_d": 0.309,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 405.63 > E20w 384.53"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 44 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +12.4"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 65 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 428.64"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.309 超流入🚀🚀"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 436.87 > E20 428.43"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          3,
+          3,
+          "斜率 +0.33/日 ✓ · RS +12.4"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          2,
+          2,
+          "+0.162"
         ],
         [
           "Volume 確認",
@@ -1179,7 +828,130 @@
         [
           "⚠️",
           "KDJ 超買",
-          "J=80.2 > 80 → 等回落"
+          "J=80.9 > 80 → 等回落"
+        ]
+      ]
+    },
+    {
+      "ticker": "0005.HK",
+      "market": "HK",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 166.7,
+      "gate_n": 4,
+      "score": 12,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "🟡 等回踩",
+      "concl_cls": "concl-amber",
+      "downgraded": null,
+      "stop": 159.6661,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 17.41,
+      "rs_slope": -0.178,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 162.8921,
+        "ema20d": 162.2002,
+        "ema50d": 158.5562,
+        "ema250d": 134.3597,
+        "ema10w": 159.6661,
+        "ema20w": 152.814,
+        "ema89w": 120.2141,
+        "ut_stop": 158.3,
+        "st_line_d": 159.18,
+        "st_line_w": null,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 83.1,
+        "cmf_d": 0.224,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 159.67 > E20w 152.81"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 69 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +17.4"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 56 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 158.30"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.224 強流入🚀"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 162.89 > E20 162.20"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          1,
+          3,
+          "斜率 -0.18/日 ✗ · RS +17.4"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          2,
+          2,
+          "+0.224"
+        ],
+        [
+          "Volume 確認",
+          2,
+          2,
+          "UT Bot B日 vol 3.20x"
+        ],
+        [
+          "BSP 綠x粉",
+          2,
+          2,
+          "綠線在上升緊"
+        ]
+      ],
+      "vetoes": [
+        [
+          "⚠️",
+          "KDJ 超買",
+          "J=83.1 > 80 → 等回落"
         ]
       ]
     },
@@ -1191,58 +963,58 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 843.47,
+      "close": 827.72,
       "gate_n": 4,
-      "score": 12,
+      "score": 11,
       "max_score": 14,
       "warn_n": 0,
       "concl": "🟢 回踩 EMA10 即買",
       "concl_cls": "concl-green",
       "downgraded": null,
-      "stop": 748.4055,
+      "stop": 762.8263,
       "stop_label": "Weekly EMA10",
-      "rs_now": 6.36,
-      "rs_slope": 0.293,
+      "rs_now": 4.8,
+      "rs_slope": 0.24,
       "w_stack": true,
       "levels": {
-        "ema10d": 823.4497,
-        "ema20d": 805.6549,
-        "ema50d": 757.2507,
-        "ema250d": 714.741,
-        "ema10w": 748.4055,
-        "ema20w": 724.2831,
-        "ema89w": 716.637,
+        "ema10d": 824.2261,
+        "ema20d": 807.7563,
+        "ema50d": 760.0142,
+        "ema250d": 715.6413,
+        "ema10w": 762.8263,
+        "ema20w": 734.1342,
+        "ema89w": 719.1055,
         "ut_stop": 800.0499,
         "st_line_d": 787.789,
         "st_line_w": null,
-        "ch_upper": 664.5801,
-        "ch_lower": 601.4401,
-        "kdj_j": 69.5,
-        "cmf_d": 0.109,
+        "ch_upper": 663.4901,
+        "ch_lower": 600.3501,
+        "kdj_j": 70.3,
+        "cmf_d": 0.08,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 748.41 > E20w 724.28"
+          "P > E10w 762.83 > E20w 734.13"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 5 週"
+          "buy line，連續 6 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +6.4"
+          "Mansfield RS +4.8"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 45 日"
+          "連續 46 日"
         ],
         [
           "Daily UT Bot = B",
@@ -1252,12 +1024,12 @@
         [
           "Daily CMF > 0",
           true,
-          "+0.109 流入✅"
+          "+0.080 流入✅"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 823.45 > E20 805.65"
+          "E10 824.23 > E20 807.76"
         ]
       ],
       "scores": [
@@ -1265,7 +1037,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.29/日 ✓ · RS +6.4"
+          "斜率 +0.24/日 ✓ · RS +4.8"
         ],
         [
           "BigChing 7 條件",
@@ -1283,7 +1055,7 @@
           "Weekly CMF",
           2,
           2,
-          "+0.159"
+          "+0.182"
         ],
         [
           "Volume 確認",
@@ -1293,126 +1065,9 @@
         ],
         [
           "BSP 綠x粉",
-          2,
-          2,
-          "綠線在上升緊"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
-      "ticker": "CRWD",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 214.97,
-      "gate_n": 4,
-      "score": 11,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "🟢 回踩 EMA10 即買",
-      "concl_cls": "concl-green",
-      "downgraded": null,
-      "stop": 195.9406,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 40.01,
-      "rs_slope": -0.595,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 210.7476,
-        "ema20d": 207.9056,
-        "ema50d": 197.0594,
-        "ema250d": 147.7831,
-        "ema10w": 195.9406,
-        "ema20w": 176.8737,
-        "ema89w": 128.4724,
-        "ut_stop": 200.04,
-        "st_line_d": 184.2415,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 65.7,
-        "cmf_d": 0.119,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 195.94 > E20w 176.87"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 17 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +40.0"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 6 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 200.04"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.119 流入✅"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 210.75 > E20 207.91"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          1,
-          3,
-          "斜率 -0.60/日 ✗ · RS +40.0"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.184"
-        ],
-        [
-          "Volume 確認",
-          2,
-          2,
-          "ST B日 vol 2.69x"
-        ],
-        [
-          "BSP 綠x粉",
           1,
           2,
-          "5 bar 前上穿"
+          "2 bar 前上穿"
         ]
       ],
       "vetoes": []
@@ -1425,7 +1080,7 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 221.66,
+      "close": 218.22,
       "gate_n": 4,
       "score": 10,
       "max_score": 14,
@@ -1433,65 +1088,65 @@
       "concl": "🟢 回踩 EMA10 即買",
       "concl_cls": "concl-green",
       "downgraded": null,
-      "stop": 194.4143,
+      "stop": 198.7426,
       "stop_label": "Weekly EMA10",
-      "rs_now": 34.02,
-      "rs_slope": 0.971,
+      "rs_now": 32.14,
+      "rs_slope": 0.863,
       "w_stack": true,
       "levels": {
-        "ema10d": 214.8899,
-        "ema20d": 209.8422,
-        "ema50d": 196.2667,
-        "ema250d": 151.5102,
-        "ema10w": 194.4143,
-        "ema20w": 177.3381,
-        "ema89w": 140.9358,
-        "ut_stop": 200.02,
+        "ema10d": 215.4953,
+        "ema20d": 210.6401,
+        "ema50d": 197.1276,
+        "ema250d": 152.0418,
+        "ema10w": 198.7426,
+        "ema20w": 181.2316,
+        "ema89w": 142.6533,
+        "ut_stop": 202.8,
         "st_line_d": 197.728,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 58.3,
-        "cmf_d": 0.319,
+        "kdj_j": 63.6,
+        "cmf_d": 0.322,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 194.41 > E20w 177.34"
+          "P > E10w 198.74 > E20w 181.23"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 14 週"
+          "buy line，連續 15 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +34.0"
+          "Mansfield RS +32.1"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 99 日"
+          "連續 100 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 200.02"
+          "stop 202.80"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.319 超流入🚀🚀"
+          "+0.322 超流入🚀🚀"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 214.89 > E20 209.84"
+          "E10 215.50 > E20 210.64"
         ]
       ],
       "scores": [
@@ -1499,7 +1154,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.97/日 ✓ · RS +34.0"
+          "斜率 +0.86/日 ✓ · RS +32.1"
         ],
         [
           "BigChing 7 條件",
@@ -1517,7 +1172,7 @@
           "Weekly CMF",
           2,
           2,
-          "+0.127"
+          "+0.180"
         ],
         [
           "Volume 確認",
@@ -1542,7 +1197,7 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 100.5,
+      "close": 100.8,
       "gate_n": 4,
       "score": 10,
       "max_score": 14,
@@ -1550,65 +1205,65 @@
       "concl": "🟡 等回踩",
       "concl_cls": "concl-amber",
       "downgraded": null,
-      "stop": 94.3435,
+      "stop": 95.5174,
       "stop_label": "Weekly EMA10",
-      "rs_now": 14.42,
-      "rs_slope": 0.266,
+      "rs_now": 12.72,
+      "rs_slope": 0.257,
       "w_stack": true,
       "levels": {
-        "ema10d": 99.3668,
-        "ema20d": 98.2164,
-        "ema50d": 95.243,
-        "ema250d": 88.4666,
-        "ema10w": 94.3435,
-        "ema20w": 91.7683,
-        "ema89w": 77.1587,
-        "ut_stop": 97.6,
+        "ema10d": 99.6274,
+        "ema20d": 98.4625,
+        "ema50d": 95.4609,
+        "ema250d": 88.5649,
+        "ema10w": 95.5174,
+        "ema20w": 92.6285,
+        "ema89w": 77.6841,
+        "ut_stop": 98.6,
         "st_line_d": 95.905,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 92.6,
-        "cmf_d": 0.097,
+        "kdj_j": 92.8,
+        "cmf_d": 0.1,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 94.34 > E20w 91.77"
+          "P > E10w 95.52 > E20w 92.63"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 101 週"
+          "buy line，連續 102 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +14.4"
+          "Mansfield RS +12.7"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 44 日"
+          "連續 45 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 97.60"
+          "stop 98.60"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.097 流入✅"
+          "+0.100 流入✅"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 99.37 > E20 98.22"
+          "E10 99.63 > E20 98.46"
         ]
       ],
       "scores": [
@@ -1616,7 +1271,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.27/日 ✓ · RS +14.4"
+          "斜率 +0.26/日 ✓ · RS +12.7"
         ],
         [
           "BigChing 7 條件",
@@ -1634,7 +1289,7 @@
           "Weekly CMF",
           2,
           2,
-          "+0.103"
+          "+0.115"
         ],
         [
           "Volume 確認",
@@ -1653,19 +1308,19 @@
         [
           "⚠️",
           "KDJ 超買",
-          "J=92.6 > 80 → 等回落"
+          "J=92.8 > 80 → 等回落"
         ]
       ]
     },
     {
-      "ticker": "MSFT",
-      "market": "US",
+      "ticker": "2018.HK",
+      "market": "HK",
       "scen": "S1",
       "scen_name": "S1 強勢延續",
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 510.12,
+      "close": 42.96,
       "gate_n": 4,
       "score": 10,
       "max_score": 14,
@@ -1673,65 +1328,65 @@
       "concl": "🟢 回踩 EMA10 即買",
       "concl_cls": "concl-green",
       "downgraded": null,
-      "stop": 457.4283,
+      "stop": 41.2815,
       "stop_label": "Weekly EMA10",
-      "rs_now": 10.92,
-      "rs_slope": 0.232,
+      "rs_now": 8.81,
+      "rs_slope": 0.019,
       "w_stack": true,
       "levels": {
-        "ema10d": 499.9259,
-        "ema20d": 489.1193,
-        "ema50d": 458.9774,
-        "ema250d": 438.8347,
-        "ema10w": 457.4283,
-        "ema20w": 438.639,
-        "ema89w": 434.3842,
-        "ut_stop": 493.01,
-        "st_line_d": 481.351,
+        "ema10d": 42.3344,
+        "ema20d": 41.8306,
+        "ema50d": 41.422,
+        "ema250d": 40.0321,
+        "ema10w": 41.2815,
+        "ema20w": 40.8143,
+        "ema89w": 38.2316,
+        "ut_stop": 41.2,
+        "st_line_d": 38.634,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 59.0,
-        "cmf_d": 0.029,
+        "kdj_j": 78.1,
+        "cmf_d": 0.126,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 457.43 > E20w 438.64"
+          "P > E10w 41.28 > E20w 40.81"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 14 週"
+          "buy line，連續 17 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +10.9"
+          "Mansfield RS +8.8"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 37 日"
+          "連續 15 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 493.01"
+          "stop 41.20"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.029 中性"
+          "+0.126 流入✅"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 499.93 > E20 489.12"
+          "E10 42.33 > E20 41.83"
         ]
       ],
       "scores": [
@@ -1739,7 +1394,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.23/日 ✓ · RS +10.9"
+          "斜率 +0.02/日 ✓ · RS +8.8"
         ],
         [
           "BigChing 7 條件",
@@ -1755,15 +1410,15 @@
         ],
         [
           "Weekly CMF",
+          0,
           2,
-          2,
-          "+0.169"
+          "-0.001"
         ],
         [
           "Volume 確認",
-          0,
           2,
-          "UT Bot B日 vol 0.55x"
+          2,
+          "UT Bot B日 vol 2.65x"
         ],
         [
           "BSP 綠x粉",
@@ -1782,73 +1437,73 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 135.4,
+      "close": 147.89,
       "gate_n": 4,
       "score": 10,
       "max_score": 14,
-      "warn_n": 0,
-      "concl": "🟢 回踩 EMA10 即買",
-      "concl_cls": "concl-green",
+      "warn_n": 1,
+      "concl": "🟡 等回踩",
+      "concl_cls": "concl-amber",
       "downgraded": null,
-      "stop": 132.2132,
+      "stop": 135.0626,
       "stop_label": "Weekly EMA10",
-      "rs_now": 14.13,
-      "rs_slope": -0.387,
+      "rs_now": 24.74,
+      "rs_slope": -0.148,
       "w_stack": true,
       "levels": {
-        "ema10d": 133.3793,
-        "ema20d": 132.6743,
-        "ema50d": 133.0765,
-        "ema250d": 104.9836,
-        "ema10w": 132.2132,
-        "ema20w": 127.0264,
-        "ema89w": 86.7196,
-        "ut_stop": 122.14,
+        "ema10d": 136.0176,
+        "ema20d": 134.1234,
+        "ema50d": 133.6574,
+        "ema250d": 105.3255,
+        "ema10w": 135.0626,
+        "ema20w": 129.0129,
+        "ema89w": 88.0788,
+        "ut_stop": 122.63,
         "st_line_d": 116.679,
         "st_line_w": null,
-        "ch_upper": 149.2458,
-        "ch_lower": 90.0516,
-        "kdj_j": 42.0,
-        "cmf_d": 0.083,
+        "ch_upper": 148.744,
+        "ch_lower": 89.5498,
+        "kdj_j": 54.5,
+        "cmf_d": 0.091,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 132.21 > E20w 127.03"
+          "P > E10w 135.06 > E20w 129.01"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 60 週"
+          "buy line，連續 61 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +14.1"
+          "Mansfield RS +24.7"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 20 日"
+          "連續 21 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 122.14"
+          "stop 122.63"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.083 流入✅"
+          "+0.091 流入✅"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 133.38 > E20 132.67"
+          "E10 136.02 > E20 134.12"
         ]
       ],
       "scores": [
@@ -1856,7 +1511,7 @@
           "RS 改善",
           1,
           3,
-          "斜率 -0.39/日 ✗ · RS +14.1"
+          "斜率 -0.15/日 ✗ · RS +24.7"
         ],
         [
           "BigChing 7 條件",
@@ -1874,7 +1529,7 @@
           "Weekly CMF",
           0,
           2,
-          "-0.102"
+          "-0.056"
         ],
         [
           "Volume 確認",
@@ -1889,91 +1544,97 @@
           "綠線在上升緊"
         ]
       ],
-      "vetoes": []
+      "vetoes": [
+        [
+          "⚠️",
+          "下降通道上軌",
+          "距上軌 0.6% (148.74) → 唔追"
+        ]
+      ]
     },
     {
-      "ticker": "WELL",
+      "ticker": "CRWD",
       "market": "US",
       "scen": "S1",
       "scen_name": "S1 強勢延續",
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 241.12,
-      "gate_n": 3,
-      "score": 12,
+      "close": 213.1,
+      "gate_n": 4,
+      "score": 10,
       "max_score": 14,
-      "warn_n": 1,
-      "concl": "⚪ 觀察",
-      "concl_cls": "concl-gray",
+      "warn_n": 0,
+      "concl": "🟢 回踩 EMA10 即買",
+      "concl_cls": "concl-green",
       "downgraded": null,
-      "stop": 234.1814,
+      "stop": 199.0605,
       "stop_label": "Weekly EMA10",
-      "rs_now": 5.31,
-      "rs_slope": 0.228,
+      "rs_now": 38.96,
+      "rs_slope": -0.544,
       "w_stack": true,
       "levels": {
-        "ema10d": 238.9769,
-        "ema20d": 238.0481,
-        "ema50d": 233.8317,
-        "ema250d": 205.5668,
-        "ema10w": 234.1814,
-        "ema20w": 225.9743,
-        "ema89w": 185.1212,
-        "ut_stop": 233.87,
-        "st_line_d": 244.797,
+        "ema10d": 211.1753,
+        "ema20d": 208.4003,
+        "ema50d": 197.6884,
+        "ema250d": 148.3036,
+        "ema10w": 199.0605,
+        "ema20w": 180.3239,
+        "ema89w": 130.353,
+        "ut_stop": 200.04,
+        "st_line_d": 184.2415,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 91.8,
-        "cmf_d": 0.102,
+        "kdj_j": 64.2,
+        "cmf_d": 0.069,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 234.18 > E20w 225.97"
+          "P > E10w 199.06 > E20w 180.32"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 189 週"
+          "buy line，連續 18 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +5.3"
+          "Mansfield RS +39.0"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
-          false,
-          "連續 0 日"
+          true,
+          "連續 7 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 233.87"
+          "stop 200.04"
         ],
         [
           "Daily CMF > 0",
           true,
-          "+0.102 流入✅"
+          "+0.069 流入✅"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 238.98 > E20 238.05"
+          "E10 211.18 > E20 208.40"
         ]
       ],
       "scores": [
         [
           "RS 改善",
+          1,
           3,
-          3,
-          "斜率 +0.23/日 ✓ · RS +5.3"
+          "斜率 -0.54/日 ✗ · RS +39.0"
         ],
         [
           "BigChing 7 條件",
@@ -1991,104 +1652,98 @@
           "Weekly CMF",
           2,
           2,
-          "+0.196"
+          "+0.230"
         ],
         [
           "Volume 確認",
-          0,
           2,
-          "UT Bot B日 vol 0.60x"
+          2,
+          "ST B日 vol 2.69x"
         ],
         [
           "BSP 綠x粉",
+          0,
           2,
-          2,
-          "綠線在上升緊"
+          "綠線在下"
         ]
       ],
-      "vetoes": [
-        [
-          "⚠️",
-          "KDJ 超買",
-          "J=91.8 > 80 → 等回落"
-        ]
-      ]
+      "vetoes": []
     },
     {
-      "ticker": "XOM",
+      "ticker": "ELV",
       "market": "US",
       "scen": "S1",
       "scen_name": "S1 強勢延續",
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 162.21,
+      "close": 407.5,
       "gate_n": 3,
-      "score": 11,
+      "score": 13,
       "max_score": 14,
       "warn_n": 0,
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 154.1048,
+      "stop": 394.9602,
       "stop_label": "Weekly EMA10",
-      "rs_now": 1.52,
-      "rs_slope": 0.058,
+      "rs_now": 4.92,
+      "rs_slope": 0.16,
       "w_stack": true,
       "levels": {
-        "ema10d": 161.5925,
-        "ema20d": 160.159,
-        "ema50d": 155.7339,
-        "ema250d": 141.2472,
-        "ema10w": 154.1048,
-        "ema20w": 150.5747,
-        "ema89w": 132.0769,
-        "ut_stop": 159.63,
-        "st_line_d": 166.126,
+        "ema10d": 403.1641,
+        "ema20d": 399.7235,
+        "ema50d": 394.6003,
+        "ema250d": 371.3431,
+        "ema10w": 394.9602,
+        "ema20w": 384.9952,
+        "ema89w": 379.151,
+        "ut_stop": 393.7,
+        "st_line_d": 384.103,
         "st_line_w": null,
-        "ch_upper": 137.8664,
-        "ch_lower": 108.0233,
-        "kdj_j": 54.2,
-        "cmf_d": 0.002,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 78.2,
+        "cmf_d": -0.071,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 154.10 > E20w 150.57"
+          "P > E10w 394.96 > E20w 385.00"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 35 週"
+          "buy line，連續 19 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +1.5"
+          "Mansfield RS +4.9"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
-          false,
-          "連續 0 日"
+          true,
+          "連續 2 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 159.63"
+          "stop 393.70"
         ],
         [
           "Daily CMF > 0",
-          true,
-          "+0.002 中性"
+          false,
+          "-0.071 流出❌"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 161.59 > E20 160.16"
+          "E10 403.16 > E20 399.72"
         ]
       ],
       "scores": [
@@ -2096,7 +1751,7 @@
           "RS 改善",
           3,
           3,
-          "斜率 +0.06/日 ✓ · RS +1.5"
+          "斜率 +0.16/日 ✓ · RS +4.9"
         ],
         [
           "BigChing 7 條件",
@@ -2112,15 +1767,15 @@
         ],
         [
           "Weekly CMF",
-          0,
           2,
-          "-0.166"
+          2,
+          "+0.211"
         ],
         [
           "Volume 確認",
           1,
           2,
-          "UT Bot B日 vol 1.29x"
+          "ST B日 vol 1.41x"
         ],
         [
           "BSP 綠x粉",
@@ -2139,81 +1794,81 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 106.46,
+      "close": 107.11,
       "gate_n": 3,
-      "score": 11,
+      "score": 13,
       "max_score": 14,
       "warn_n": 1,
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 101.3391,
+      "stop": 102.3884,
       "stop_label": "Weekly EMA10",
-      "rs_now": 8.34,
-      "rs_slope": -0.033,
+      "rs_now": 9.29,
+      "rs_slope": 0.007,
       "w_stack": true,
       "levels": {
-        "ema10d": 104.2176,
-        "ema20d": 103.7383,
-        "ema50d": 101.381,
-        "ema250d": 86.4778,
-        "ema10w": 101.3391,
-        "ema20w": 97.0502,
-        "ema89w": 76.6158,
-        "ut_stop": 103.4,
-        "st_line_d": 101.805,
+        "ema10d": 104.7435,
+        "ema20d": 104.0594,
+        "ema50d": 101.6056,
+        "ema250d": 86.6422,
+        "ema10w": 102.3884,
+        "ema20w": 98.0083,
+        "ema89w": 77.2934,
+        "ut_stop": 104.99,
+        "st_line_d": 102.988,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 93.5,
-        "cmf_d": -0.128,
+        "kdj_j": 109.6,
+        "cmf_d": -0.072,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 101.34 > E20w 97.05"
+          "P > E10w 102.39 > E20w 98.01"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 9 週"
+          "buy line，連續 10 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +8.3"
+          "Mansfield RS +9.3"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 56 日"
+          "連續 57 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 103.40"
+          "stop 104.99"
         ],
         [
           "Daily CMF > 0",
           false,
-          "-0.128 流出❌"
+          "-0.072 流出❌"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 104.22 > E20 103.74"
+          "E10 104.74 > E20 104.06"
         ]
       ],
       "scores": [
         [
           "RS 改善",
-          1,
           3,
-          "斜率 -0.03/日 ✗ · RS +8.3"
+          3,
+          "斜率 +0.01/日 ✓ · RS +9.3"
         ],
         [
           "BigChing 7 條件",
@@ -2231,7 +1886,7 @@
           "Weekly CMF",
           2,
           2,
-          "+0.241"
+          "+0.240"
         ],
         [
           "Volume 確認",
@@ -2250,7 +1905,7 @@
         [
           "⚠️",
           "KDJ 超買",
-          "J=93.5 > 80 → 等回落"
+          "J=109.6 > 80 → 等回落"
         ]
       ]
     },
@@ -2262,81 +1917,81 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 228.45,
+      "close": 230.36,
       "gate_n": 3,
-      "score": 10,
+      "score": 11,
       "max_score": 14,
       "warn_n": 0,
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 212.3606,
+      "stop": 215.6332,
       "stop_label": "Weekly EMA10",
-      "rs_now": 6.81,
-      "rs_slope": -0.007,
+      "rs_now": 8.04,
+      "rs_slope": 0.082,
       "w_stack": true,
       "levels": {
-        "ema10d": 220.6903,
-        "ema20d": 218.1355,
-        "ema50d": 213.1546,
-        "ema250d": 192.5414,
-        "ema10w": 212.3606,
-        "ema20w": 206.8377,
-        "ema89w": 172.5568,
-        "ut_stop": 216.47,
-        "st_line_d": 205.678,
+        "ema10d": 222.4484,
+        "ema20d": 219.2997,
+        "ema50d": 213.8293,
+        "ema250d": 192.8427,
+        "ema10w": 215.6332,
+        "ema20w": 209.078,
+        "ema89w": 173.8414,
+        "ut_stop": 217.74,
+        "st_line_d": 206.455,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 64.8,
-        "cmf_d": -0.188,
+        "kdj_j": 79.3,
+        "cmf_d": -0.205,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 212.36 > E20w 206.84"
+          "P > E10w 215.63 > E20w 209.08"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 62 週"
+          "buy line，連續 63 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +6.8"
+          "Mansfield RS +8.0"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 6 日"
+          "連續 7 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 216.47"
+          "stop 217.74"
         ],
         [
           "Daily CMF > 0",
           false,
-          "-0.188 強流出⚠️"
+          "-0.205 強流出⚠️"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 220.69 > E20 218.14"
+          "E10 222.45 > E20 219.30"
         ]
       ],
       "scores": [
         [
           "RS 改善",
-          1,
           3,
-          "斜率 -0.01/日 ✗ · RS +6.8"
+          3,
+          "斜率 +0.08/日 ✓ · RS +8.0"
         ],
         [
           "BigChing 7 條件",
@@ -2352,9 +2007,9 @@
         ],
         [
           "Weekly CMF",
-          1,
+          0,
           2,
-          "-0.011 改善中"
+          "-0.019"
         ],
         [
           "Volume 確認",
@@ -2366,7 +2021,7 @@
           "BSP 綠x粉",
           1,
           2,
-          "4 bar 前上穿"
+          "5 bar 前上穿"
         ]
       ],
       "vetoes": []
@@ -2379,81 +2034,81 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 37.08,
+      "close": 37.69,
       "gate_n": 3,
-      "score": 10,
+      "score": 11,
       "max_score": 14,
       "warn_n": 0,
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 33.0514,
+      "stop": 33.8947,
       "stop_label": "Weekly EMA10",
-      "rs_now": 11.96,
-      "rs_slope": -0.169,
+      "rs_now": 14.11,
+      "rs_slope": 0.021,
       "w_stack": true,
       "levels": {
-        "ema10d": 34.861,
-        "ema20d": 34.2738,
-        "ema50d": 33.2631,
-        "ema250d": 29.9468,
-        "ema10w": 33.0514,
-        "ema20w": 32.1321,
-        "ema89w": 26.6541,
-        "ut_stop": 33.3,
-        "st_line_d": 30.321,
+        "ema10d": 35.3753,
+        "ema20d": 34.5992,
+        "ema50d": 33.4367,
+        "ema250d": 30.0085,
+        "ema10w": 33.8947,
+        "ema20w": 32.6614,
+        "ema89w": 26.8993,
+        "ut_stop": 33.61,
+        "st_line_d": 30.336,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 59.9,
-        "cmf_d": -0.144,
+        "kdj_j": 75.5,
+        "cmf_d": -0.159,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 33.05 > E20w 32.13"
+          "P > E10w 33.89 > E20w 32.66"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 17 週"
+          "buy line，連續 18 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +12.0"
+          "Mansfield RS +14.1"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 6 日"
+          "連續 7 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 33.30"
+          "stop 33.61"
         ],
         [
           "Daily CMF > 0",
           false,
-          "-0.144 流出❌"
+          "-0.159 強流出⚠️"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 34.86 > E20 34.27"
+          "E10 35.38 > E20 34.60"
         ]
       ],
       "scores": [
         [
           "RS 改善",
-          1,
           3,
-          "斜率 -0.17/日 ✗ · RS +12.0"
+          3,
+          "斜率 +0.02/日 ✓ · RS +14.1"
         ],
         [
           "BigChing 7 條件",
@@ -2469,9 +2124,9 @@
         ],
         [
           "Weekly CMF",
-          1,
+          0,
           2,
-          "-0.061 改善中"
+          "-0.078"
         ],
         [
           "Volume 確認",
@@ -2483,7 +2138,7 @@
           "BSP 綠x粉",
           1,
           2,
-          "4 bar 前上穿"
+          "5 bar 前上穿"
         ]
       ],
       "vetoes": []
@@ -2496,7 +2151,7 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 356.47,
+      "close": 337.18,
       "gate_n": 3,
       "score": 10,
       "max_score": 14,
@@ -2504,65 +2159,65 @@
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 294.2696,
+      "stop": 302.0715,
       "stop_label": "Weekly EMA10",
-      "rs_now": 53.73,
-      "rs_slope": -0.267,
+      "rs_now": 45.67,
+      "rs_slope": -0.216,
       "w_stack": true,
       "levels": {
-        "ema10d": 327.5185,
-        "ema20d": 321.6948,
-        "ema50d": 295.4757,
-        "ema250d": 227.3462,
-        "ema10w": 294.2696,
-        "ema20w": 260.9171,
-        "ema89w": 210.5429,
-        "ut_stop": 199.03,
+        "ema10d": 329.2752,
+        "ema20d": 323.1696,
+        "ema50d": 297.1112,
+        "ema250d": 228.2214,
+        "ema10w": 302.0715,
+        "ema20w": 268.1803,
+        "ema89w": 213.3571,
+        "ut_stop": 297.74,
         "st_line_d": 309.1525,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 22.4,
-        "cmf_d": -0.157,
+        "kdj_j": 28.1,
+        "cmf_d": -0.26,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 294.27 > E20w 260.92"
+          "P > E10w 302.07 > E20w 268.18"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 14 週"
+          "buy line，連續 15 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +53.7"
+          "Mansfield RS +45.7"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 94 日"
+          "連續 95 日"
         ],
         [
           "Daily UT Bot = B",
           true,
-          "stop 199.03"
+          "stop 297.74"
         ],
         [
           "Daily CMF > 0",
           false,
-          "-0.157 強流出⚠️"
+          "-0.260 超流出⚠️⚠️"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 327.52 > E20 321.69"
+          "E10 329.28 > E20 323.17"
         ]
       ],
       "scores": [
@@ -2570,7 +2225,7 @@
           "RS 改善",
           1,
           3,
-          "斜率 -0.27/日 ✗ · RS +53.7"
+          "斜率 -0.22/日 ✗ · RS +45.7"
         ],
         [
           "BigChing 7 條件",
@@ -2588,7 +2243,7 @@
           "Weekly CMF",
           2,
           2,
-          "+0.199"
+          "+0.248"
         ],
         [
           "Volume 確認",
@@ -2606,123 +2261,6 @@
       "vetoes": []
     },
     {
-      "ticker": "EOG",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 145.96,
-      "gate_n": 3,
-      "score": 9,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "⚪ 觀察",
-      "concl_cls": "concl-gray",
-      "downgraded": null,
-      "stop": 141.9297,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 3.33,
-      "rs_slope": 0.2,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 146.638,
-        "ema20d": 145.7207,
-        "ema50d": 142.6534,
-        "ema250d": 130.5753,
-        "ema10w": 141.9297,
-        "ema20w": 138.0445,
-        "ema89w": 126.4287,
-        "ut_stop": 144.24,
-        "st_line_d": 142.522,
-        "st_line_w": null,
-        "ch_upper": 133.1886,
-        "ch_lower": 107.8567,
-        "kdj_j": 56.6,
-        "cmf_d": 0.152,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 141.93 > E20w 138.04"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 29 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +3.3"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 11 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 144.24"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.152 強流入🚀"
-        ],
-        [
-          "Daily EMA stack",
-          false,
-          "E10 146.64 > E20 145.72"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          3,
-          3,
-          "斜率 +0.20/日 ✓ · RS +3.3"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          0,
-          2,
-          "未成形"
-        ],
-        [
-          "Weekly CMF",
-          0,
-          2,
-          "-0.077"
-        ],
-        [
-          "Volume 確認",
-          1,
-          2,
-          "UT Bot B日 vol 1.28x"
-        ],
-        [
-          "BSP 綠x粉",
-          2,
-          2,
-          "綠線在上升緊"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
       "ticker": "JPM",
       "market": "US",
       "scen": "S1",
@@ -2730,7 +2268,7 @@
       "scen_en": "Momentum",
       "position": "1/1",
       "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 362.06,
+      "close": 358.64,
       "gate_n": 3,
       "score": 9,
       "max_score": 14,
@@ -2738,50 +2276,50 @@
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 346.7062,
+      "stop": 348.876,
       "stop_label": "Weekly EMA10",
-      "rs_now": 4.98,
-      "rs_slope": -0.047,
+      "rs_now": 4.39,
+      "rs_slope": -0.058,
       "w_stack": true,
       "levels": {
-        "ema10d": 357.2825,
-        "ema20d": 356.2889,
-        "ema50d": 347.9661,
-        "ema250d": 315.1368,
-        "ema10w": 346.7062,
-        "ema20w": 334.4078,
-        "ema89w": 292.3829,
+        "ema10d": 357.5293,
+        "ema20d": 356.5128,
+        "ema50d": 348.3847,
+        "ema250d": 315.4835,
+        "ema10w": 348.876,
+        "ema20w": 336.7156,
+        "ema89w": 293.8553,
         "ut_stop": 348.8,
         "st_line_d": 347.294,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 33.8,
-        "cmf_d": -0.082,
+        "kdj_j": 47.0,
+        "cmf_d": -0.054,
         "bigching": 7
       },
       "scen_rows": [
         [
           "Weekly EMA stack",
           true,
-          "P > E10w 346.71 > E20w 334.41"
+          "P > E10w 348.88 > E20w 336.72"
         ],
         [
           "Weekly ST = B",
           true,
-          "buy line，連續 7 週"
+          "buy line，連續 8 週"
         ],
         [
           "Daily RS > 0",
           true,
-          "Mansfield RS +5.0"
+          "Mansfield RS +4.4"
         ]
       ],
       "gates": [
         [
           "Daily SuperTrend = B",
           true,
-          "連續 58 日"
+          "連續 59 日"
         ],
         [
           "Daily UT Bot = B",
@@ -2791,12 +2329,12 @@
         [
           "Daily CMF > 0",
           false,
-          "-0.082 流出❌"
+          "-0.054 流出❌"
         ],
         [
           "Daily EMA stack",
           true,
-          "E10 357.28 > E20 356.29"
+          "E10 357.53 > E20 356.51"
         ]
       ],
       "scores": [
@@ -2804,475 +2342,7 @@
           "RS 改善",
           1,
           3,
-          "斜率 -0.05/日 ✗ · RS +5.0"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.062"
-        ],
-        [
-          "Volume 確認",
-          0,
-          2,
-          "UT Bot B日 vol 1.00x"
-        ],
-        [
-          "BSP 綠x粉",
-          1,
-          2,
-          "4 bar 前上穿"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
-      "ticker": "TRV",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 374.34,
-      "gate_n": 3,
-      "score": 8,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "⚪ 觀察",
-      "concl_cls": "concl-gray",
-      "downgraded": null,
-      "stop": 359.1007,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 10.14,
-      "rs_slope": -0.135,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 368.7824,
-        "ema20d": 368.7276,
-        "ema50d": 358.4837,
-        "ema250d": 312.112,
-        "ema10w": 359.1007,
-        "ema20w": 341.0407,
-        "ema89w": 289.8967,
-        "ut_stop": 353.56,
-        "st_line_d": 361.648,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 42.9,
-        "cmf_d": -0.273,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 359.10 > E20w 341.04"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 105 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +10.1"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 54 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 353.56"
-        ],
-        [
-          "Daily CMF > 0",
-          false,
-          "-0.273 超流出⚠️⚠️"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 368.78 > E20 368.73"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          1,
-          3,
-          "斜率 -0.13/日 ✗ · RS +10.1"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          2,
-          2,
-          "+0.231"
-        ],
-        [
-          "Volume 確認",
-          0,
-          2,
-          "UT Bot B日 vol 1.04x"
-        ],
-        [
-          "BSP 綠x粉",
-          0,
-          2,
-          "綠線在下"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
-      "ticker": "GM",
-      "market": "US",
-      "scen": "S1",
-      "scen_name": "S1 強勢延續",
-      "scen_en": "Momentum",
-      "position": "1/1",
-      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
-      "close": 87.22,
-      "gate_n": 3,
-      "score": 7,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "⚪ 觀察",
-      "concl_cls": "concl-gray",
-      "downgraded": null,
-      "stop": 84.2,
-      "stop_label": "Weekly EMA10",
-      "rs_now": 0.27,
-      "rs_slope": -0.042,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 86.1693,
-        "ema20d": 85.9747,
-        "ema50d": 84.1869,
-        "ema250d": 75.4916,
-        "ema10w": 84.2,
-        "ema20w": 81.7693,
-        "ema89w": 68.5013,
-        "ut_stop": 83.96,
-        "st_line_d": 81.64,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 32.0,
-        "cmf_d": -0.157,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "Weekly EMA stack",
-          true,
-          "P > E10w 84.20 > E20w 81.77"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "buy line，連續 54 週"
-        ],
-        [
-          "Daily RS > 0",
-          true,
-          "Mansfield RS +0.3"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily SuperTrend = B",
-          true,
-          "連續 32 日"
-        ],
-        [
-          "Daily UT Bot = B",
-          true,
-          "stop 83.96"
-        ],
-        [
-          "Daily CMF > 0",
-          false,
-          "-0.157 強流出⚠️"
-        ],
-        [
-          "Daily EMA stack",
-          true,
-          "E10 86.17 > E20 85.97"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          1,
-          3,
-          "斜率 -0.04/日 ✗ · RS +0.3"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          1,
-          2,
-          "-0.066 改善中"
-        ],
-        [
-          "Volume 確認",
-          0,
-          2,
-          "UT Bot B日 vol 0.92x"
-        ],
-        [
-          "BSP 綠x粉",
-          0,
-          2,
-          "綠線在下"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
-      "ticker": "ICE",
-      "market": "US",
-      "scen": "S2",
-      "scen_name": "S2 強勢修復",
-      "scen_en": "RS Recovery",
-      "position": "2/3",
-      "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
-      "close": 164.59,
-      "gate_n": 4,
-      "score": 10,
-      "max_score": 14,
-      "warn_n": 0,
-      "concl": "🟢 可入",
-      "concl_cls": "concl-green",
-      "downgraded": null,
-      "stop": 150.5604,
-      "stop_label": "Weekly EMA20",
-      "rs_now": -2.19,
-      "rs_slope": 0.5,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 160.4184,
-        "ema20d": 157.7798,
-        "ema50d": 152.1869,
-        "ema250d": 155.6649,
-        "ema10w": 151.4894,
-        "ema20w": 150.5604,
-        "ema89w": 155.1185,
-        "ut_stop": 150.97,
-        "st_line_d": 153.019,
-        "st_line_w": null,
-        "ch_upper": 155.4571,
-        "ch_lower": 115.9753,
-        "kdj_j": 75.0,
-        "cmf_d": 0.127,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "價 > EMA250",
-          true,
-          "+5.7% vs EMA250 155.66"
-        ],
-        [
-          "Weekly 結構完好",
-          true,
-          "P ≥ EMA89w 155.12 ✓ · Weekly ST = B ✓"
-        ],
-        [
-          "Daily RS < 0 改善中",
-          true,
-          "RS -2.2，斜率 +0.50/日（約 4 日轉正）"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily ST B + UT Bot B",
-          true,
-          "ST ✓ · UT ✓"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.127 流入✅"
-        ],
-        [
-          "Weekly P ≥ EMA89",
-          true,
-          "+6.1%"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "連續 5 週"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          2,
-          3,
-          "斜率 +0.50/日 ✓ · RS -2.2"
-        ],
-        [
-          "BigChing 7 條件",
-          3,
-          3,
-          "7/7 全綠"
-        ],
-        [
-          "Daily EMA stack",
-          2,
-          2,
-          "P>E10>E20 成立"
-        ],
-        [
-          "Weekly CMF",
-          0,
-          2,
-          "-0.051"
-        ],
-        [
-          "Volume 確認",
-          1,
-          2,
-          "UT Bot B日 vol 1.47x"
-        ],
-        [
-          "BSP 綠x粉",
-          2,
-          2,
-          "綠線在上升緊"
-        ]
-      ],
-      "vetoes": []
-    },
-    {
-      "ticker": "PGR",
-      "market": "US",
-      "scen": "S2",
-      "scen_name": "S2 強勢修復",
-      "scen_en": "RS Recovery",
-      "position": "2/3",
-      "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
-      "close": 223.87,
-      "gate_n": 4,
-      "score": 10,
-      "max_score": 14,
-      "warn_n": 1,
-      "concl": "🟡 RS 轉正日入",
-      "concl_cls": "concl-amber",
-      "downgraded": null,
-      "stop": 212.3918,
-      "stop_label": "Weekly EMA20",
-      "rs_now": -0.99,
-      "rs_slope": 0.461,
-      "w_stack": true,
-      "levels": {
-        "ema10d": 219.8769,
-        "ema20d": 217.8742,
-        "ema50d": 214.9594,
-        "ema250d": 218.1853,
-        "ema10w": 214.6448,
-        "ema20w": 212.3918,
-        "ema89w": 219.1426,
-        "ut_stop": 215.73,
-        "st_line_d": 212.378,
-        "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 93.1,
-        "cmf_d": 0.139,
-        "bigching": 7
-      },
-      "scen_rows": [
-        [
-          "價 > EMA250",
-          true,
-          "+2.6% vs EMA250 218.19"
-        ],
-        [
-          "Weekly 結構完好",
-          true,
-          "P ≥ EMA89w 219.14 ✓ · Weekly ST = B ✓"
-        ],
-        [
-          "Daily RS < 0 改善中",
-          true,
-          "RS -1.0，斜率 +0.46/日（約 2 日轉正）"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily ST B + UT Bot B",
-          true,
-          "ST ✓ · UT ✓"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.139 流入✅"
-        ],
-        [
-          "Weekly P ≥ EMA89",
-          true,
-          "+2.2%"
-        ],
-        [
-          "Weekly ST = B",
-          true,
-          "連續 9 週"
-        ]
-      ],
-      "scores": [
-        [
-          "RS 改善",
-          2,
-          3,
-          "斜率 +0.46/日 ✓ · RS -1.0"
+          "斜率 -0.06/日 ✗ · RS +4.4"
         ],
         [
           "BigChing 7 條件",
@@ -3296,106 +2366,340 @@
           "Volume 確認",
           0,
           2,
-          "UT Bot B日 vol 1.08x"
+          "UT Bot B日 vol 1.00x"
         ],
         [
           "BSP 綠x粉",
           1,
           2,
-          "收斂中"
+          "5 bar 前上穿"
         ]
       ],
-      "vetoes": [
-        [
-          "⚠️",
-          "KDJ 超買",
-          "J=93.1 > 80 → 等回落"
-        ]
-      ]
+      "vetoes": []
     },
     {
-      "ticker": "SPGI",
+      "ticker": "BE",
       "market": "US",
-      "scen": "S2",
-      "scen_name": "S2 強勢修復",
-      "scen_en": "RS Recovery",
-      "position": "2/3",
-      "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
-      "close": 450.58,
-      "gate_n": 4,
-      "score": 8,
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 252.87,
+      "gate_n": 3,
+      "score": 9,
       "max_score": 14,
       "warn_n": 0,
-      "concl": "🟢 可入",
-      "concl_cls": "concl-green",
+      "concl": "⚪ 觀察",
+      "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 420.5072,
-      "stop_label": "Weekly EMA20",
-      "rs_now": -2.46,
-      "rs_slope": 0.583,
+      "stop": 228.1589,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 18.0,
+      "rs_slope": -0.113,
       "w_stack": true,
       "levels": {
-        "ema10d": 436.5964,
-        "ema20d": 431.2244,
-        "ema50d": 423.6264,
-        "ema250d": 435.1096,
-        "ema10w": 423.3215,
-        "ema20w": 420.5072,
-        "ema89w": 440.0309,
-        "ut_stop": 424.55,
-        "st_line_d": 410.28,
+        "ema10d": 223.9548,
+        "ema20d": 220.5965,
+        "ema50d": 226.8694,
+        "ema250d": 179.1699,
+        "ema10w": 228.1589,
+        "ema20w": 223.9889,
+        "ema89w": 138.1482,
+        "ut_stop": 217.37,
+        "st_line_d": 196.0806,
         "st_line_w": null,
-        "ch_upper": null,
-        "ch_lower": null,
-        "kdj_j": 79.7,
-        "cmf_d": 0.025,
+        "ch_upper": 207.2065,
+        "ch_lower": 79.5343,
+        "kdj_j": 70.4,
+        "cmf_d": -0.045,
         "bigching": 7
       },
       "scen_rows": [
         [
-          "價 > EMA250",
+          "Weekly EMA stack",
           true,
-          "+3.6% vs EMA250 435.11"
-        ],
-        [
-          "Weekly 結構完好",
-          true,
-          "P ≥ EMA89w 440.03 ✓ · Weekly ST = B ✓"
-        ],
-        [
-          "Daily RS < 0 改善中",
-          true,
-          "RS -2.5，斜率 +0.58/日（約 4 日轉正）"
-        ]
-      ],
-      "gates": [
-        [
-          "Daily ST B + UT Bot B",
-          true,
-          "ST ✓ · UT ✓"
-        ],
-        [
-          "Daily CMF > 0",
-          true,
-          "+0.025 中性"
-        ],
-        [
-          "Weekly P ≥ EMA89",
-          true,
-          "+2.4%"
+          "P > E10w 228.16 > E20w 223.99"
         ],
         [
           "Weekly ST = B",
           true,
-          "連續 7 週"
+          "buy line，連續 59 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +18.0"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 1 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 217.37"
+        ],
+        [
+          "Daily CMF > 0",
+          false,
+          "-0.045 中性"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 223.95 > E20 220.60"
         ]
       ],
       "scores": [
         [
           "RS 改善",
-          2,
+          1,
           3,
-          "斜率 +0.58/日 ✓ · RS -2.5"
+          "斜率 -0.11/日 ✗ · RS +18.0"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          0,
+          2,
+          "-0.067"
+        ],
+        [
+          "Volume 確認",
+          1,
+          2,
+          "ST B日 vol 1.34x"
+        ],
+        [
+          "BSP 綠x粉",
+          2,
+          2,
+          "綠線在上升緊"
+        ]
+      ],
+      "vetoes": []
+    },
+    {
+      "ticker": "C",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 137.72,
+      "gate_n": 3,
+      "score": 9,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "⚪ 觀察",
+      "concl_cls": "concl-gray",
+      "downgraded": null,
+      "stop": 134.6415,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 2.41,
+      "rs_slope": -0.128,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 134.7904,
+        "ema20d": 134.5132,
+        "ema50d": 134.2292,
+        "ema250d": 118.8636,
+        "ema10w": 134.6415,
+        "ema20w": 131.5913,
+        "ema89w": 106.6658,
+        "ut_stop": 132.24,
+        "st_line_d": 139.102,
+        "st_line_w": null,
+        "ch_upper": 138.402,
+        "ch_lower": 122.001,
+        "kdj_j": 59.2,
+        "cmf_d": 0.063,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 134.64 > E20w 131.59"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 63 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +2.4"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          false,
+          "連續 0 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 132.24"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.063 流入✅"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 134.79 > E20 134.51"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          1,
+          3,
+          "斜率 -0.13/日 ✗ · RS +2.4"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          0,
+          2,
+          "-0.075"
+        ],
+        [
+          "Volume 確認",
+          1,
+          2,
+          "UT Bot B日 vol 1.49x"
+        ],
+        [
+          "BSP 綠x粉",
+          2,
+          2,
+          "綠線在上升緊"
+        ]
+      ],
+      "vetoes": [
+        [
+          "⚠️",
+          "下降通道上軌",
+          "距上軌 0.5% (138.40) → 唔追"
+        ]
+      ]
+    },
+    {
+      "ticker": "APH",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 82.78,
+      "gate_n": 3,
+      "score": 9,
+      "max_score": 14,
+      "warn_n": 0,
+      "concl": "⚪ 觀察",
+      "concl_cls": "concl-gray",
+      "downgraded": null,
+      "stop": 79.7812,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 4.92,
+      "rs_slope": -0.178,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 80.8947,
+        "ema20d": 80.7097,
+        "ema50d": 79.5945,
+        "ema250d": 69.6355,
+        "ema10w": 79.7812,
+        "ema20w": 77.191,
+        "ema89w": 61.6535,
+        "ut_stop": 78.8,
+        "st_line_d": 76.3565,
+        "st_line_w": null,
+        "ch_upper": 87.2806,
+        "ch_lower": 68.6558,
+        "kdj_j": 55.1,
+        "cmf_d": -0.035,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 79.78 > E20w 77.19"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 71 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +4.9"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 25 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 78.80"
+        ],
+        [
+          "Daily CMF > 0",
+          false,
+          "-0.035 中性"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 80.89 > E20 80.71"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          1,
+          3,
+          "斜率 -0.18/日 ✗ · RS +4.9"
         ],
         [
           "BigChing 7 條件",
@@ -3413,7 +2717,727 @@
           "Weekly CMF",
           1,
           2,
-          "-0.013 改善中"
+          "-0.008 改善中"
+        ],
+        [
+          "Volume 確認",
+          0,
+          2,
+          "UT Bot B日 vol 0.95x"
+        ],
+        [
+          "BSP 綠x粉",
+          2,
+          2,
+          "綠線在上升緊"
+        ]
+      ],
+      "vetoes": []
+    },
+    {
+      "ticker": "EOG",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 145.19,
+      "gate_n": 3,
+      "score": 8,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "⚪ 觀察",
+      "concl_cls": "concl-gray",
+      "downgraded": null,
+      "stop": 142.5225,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 3.06,
+      "rs_slope": 0.057,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 146.3747,
+        "ema20d": 145.6701,
+        "ema50d": 142.7529,
+        "ema250d": 130.6918,
+        "ema10w": 142.5225,
+        "ema20w": 138.725,
+        "ema89w": 126.8456,
+        "ut_stop": 144.24,
+        "st_line_d": 142.522,
+        "st_line_w": null,
+        "ch_upper": 133.0172,
+        "ch_lower": 107.6853,
+        "kdj_j": 43.9,
+        "cmf_d": 0.15,
+        "bigching": 6
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 142.52 > E20w 138.73"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 30 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +3.1"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 12 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 144.24"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.150 強流入🚀"
+        ],
+        [
+          "Daily EMA stack",
+          false,
+          "E10 146.37 > E20 145.67"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          3,
+          3,
+          "斜率 +0.06/日 ✓ · RS +3.1"
+        ],
+        [
+          "BigChing 7 條件",
+          2,
+          3,
+          "6/7（欠 P>EMA20 -0.3%）"
+        ],
+        [
+          "Daily EMA stack",
+          0,
+          2,
+          "未成形"
+        ],
+        [
+          "Weekly CMF",
+          0,
+          2,
+          "-0.059"
+        ],
+        [
+          "Volume 確認",
+          1,
+          2,
+          "UT Bot B日 vol 1.28x"
+        ],
+        [
+          "BSP 綠x粉",
+          2,
+          2,
+          "綠線在上升緊"
+        ]
+      ],
+      "vetoes": [
+        [
+          "⚠️",
+          "EMA 阻力",
+          "EMA20 於 +0.3% (145.67)"
+        ]
+      ]
+    },
+    {
+      "ticker": "TRV",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 369.35,
+      "gate_n": 3,
+      "score": 8,
+      "max_score": 14,
+      "warn_n": 0,
+      "concl": "⚪ 觀察",
+      "concl_cls": "concl-gray",
+      "downgraded": null,
+      "stop": 360.9642,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 9.02,
+      "rs_slope": -0.079,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 368.8856,
+        "ema20d": 368.7869,
+        "ema50d": 358.9098,
+        "ema250d": 312.568,
+        "ema10w": 360.9642,
+        "ema20w": 343.7368,
+        "ema89w": 291.6624,
+        "ut_stop": 356.27,
+        "st_line_d": 361.648,
+        "st_line_w": null,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 58.8,
+        "cmf_d": -0.334,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 360.96 > E20w 343.74"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 106 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +9.0"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 55 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 356.27"
+        ],
+        [
+          "Daily CMF > 0",
+          false,
+          "-0.334 超流出⚠️⚠️"
+        ],
+        [
+          "Daily EMA stack",
+          true,
+          "E10 368.89 > E20 368.79"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          1,
+          3,
+          "斜率 -0.08/日 ✗ · RS +9.0"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          2,
+          2,
+          "+0.229"
+        ],
+        [
+          "Volume 確認",
+          0,
+          2,
+          "UT Bot B日 vol 1.04x"
+        ],
+        [
+          "BSP 綠x粉",
+          0,
+          2,
+          "綠線在下"
+        ]
+      ],
+      "vetoes": []
+    },
+    {
+      "ticker": "TQQQ",
+      "market": "US",
+      "scen": "S1",
+      "scen_name": "S1 強勢延續",
+      "scen_en": "Momentum",
+      "position": "1/1",
+      "buy_logic": "動能股：回踩 EMA10 即買，唔等深回。",
+      "close": 72.37,
+      "gate_n": 3,
+      "score": 6,
+      "max_score": 14,
+      "warn_n": 0,
+      "concl": "⚪ 觀察",
+      "concl_cls": "concl-gray",
+      "downgraded": null,
+      "stop": 71.788,
+      "stop_label": "Weekly EMA10",
+      "rs_now": 8.54,
+      "rs_slope": -0.422,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 71.4062,
+        "ema20d": 71.4789,
+        "ema50d": 71.4841,
+        "ema250d": 60.8633,
+        "ema10w": 71.788,
+        "ema20w": 69.4332,
+        "ema89w": 53.7593,
+        "ut_stop": 69.19,
+        "st_line_d": 68.052,
+        "st_line_w": null,
+        "ch_upper": 75.1027,
+        "ch_lower": 52.1953,
+        "kdj_j": 17.7,
+        "cmf_d": 0.024,
+        "bigching": 6
+      },
+      "scen_rows": [
+        [
+          "Weekly EMA stack",
+          true,
+          "P > E10w 71.79 > E20w 69.43"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "buy line，連續 21 週"
+        ],
+        [
+          "Daily RS > 0",
+          true,
+          "Mansfield RS +8.5"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily SuperTrend = B",
+          true,
+          "連續 24 日"
+        ],
+        [
+          "Daily UT Bot = B",
+          true,
+          "stop 69.19"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.024 中性"
+        ],
+        [
+          "Daily EMA stack",
+          false,
+          "E10 71.41 < E20 71.48"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          1,
+          3,
+          "斜率 -0.42/日 ✗ · RS +8.5"
+        ],
+        [
+          "BigChing 7 條件",
+          2,
+          3,
+          "6/7（欠 MACD>0 -0.088）"
+        ],
+        [
+          "Daily EMA stack",
+          1,
+          2,
+          "EMA10 斜率轉正"
+        ],
+        [
+          "Weekly CMF",
+          2,
+          2,
+          "+0.279"
+        ],
+        [
+          "Volume 確認",
+          0,
+          2,
+          "UT Bot B日 vol 1.01x"
+        ],
+        [
+          "BSP 綠x粉",
+          0,
+          2,
+          "綠線在下"
+        ]
+      ],
+      "vetoes": [
+        [
+          "ℹ️",
+          "KDJ 矛盾",
+          "J=17.7 超賣但價升 → 等回踩"
+        ]
+      ]
+    },
+    {
+      "ticker": "ICE",
+      "market": "US",
+      "scen": "S2",
+      "scen_name": "S2 強勢修復",
+      "scen_en": "RS Recovery",
+      "position": "2/3",
+      "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
+      "close": 161.26,
+      "gate_n": 4,
+      "score": 11,
+      "max_score": 14,
+      "warn_n": 0,
+      "concl": "🟢 可入",
+      "concl_cls": "concl-green",
+      "downgraded": null,
+      "stop": 151.5794,
+      "stop_label": "Weekly EMA20",
+      "rs_now": -3.73,
+      "rs_slope": 0.451,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 160.5714,
+        "ema20d": 158.1112,
+        "ema50d": 152.5427,
+        "ema250d": 155.7095,
+        "ema10w": 153.2658,
+        "ema20w": 151.5794,
+        "ema89w": 155.255,
+        "ut_stop": 154.18,
+        "st_line_d": 153.019,
+        "st_line_w": null,
+        "ch_upper": 155.3333,
+        "ch_lower": 115.8515,
+        "kdj_j": 79.2,
+        "cmf_d": 0.091,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "價 > EMA250",
+          true,
+          "+3.6% vs EMA250 155.71"
+        ],
+        [
+          "Weekly 結構完好",
+          true,
+          "P ≥ EMA89w 155.25 ✓ · Weekly ST = B ✓"
+        ],
+        [
+          "Daily RS < 0 改善中",
+          true,
+          "RS -3.7，斜率 +0.45/日（約 8 日轉正）"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily ST B + UT Bot B",
+          true,
+          "ST ✓ · UT ✓"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.091 流入✅"
+        ],
+        [
+          "Weekly P ≥ EMA89",
+          true,
+          "+3.9%"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "連續 6 週"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          2,
+          3,
+          "斜率 +0.45/日 ✓ · RS -3.7"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          1,
+          2,
+          "-0.029 改善中"
+        ],
+        [
+          "Volume 確認",
+          1,
+          2,
+          "UT Bot B日 vol 1.47x"
+        ],
+        [
+          "BSP 綠x粉",
+          2,
+          2,
+          "綠線在上升緊"
+        ]
+      ],
+      "vetoes": []
+    },
+    {
+      "ticker": "WFC",
+      "market": "US",
+      "scen": "S2",
+      "scen_name": "S2 強勢修復",
+      "scen_en": "RS Recovery",
+      "position": "2/3",
+      "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
+      "close": 89.97,
+      "gate_n": 4,
+      "score": 10,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "🟡 RS 轉正日入",
+      "concl_cls": "concl-amber",
+      "downgraded": null,
+      "stop": 85.0273,
+      "stop_label": "Weekly EMA20",
+      "rs_now": -1.49,
+      "rs_slope": 0.131,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 87.6336,
+        "ema20d": 87.0759,
+        "ema50d": 86.0455,
+        "ema250d": 82.903,
+        "ema10w": 86.4152,
+        "ema20w": 85.0273,
+        "ema89w": 79.0501,
+        "ut_stop": 87.17,
+        "st_line_d": 84.323,
+        "st_line_w": null,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 99.0,
+        "cmf_d": 0.03,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "價 > EMA250",
+          true,
+          "+8.5% vs EMA250 82.90"
+        ],
+        [
+          "Weekly 結構完好",
+          true,
+          "P ≥ EMA89w 79.05 ✓ · Weekly ST = B ✓"
+        ],
+        [
+          "Daily RS < 0 改善中",
+          true,
+          "RS -1.5，斜率 +0.13/日（約 11 日轉正）"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily ST B + UT Bot B",
+          true,
+          "ST ✓ · UT ✓"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.030 中性"
+        ],
+        [
+          "Weekly P ≥ EMA89",
+          true,
+          "+13.8%"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "連續 4 週"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          2,
+          3,
+          "斜率 +0.13/日 ✓ · RS -1.5"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          1,
+          2,
+          "-0.017 改善中"
+        ],
+        [
+          "Volume 確認",
+          2,
+          2,
+          "ST B日 vol 1.67x"
+        ],
+        [
+          "BSP 綠x粉",
+          0,
+          2,
+          "綠線在下"
+        ]
+      ],
+      "vetoes": [
+        [
+          "⚠️",
+          "KDJ 超買",
+          "J=99.0 > 80 → 等回落"
+        ]
+      ]
+    },
+    {
+      "ticker": "SPGI",
+      "market": "US",
+      "scen": "S2",
+      "scen_name": "S2 強勢修復",
+      "scen_en": "RS Recovery",
+      "position": "2/3",
+      "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
+      "close": 443.51,
+      "gate_n": 4,
+      "score": 9,
+      "max_score": 14,
+      "warn_n": 1,
+      "concl": "🟡 RS 轉正日入",
+      "concl_cls": "concl-amber",
+      "downgraded": null,
+      "stop": 422.6979,
+      "stop_label": "Weekly EMA20",
+      "rs_now": -3.51,
+      "rs_slope": 0.559,
+      "w_stack": true,
+      "levels": {
+        "ema10d": 437.8534,
+        "ema20d": 432.3944,
+        "ema50d": 424.4062,
+        "ema250d": 435.1766,
+        "ema10w": 426.9921,
+        "ema20w": 422.6979,
+        "ema89w": 440.1082,
+        "ut_stop": 424.55,
+        "st_line_d": 410.28,
+        "st_line_w": null,
+        "ch_upper": null,
+        "ch_lower": null,
+        "kdj_j": 82.5,
+        "cmf_d": 0.078,
+        "bigching": 7
+      },
+      "scen_rows": [
+        [
+          "價 > EMA250",
+          true,
+          "+1.9% vs EMA250 435.18"
+        ],
+        [
+          "Weekly 結構完好",
+          true,
+          "P ≥ EMA89w 440.11 ✓ · Weekly ST = B ✓"
+        ],
+        [
+          "Daily RS < 0 改善中",
+          true,
+          "RS -3.5，斜率 +0.56/日（約 6 日轉正）"
+        ]
+      ],
+      "gates": [
+        [
+          "Daily ST B + UT Bot B",
+          true,
+          "ST ✓ · UT ✓"
+        ],
+        [
+          "Daily CMF > 0",
+          true,
+          "+0.078 流入✅"
+        ],
+        [
+          "Weekly P ≥ EMA89",
+          true,
+          "+0.8%"
+        ],
+        [
+          "Weekly ST = B",
+          true,
+          "連續 8 週"
+        ]
+      ],
+      "scores": [
+        [
+          "RS 改善",
+          2,
+          3,
+          "斜率 +0.56/日 ✓ · RS -3.5"
+        ],
+        [
+          "BigChing 7 條件",
+          3,
+          3,
+          "7/7 全綠"
+        ],
+        [
+          "Daily EMA stack",
+          2,
+          2,
+          "P>E10>E20 成立"
+        ],
+        [
+          "Weekly CMF",
+          2,
+          2,
+          "+0.019"
         ],
         [
           "Volume 確認",
@@ -3428,61 +3452,67 @@
           "綠線在下"
         ]
       ],
-      "vetoes": []
+      "vetoes": [
+        [
+          "⚠️",
+          "KDJ 超買",
+          "J=82.5 > 80 → 等回落"
+        ]
+      ]
     },
     {
-      "ticker": "WFC",
+      "ticker": "MDT",
       "market": "US",
       "scen": "S2",
       "scen_name": "S2 強勢修復",
       "scen_en": "RS Recovery",
       "position": "2/3",
       "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
-      "close": 89.19,
-      "gate_n": 3,
-      "score": 11,
+      "close": 94.17,
+      "gate_n": 4,
+      "score": 9,
       "max_score": 14,
-      "warn_n": 1,
-      "concl": "⚪ 觀察",
-      "concl_cls": "concl-gray",
+      "warn_n": 0,
+      "concl": "🟢 可入",
+      "concl_cls": "concl-green",
       "downgraded": null,
-      "stop": 84.507,
+      "stop": 87.0054,
       "stop_label": "Weekly EMA20",
-      "rs_now": -2.81,
-      "rs_slope": 0.079,
+      "rs_now": -1.46,
+      "rs_slope": 0.277,
       "w_stack": true,
       "levels": {
-        "ema10d": 87.1144,
-        "ema20d": 86.7713,
-        "ema50d": 85.8853,
-        "ema250d": 82.8462,
-        "ema10w": 85.6252,
-        "ema20w": 84.507,
-        "ema89w": 78.8019,
-        "ut_stop": 85.87,
-        "st_line_d": 84.323,
+        "ema10d": 92.2145,
+        "ema20d": 91.054,
+        "ema50d": 87.9246,
+        "ema250d": 88.1305,
+        "ema10w": 88.5886,
+        "ema20w": 87.0054,
+        "ema89w": 88.5289,
+        "ut_stop": 89.31,
+        "st_line_d": 87.409,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 83.4,
-        "cmf_d": -0.031,
+        "kdj_j": 63.1,
+        "cmf_d": 0.023,
         "bigching": 7
       },
       "scen_rows": [
         [
           "價 > EMA250",
           true,
-          "+7.7% vs EMA250 82.85"
+          "+6.9% vs EMA250 88.13"
         ],
         [
           "Weekly 結構完好",
           true,
-          "P ≥ EMA89w 78.80 ✓ · Weekly ST = B ✓"
+          "P ≥ EMA89w 88.53 ✓ · Weekly ST = B ✓"
         ],
         [
           "Daily RS < 0 改善中",
           true,
-          "RS -2.8，斜率 +0.08/日"
+          "RS -1.5，斜率 +0.28/日（約 5 日轉正）"
         ]
       ],
       "gates": [
@@ -3493,18 +3523,18 @@
         ],
         [
           "Daily CMF > 0",
-          false,
-          "-0.031 中性"
+          true,
+          "+0.023 中性"
         ],
         [
           "Weekly P ≥ EMA89",
           true,
-          "+13.2%"
+          "+6.4%"
         ],
         [
           "Weekly ST = B",
           true,
-          "連續 3 週"
+          "連續 4 週"
         ]
       ],
       "scores": [
@@ -3512,7 +3542,7 @@
           "RS 改善",
           2,
           3,
-          "斜率 +0.08/日 ✓ · RS -2.8"
+          "斜率 +0.28/日 ✓ · RS -1.5"
         ],
         [
           "BigChing 7 條件",
@@ -3528,30 +3558,24 @@
         ],
         [
           "Weekly CMF",
-          1,
           2,
-          "-0.042 改善中"
+          2,
+          "+0.058"
         ],
         [
           "Volume 確認",
+          0,
           2,
-          2,
-          "ST B日 vol 1.67x"
+          "UT Bot B日 vol 0.95x"
         ],
         [
           "BSP 綠x粉",
-          1,
+          0,
           2,
-          "5 bar 前上穿"
+          "綠線在下"
         ]
       ],
-      "vetoes": [
-        [
-          "⚠️",
-          "KDJ 超買",
-          "J=83.4 > 80 → 等回落"
-        ]
-      ]
+      "vetoes": []
     },
     {
       "ticker": "GLXY",
@@ -3561,51 +3585,51 @@
       "scen_en": "RS Recovery",
       "position": "2/3",
       "buy_logic": "修復股：等 RS 轉正日或 BigChing 7/7 全綠日入。",
-      "close": 26.5,
+      "close": 26.33,
       "gate_n": 3,
       "score": 10,
       "max_score": 14,
-      "warn_n": 0,
+      "warn_n": 1,
       "concl": "⚪ 觀察",
       "concl_cls": "concl-gray",
       "downgraded": null,
-      "stop": 24.5238,
+      "stop": 24.6959,
       "stop_label": "Weekly EMA20",
-      "rs_now": -1.62,
-      "rs_slope": 1.25,
+      "rs_now": -1.85,
+      "rs_slope": 1.284,
       "w_stack": false,
       "levels": {
-        "ema10d": 24.1637,
-        "ema20d": 23.4574,
-        "ema50d": 23.8665,
-        "ema250d": 25.3867,
-        "ema10w": 23.5632,
-        "ema20w": 24.5238,
-        "ema89w": 25.0056,
-        "ut_stop": 22.44,
-        "st_line_d": 20.458,
+        "ema10d": 24.5576,
+        "ema20d": 23.731,
+        "ema50d": 23.9631,
+        "ema250d": 25.3942,
+        "ema10w": 24.0662,
+        "ema20w": 24.6959,
+        "ema89w": 25.0351,
+        "ut_stop": 24.59,
+        "st_line_d": 20.875,
         "st_line_w": null,
         "ch_upper": null,
         "ch_lower": null,
-        "kdj_j": 78.0,
-        "cmf_d": -0.078,
+        "kdj_j": 86.0,
+        "cmf_d": -0.072,
         "bigching": 7
       },
       "scen_rows": [
         [
           "價 > EMA250",
           true,
-          "+4.4% vs EMA250 25.39"
+          "+3.7% vs EMA250 25.39"
         ],
         [
           "Weekly 結構完好",
           true,
-          "P ≥ EMA89w 25.01 ✓ · Weekly ST = B ✓"
+          "P ≥ EMA89w 25.04 ✓ · Weekly ST = B ✓"
         ],
         [
           "Daily RS < 0 改善中",
           true,
-          "RS -1.6，斜率 +1.25/日（約 1 日轉正）"
+          "RS -1.8，斜率 +1.28/日（約 1 日轉正）"
         ]
       ],
       "gates": [
@@ -3617,17 +3641,17 @@
         [
           "Daily CMF > 0",
           false,
-          "-0.078 流出❌"
+          "-0.072 流出❌"
         ],
         [
           "Weekly P ≥ EMA89",
           true,
-          "+6.0%"
+          "+5.2%"
         ],
         [
           "Weekly ST = B",
           true,
-          "連續 12 週"
+          "連續 13 週"
         ]
       ],
       "scores": [
@@ -3635,7 +3659,7 @@
           "RS 改善",
           2,
           3,
-          "斜率 +1.25/日 ✓ · RS -1.6"
+          "斜率 +1.28/日 ✓ · RS -1.8"
         ],
         [
           "BigChing 7 條件",
@@ -3653,7 +3677,7 @@
           "Weekly CMF",
           0,
           2,
-          "-0.051"
+          "-0.053"
         ],
         [
           "Volume 確認",
@@ -3668,39 +3692,45 @@
           "綠線在上升緊"
         ]
       ],
-      "vetoes": []
+      "vetoes": [
+        [
+          "⚠️",
+          "KDJ 超買",
+          "J=86.0 > 80 → 等回落"
+        ]
+      ]
     }
   ],
   "tickers": [
-    "DE",
-    "HOOD",
+    "3968.HK",
+    "JNJ",
+    "2388.HK",
     "OKTA",
     "AAPL",
-    "JNJ",
-    "ELV",
-    "2388.HK",
-    "2018.HK",
     "AMGN",
+    "0005.HK",
     "REGN",
-    "CRWD",
     "ILMN",
     "0300.HK",
-    "MSFT",
+    "2018.HK",
     "SMTC",
-    "WELL",
-    "XOM",
+    "CRWD",
+    "ELV",
     "HSBC",
     "NVDA",
     "NVDL",
     "SNOW",
-    "EOG",
     "JPM",
+    "BE",
+    "C",
+    "APH",
+    "EOG",
     "TRV",
-    "GM",
+    "TQQQ",
     "ICE",
-    "PGR",
-    "SPGI",
     "WFC",
+    "SPGI",
+    "MDT",
     "GLXY"
   ]
 }
