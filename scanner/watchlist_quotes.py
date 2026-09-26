@@ -161,12 +161,18 @@ def load_prev_quotes(out_path: Path):
     return {}
 
 
-def run(watchlist_path: Path, out_path: Path):
+def run(watchlist_path: Path, out_path: Path, markets=None):
+    """markets: iterable of 'US'/'HK' to restrict this run to -- same idea as
+    band_quotes.py's QUOTE_MARKETS env var, so an off-hours cron doesn't waste
+    Yahoo quota re-quoting a market that isn't even open."""
+    markets = {m.upper() for m in markets} if markets else {"US", "HK"}
     entries = parse_watchlist(watchlist_path)
     valid = [e for e in entries if e["ticker"]]
     by_market = {"US": [], "HK": []}
     for e in valid:
-        by_market[market_of(e["ticker"])].append(e["ticker"])
+        m = market_of(e["ticker"])
+        if m in markets:
+            by_market[m].append(e["ticker"])
 
     quotes = load_prev_quotes(out_path)
     fresh_count = 0
@@ -232,5 +238,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--watchlist", default=Path(os.environ.get("WATCHLIST_TXT", "Watchlists.txt")), type=Path)
     ap.add_argument("--out", default=Path(os.environ.get("WATCHLIST_QUOTES_OUT", "watchlist_quotes.json")), type=Path)
+    ap.add_argument("--markets", default=os.environ.get("QUOTE_MARKETS", "US,HK"),
+                     help="comma list, e.g. 'US' or 'US,HK' -- same env var name as band_quotes.py")
     args = ap.parse_args()
-    run(args.watchlist, args.out)
+    run(args.watchlist, args.out, markets=[m.strip() for m in args.markets.split(",") if m.strip()])
