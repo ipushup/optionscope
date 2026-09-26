@@ -42,6 +42,7 @@ const M = "'DM Mono',ui-monospace,monospace";
 const N = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : v.toFixed(d));
 const P = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(d)}%`);
 const pctC = v => (v == null ? C.mute : v > 0 ? C.up : v < 0 ? C.dn : C.mute);
+const isHK = ticker => ticker.endsWith(".HK");
 
 const BAND_LABEL = { confirmed: "已確認", forming: "形成中", candidate: "候選", exit: "出場", watch: "觀察", flat: "追蹤中" };
 const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" };
@@ -215,8 +216,8 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct), fontWeight: 700 }}>
                   {P(r.chg_pct)}
                 </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.ext_chg_pct) }}>
-                  {P(r.ext_chg_pct)}
+                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
+                  {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}
                 </td>
               </tr>
             ))}
