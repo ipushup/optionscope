@@ -124,24 +124,74 @@ jobs:
              || 'US,HK' }}
         run: python scanner/band_quotes.py
 
+      # ── WATCHLIST（Symbol/TBand/UT/ST/Last/%Chg/E%Chg 嗰個新tab）─────────
+      # watchlist_quotes.py 用返同一個 QUOTE_MARKETS，同 band_quotes.py 一齊
+      # 喺*每次* run 都刷（quotes-only 同 full scan 都要），先至可以跟得住
+      # 開緊市嗰邊嘅價。indicator_scan.py（UT Bot/SuperTrend 要重新計）同
+      # merge_watchlist.py 就淨係 full scan 至用得著跑 —— 呢兩樣同 band.json
+      # 自己個 confirmed/forming/candidates 一樣，全部 closed-candle based，
+      # 15分鐘報價cron跑多次都係嘥Yahoo額度冇著數。
+      - name: Refresh watchlist quotes
+        env:
+          QUOTE_MARKETS: >-
+            ${{ (github.event_name == 'schedule' && startsWith(github.event.schedule, '5,20,35,50 1-7')) && 'HK'
+             || (github.event_name == 'schedule' && startsWith(github.event.schedule, '5,20,35,50 8-23')) && 'US'
+             || 'US,HK' }}
+        run: |
+          python scanner/watchlist_quotes.py \
+            --watchlist scanner/Watchlists.txt \
+            --out frontend/public/watchlist_quotes.json
+
+      - name: Watchlist indicators + merge (full scan only)
+        if: steps.mode.outputs.full == 'true'
+        run: |
+          python scanner/indicator_scan.py \
+            --watchlist scanner/Watchlists.txt \
+            --out frontend/public/indicator_signals.json
+          python scanner/merge_watchlist.py \
+            --watchlist scanner/Watchlists.txt \
+            --band frontend/public/band.json \
+            --band-scan scanner/band_scan.py \
+            --indicators frontend/public/indicator_signals.json \
+            --quotes frontend/public/watchlist_quotes.json \
+            --out frontend/public/watchlist_merged.json
+
+      - name: Pull existing watchlist_merged.json from gh-pages (quote-only runs)
+        # quotes-only run 冇重新跑 merge，watchlist_merged.json 淨係喺呢個
+        # checkout 度唔存在 —— 要攞返 gh-pages 現存嗰份，等下面 push 步驟唔會
+        # 用返「未跑過」嗰份空白版本覆蓋走真係有嘅資料。
+        if: steps.mode.outputs.full == 'false'
+        run: |
+          git fetch origin gh-pages --depth=1
+          git show origin/gh-pages:watchlist_merged.json > frontend/public/watchlist_merged.json 2>/dev/null \
+            || echo "⚠ gh-pages 都未有 watchlist_merged.json（未跑過 full scan），跳過"
+
       - name: Push to gh-pages
         run: |
-          ls -la frontend/public/band.json frontend/public/band_quotes.json
-          cp frontend/public/band.json        /tmp/band_out.json
-          cp frontend/public/band_quotes.json /tmp/band_quotes_out.json
+          ls -la frontend/public/band.json frontend/public/band_quotes.json \
+            frontend/public/watchlist_quotes.json
+          cp frontend/public/band.json             /tmp/band_out.json
+          cp frontend/public/band_quotes.json      /tmp/band_quotes_out.json
+          cp frontend/public/watchlist_quotes.json /tmp/watchlist_quotes_out.json
           [ -f frontend/public/band_forming_log.json ] && \
             cp frontend/public/band_forming_log.json /tmp/band_log_out.json || true
+          [ -f frontend/public/watchlist_merged.json ] && \
+            cp frontend/public/watchlist_merged.json /tmp/watchlist_merged_out.json || true
 
           git fetch origin gh-pages
           git checkout gh-pages
-          cp /tmp/band_out.json        ./band.json
-          cp /tmp/band_quotes_out.json ./band_quotes.json
+          cp /tmp/band_out.json             ./band.json
+          cp /tmp/band_quotes_out.json      ./band_quotes.json
+          cp /tmp/watchlist_quotes_out.json ./watchlist_quotes.json
           [ -f /tmp/band_log_out.json ] && cp /tmp/band_log_out.json ./band_forming_log.json || true
+          [ -f /tmp/watchlist_merged_out.json ] && \
+            cp /tmp/watchlist_merged_out.json ./watchlist_merged.json || true
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add band.json band_quotes.json band_forming_log.json 2>/dev/null \
-            || git add band.json band_quotes.json
+          git add band.json band_quotes.json band_forming_log.json \
+                  watchlist_quotes.json watchlist_merged.json 2>/dev/null \
+            || git add band.json band_quotes.json watchlist_quotes.json
           git diff --staged --quiet && echo "No changes" || \
             git commit -m "band: $(date -u '+%Y-%m-%d %H:%M UTC') full=${{ steps.mode.outputs.full }}"
           git push origin gh-pages
