@@ -120,6 +120,13 @@ def grab_intraday(tickers, market):
                     "last": last_regular if last_regular is not None else last_price,
                     "ext_price": ext_price,
                     "market_state": market_state,
+                    # actual trading-day date these bars belong to -- used by
+                    # grab_prev_close to anchor "previous close" correctly.
+                    # Deliberately NOT wall-clock "today": on a weekend/holiday
+                    # manual run, idx_local[-1] is Friday even though today is
+                    # Saturday, and that distinction is exactly what the old
+                    # wall-clock comparison got wrong.
+                    "session_date": idx_local[-1].date(),
                 }
             except Exception as ex:
                 print(f"  parse fail {sym}: {ex}", file=sys.stderr)
@@ -127,17 +134,25 @@ def grab_intraday(tickers, market):
     return out
 
 
-def grab_prev_close(tickers, market):
+def grab_prev_close(tickers, market, session_dates):
     """Batch daily bars, return {ticker: prev_close}. Mirrors band_quotes.py's
     daily fallback style (period=5d, interval=1d).
 
-    Compares against the EXCHANGE's own local date, not UTC -- band.json's
-    daily bar index is labelled by trading-day date, and comparing that
-    against datetime.now(timezone.utc).date() drifts off-by-one near day
-    boundaries (mostly masked during normal trading hours, but wrong
-    whenever this runs close to local midnight)."""
+    FIXED: previously compared the daily bar's date against wall-clock
+    "today" to decide whether the last row was "today's still-forming bar"
+    (skip it) or "yesterday's already-final close" (use it directly). That
+    broke exactly on a weekend/holiday run: the last daily row is Friday's
+    OWN close, wall-clock "today" is Saturday, they don't match, so the old
+    code treated Friday's close as if it were already "yesterday's" --
+    handing back Friday's own close as "prev_close" against Friday's own
+    "last" price, i.e. ~0% change every time. This is what you saw with APLD.
+
+    Fix: anchor on the actual trading-day date grab_intraday resolved
+    (session_dates[ticker]) instead of wall-clock today, and explicitly
+    exclude any daily row that IS that session date -- the previous close is
+    simply the closest daily row strictly BEFORE it. Works the same whether
+    run mid-session, right after close, or over a weekend."""
     out = {}
-    today = datetime.now(MARKET_TZ[market]).date()
     for i in range(0, len(tickers), CHUNK):
         part = tickers[i:i + CHUNK]
         try:
@@ -155,17 +170,24 @@ def grab_prev_close(tickers, market):
                 d = d.dropna(subset=["Close"])
                 if d.empty:
                     continue
-                # if the last daily row is *today*, that's the still-forming
-                # bar -- previous close is the row before it. Otherwise the
-                # last row already IS the previous close (today's bar hasn't
-                # posted yet, e.g. run before/soon after open).
-                last_date = d.index[-1]
-                last_date = (last_date.tz_convert(MARKET_TZ[market]) if last_date.tzinfo
-                             else last_date).date()
-                if last_date == today and len(d) >= 2:
-                    out[sym] = float(d["Close"].iloc[-2])
+                idx = d.index
+                dates = [
+                    (ts.tz_convert(MARKET_TZ[market]) if ts.tzinfo else ts).date()
+                    for ts in idx
+                ]
+                session_date = session_dates.get(sym)
+                if session_date is not None:
+                    prior = [c for dt, c in zip(dates, d["Close"]) if dt < session_date]
+                    if prior:
+                        out[sym] = float(prior[-1])
+                    elif len(d) >= 2:
+                        # session date not found among the 5 fetched days at
+                        # all (long weekend/holiday gap) -- best effort.
+                        out[sym] = float(d["Close"].iloc[-2])
                 else:
-                    out[sym] = float(d["Close"].iloc[-1])
+                    # no intraday session to anchor on for this symbol
+                    # (grab_intraday failed for it) -- best-effort fallback.
+                    out[sym] = float(d["Close"].iloc[-2] if len(d) >= 2 else d["Close"].iloc[-1])
             except Exception as ex:
                 print(f"  prev_close parse fail {sym}: {ex}", file=sys.stderr)
         time.sleep(SLEEP_S)
@@ -205,7 +227,8 @@ def run(watchlist_path: Path, out_path: Path, markets=None):
             continue
         print(f"{market}: {len(tickers)} symbols", file=sys.stderr)
         intraday = grab_intraday(tickers, market)
-        prev_close = grab_prev_close(tickers, market)
+        session_dates = {t: v["session_date"] for t, v in intraday.items()}
+        prev_close = grab_prev_close(tickers, market, session_dates)
 
         if not intraday:
             print(f"  ⚠ {market} 1m 全空，fallback 落日線 (同 band_quotes.py 一致)", file=sys.stderr)
