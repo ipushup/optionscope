@@ -88,8 +88,17 @@ def grab_intraday(tickers, market):
                 if d.empty:
                     continue
                 idx = d.index
-                idx = idx.tz_localize("UTC") if idx.tz is None else idx
-                idx_local = idx.tz_convert(tz)
+                if idx.tz is None:
+                    # yfinance intraday timestamps are documented as already
+                    # being in the exchange's own local time -- if the tz tag
+                    # got stripped, the VALUES are still local, not UTC.
+                    # Localizing to UTC here (previous bug) re-shifted every
+                    # timestamp by the zone offset (+8h HK / +4-5h US) and
+                    # scrambled the regular/pre/post split, which is almost
+                    # certainly what broke %Chg / E%Chg.
+                    idx_local = idx.tz_localize(tz)
+                else:
+                    idx_local = idx.tz_convert(tz)
                 sessions = [split_session(ts.time(), market) for ts in idx_local]
                 d = d.copy()
                 d["_session"] = sessions
@@ -118,11 +127,17 @@ def grab_intraday(tickers, market):
     return out
 
 
-def grab_prev_close(tickers):
+def grab_prev_close(tickers, market):
     """Batch daily bars, return {ticker: prev_close}. Mirrors band_quotes.py's
-    daily fallback style (period=5d, interval=1d)."""
+    daily fallback style (period=5d, interval=1d).
+
+    Compares against the EXCHANGE's own local date, not UTC -- band.json's
+    daily bar index is labelled by trading-day date, and comparing that
+    against datetime.now(timezone.utc).date() drifts off-by-one near day
+    boundaries (mostly masked during normal trading hours, but wrong
+    whenever this runs close to local midnight)."""
     out = {}
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(MARKET_TZ[market]).date()
     for i in range(0, len(tickers), CHUNK):
         part = tickers[i:i + CHUNK]
         try:
@@ -144,7 +159,10 @@ def grab_prev_close(tickers):
                 # bar -- previous close is the row before it. Otherwise the
                 # last row already IS the previous close (today's bar hasn't
                 # posted yet, e.g. run before/soon after open).
-                if d.index[-1].date() == today and len(d) >= 2:
+                last_date = d.index[-1]
+                last_date = (last_date.tz_convert(MARKET_TZ[market]) if last_date.tzinfo
+                             else last_date).date()
+                if last_date == today and len(d) >= 2:
                     out[sym] = float(d["Close"].iloc[-2])
                 else:
                     out[sym] = float(d["Close"].iloc[-1])
@@ -187,7 +205,7 @@ def run(watchlist_path: Path, out_path: Path, markets=None):
             continue
         print(f"{market}: {len(tickers)} symbols", file=sys.stderr)
         intraday = grab_intraday(tickers, market)
-        prev_close = grab_prev_close(tickers)
+        prev_close = grab_prev_close(tickers, market)
 
         if not intraday:
             print(f"  ⚠ {market} 1m 全空，fallback 落日線 (同 band_quotes.py 一致)", file=sys.stderr)
