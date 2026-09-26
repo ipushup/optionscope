@@ -15,6 +15,10 @@ watchlist_quotes.py — Watchlist 報價刷新 (Last / %Chg / E%Chg)
      b) 多一個 daily bar batch 攞前收（prev close）嚟計 %Chg。
 
 ASSUMPTIONS TO CONFIRM WITH YOU（同你share，唔係我拍板）：
+  - 港股冇pre/post market（HKEX冇散戶用嘅盤前盤後時段），所以HK ticker嘅
+    ext_price/ext_chg_pct實質上永遠係None——呢個已經同你confirm過係預期
+    行為，唔係bug。前端(Watchlist.jsx)HK嗰行E%Chg會顯示"n/a"分清楚同
+    美股「暫時攞唔到」嗰個"—"。
   - 港股午市休市（12:00-13:00 HKT）呢度冇特別處理，當成連續盤照計；
     如果啱啱喺lunch break嗰陣跑，"regular" 最後一口價會係12:00前嗰口，
     唔會顯示"break"狀態。細節位，睇你需唔需要。
