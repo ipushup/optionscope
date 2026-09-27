@@ -36,6 +36,7 @@ Run:
 
 import ast
 import json
+import sys
 import argparse
 from datetime import datetime, timezone
 from pathlib import Path
@@ -83,7 +84,7 @@ def load_band_status(band_json: dict):
 
 
 def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
-        indicators_path: Path, quotes_path: Path, out_path: Path):
+        indicators_path: Path, quotes_path: Path, margin_path: Path, out_path: Path):
     entries = parse_watchlist(watchlist_path)
 
     band_json = json.loads(band_path.read_text(encoding="utf-8")) if band_path.exists() else {}
@@ -97,6 +98,30 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
     quotes = {}
     if quotes_path.exists():
         quotes = json.loads(quotes_path.read_text(encoding="utf-8")).get("quotes", {})
+
+    # margin_cache.json (from margin_import.py) is keyed exactly like our own
+    # ticker convention already -- bare US ticker / zero-padded "0700.HK" --
+    # so this is a direct dict lookup, no normalisation needed here.
+    # margin.txt's own header warns that stale margin rates are more
+    # dangerous than none (a stock that just got hit can have its margin
+    # eligibility cut with no notice) -- same MARGIN_MAX_AGE=30 day cutoff
+    # your other systems use, so a forgotten update doesn't silently show
+    # numbers you can no longer trust.
+    margin = {}
+    if margin_path.exists():
+        margin_json = json.loads(margin_path.read_text(encoding="utf-8"))
+        as_of = margin_json.get("as_of")
+        stale = False
+        if as_of:
+            try:
+                age_days = (datetime.now(timezone.utc).date() - datetime.fromisoformat(as_of).date()).days
+                stale = age_days > 30
+            except ValueError:
+                stale = True  # unparseable as_of -- treat as untrustworthy, same as stale
+        if stale:
+            print(f"⚠ margin_cache.json as_of={as_of} 超過30日或讀唔到，全部隱藏", file=sys.stderr)
+        else:
+            margin = margin_json.get("data", {})
 
     merged = []
     for e in entries:
@@ -132,6 +157,7 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "chg_pct": q.get("chg_pct"),
             "ext_chg_pct": q.get("ext_chg_pct"),
             "market_state": q.get("market_state"),
+            "margin": margin.get(ticker),  # None if not in margin.txt -- "唔顯示" per margin.txt's own convention
         })
 
     payload = {
@@ -152,6 +178,7 @@ if __name__ == "__main__":
     ap.add_argument("--band-scan", default="band_scan.py", type=Path)
     ap.add_argument("--indicators", default="indicator_signals.json", type=Path)
     ap.add_argument("--quotes", default="watchlist_quotes.json", type=Path)
+    ap.add_argument("--margin", default="margin_cache.json", type=Path)
     ap.add_argument("--out", default="watchlist_merged.json", type=Path)
     args = ap.parse_args()
-    run(args.watchlist, args.band, args.band_scan, args.indicators, args.quotes, args.out)
+    run(args.watchlist, args.band, args.band_scan, args.indicators, args.quotes, args.margin, args.out)
