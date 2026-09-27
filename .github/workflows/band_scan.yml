@@ -148,12 +148,17 @@ jobs:
           python scanner/indicator_scan.py \
             --watchlist scanner/Watchlists.txt \
             --out frontend/public/indicator_signals.json
+          # margin_cache.json 唔係喺度生成 -- 佢係你跑 margin_import.py
+          # 之後手動 commit 落 repo 嗰份（margin_import.py 個 docstring 都寫明
+          # 係 local 手動流程）。呢度直接讀你已經 commit 咗嗰份，冇就跳過
+          # (merge_watchlist.py 自己會 handle 檔案唔存在)。
           python scanner/merge_watchlist.py \
             --watchlist scanner/Watchlists.txt \
             --band frontend/public/band.json \
             --band-scan scanner/band_scan.py \
             --indicators frontend/public/indicator_signals.json \
             --quotes frontend/public/watchlist_quotes.json \
+            --margin scanner/margin_cache.json \
             --out frontend/public/watchlist_merged.json
 
       - name: Pull existing watchlist_merged.json from gh-pages (quote-only runs)
