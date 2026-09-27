@@ -45,8 +45,31 @@ const pctC = v => (v == null ? C.mute : v > 0 ? C.up : v < 0 ? C.dn : C.mute);
 const isHK = ticker => ticker.endsWith(".HK");
 
 const BAND_LABEL = { confirmed: "已確認", forming: "形成中", candidate: "候選", exit: "出場", watch: "觀察", flat: "追蹤中" };
-const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" };
+const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" }; // 淨係native <select> option用,嗰度冇得畫colored dot
 const bandColor = k => ({ confirmed: C.up, forming: C.warn, candidate: C.acc, exit: C.dn, watch: C.mute, flat: C.mute }[k] || C.mute);
+
+// 表格入面嘅TBand格 -- 全部同一種"dot"語言,靠顏色分狀態；
+// watch(觀察)用空心圈、flat(追蹤中)用細細粒實心點,兩個灰階狀態靠形狀分開，
+// 唔會撞晒樣。
+const TBandDot = ({ status }) => {
+  if (!status) return <span style={{ color: C.mute }}>–</span>;
+  if (status === "watch") {
+    return <span style={{
+      display: "inline-block", width: 9, height: 9, borderRadius: "50%",
+      border: `1.5px solid ${C.mute}`, boxSizing: "border-box",
+    }} />;
+  }
+  if (status === "flat") {
+    return <span style={{
+      display: "inline-block", width: 5, height: 5, borderRadius: "50%",
+      background: C.mute, opacity: 0.65,
+    }} />;
+  }
+  return <span style={{
+    display: "inline-block", width: 9, height: 9, borderRadius: "50%",
+    background: bandColor(status),
+  }} />;
+};
 
 const BASE = process.env.PUBLIC_URL || "";
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
@@ -201,7 +224,7 @@ export default function Watchlist({ isMobile, light }) {
                 }}>{r.symbol}</td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right" }}>
                   {r.tband
-                    ? <span style={{ color: bandColor(r.tband), fontSize: 13 }}>{BAND_ICON[r.tband]}</span>
+                    ? <TBandDot status={r.tband} />
                     : <span style={{ color: C.mute }}>–</span>}
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontWeight: 700 }}>
