@@ -176,26 +176,29 @@ export default function Watchlist({ isMobile, light }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+      <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
         <input
-          value={q} onChange={e => setQ(e.target.value)} placeholder="search symbol…"
+          value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "search…" : "search symbol…"}
           style={{
             background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-            padding: "6px 9px", borderRadius: 6, fontFamily: M, fontSize: 12, width: 130,
+            padding: isMobile ? "6px 6px" : "6px 9px", borderRadius: 6, fontFamily: M,
+            fontSize: isMobile ? 11 : 12, flex: "0 1 76px", minWidth: 0,
           }}
         />
         <select value={section} onChange={e => setSection(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-          padding: "6px 9px", borderRadius: 6, fontFamily: M, fontSize: 12,
+          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
         }}>
-          <option value="">All sections</option>
+          <option value="">{isMobile ? "Section" : "All sections"}</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={bandFilter} onChange={e => setBandFilter(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-          padding: "6px 9px", borderRadius: 6, fontFamily: M, fontSize: 12,
+          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
         }}>
-          <option value="">TBand: all</option>
+          <option value="">{isMobile ? "TBand" : "TBand: all"}</option>
           {Object.entries(BAND_LABEL).map(([k, v]) => (
             <option key={k} value={k}>{BAND_ICON[k]} {v}</option>
           ))}
