@@ -44,6 +44,16 @@ const P = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : `${v >= 0 ? "+" 
 const pctC = v => (v == null ? C.mute : v > 0 ? C.up : v < 0 ? C.dn : C.mute);
 const isHK = ticker => ticker.endsWith(".HK");
 
+// 融資保證金率superscript -- 同你daily_brief.py嘅margin_html()/CSS
+// (.mgn-lo/-mid/-hi/-no) 逐個對過，數值同顏色完全一致：
+// 0% → "✕" 紅色(#ef4444，不可融資) ； ≥70% → 紅色高風險 ；
+// 55-69% → 橙色(#f59e0b) ； <55% → C.sub(等於PDF嗰個var(--text-sub))
+const MGN_HI = "#ef4444";
+const MGN_MID = "#f59e0b";
+const marginColor = v => (v <= 0 || v >= 70) ? MGN_HI : v >= 55 ? MGN_MID : C.sub;
+const marginGlyph = v => (v <= 0 ? "✕" : Math.round(v).toString());
+const marginTitle = v => (v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`);
+
 const BAND_LABEL = { confirmed: "已確認", forming: "形成中", candidate: "候選", exit: "出場", watch: "觀察", flat: "追蹤中" };
 const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" }; // 淨係native <select> option用,嗰度冇得畫colored dot
 const bandColor = k => ({ confirmed: C.up, forming: C.warn, candidate: C.acc, exit: C.dn, watch: C.mute, flat: C.mute }[k] || C.mute);
@@ -224,7 +234,14 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
                   fontWeight: 700, whiteSpace: "nowrap", fontFamily: M, fontVariantNumeric: "tabular-nums",
-                }}>{r.symbol}</td>
+                }}>
+                  {r.symbol}
+                  {r.margin != null && (
+                    <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
+                      {marginGlyph(r.margin)}
+                    </sup>
+                  )}
+                </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right" }}>
                   {r.tband
                     ? <TBandDot status={r.tband} />
