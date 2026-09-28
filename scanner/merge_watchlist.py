@@ -36,6 +36,7 @@ Run:
 
 import ast
 import json
+import re
 import sys
 import argparse
 from datetime import datetime, timezone
@@ -83,9 +84,49 @@ def load_band_status(band_json: dict):
     return out
 
 
+def load_parents(path):
+    """watchlist_parents.txt -> {child_symbol: parent_symbol}. 每行 "子 母"，
+    逗號/空格/tab 都得，# 後面係註解。冇檔案就當冇從屬關係。"""
+    out = {}
+    if path is None or not Path(path).exists():
+        return out
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = [x for x in re.split(r"[,\s]+", line) if x]
+        if len(parts) >= 2:
+            out[parts[0].upper()] = parts[1].upper()
+    return out
+
+
+def suggest_unmapped(entries, parents):
+    """只係提示，唔會自動猜：同一 section 入面，緊接住某隻股後面、
+    ticker 頭 3 個字母一樣、但未登記喺 watchlist_parents.txt 嘅組合。"""
+    hints = []
+    prev = None
+    for e in entries:
+        if not e["ticker"]:
+            continue
+        sym = e["symbol"].upper()
+        if (prev and prev["section"] == e["section"] and sym not in parents
+                and not sym.isdigit() and len(sym) >= 3
+                and sym[:3] == prev["symbol"].upper()[:3] and sym != prev["symbol"].upper()):
+            hints.append(f'{sym} → {prev["symbol"].upper()}?')
+        prev = e
+    if hints:
+        print("ℹ 可能係從屬但未登記 watchlist_parents.txt: " + ", ".join(hints), file=sys.stderr)
+
+
 def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
-        indicators_path: Path, quotes_path: Path, margin_path: Path, out_path: Path):
+        indicators_path: Path, quotes_path: Path, margin_path: Path, out_path: Path,
+        parents_path=None):
     entries = parse_watchlist(watchlist_path)
+    parents = load_parents(parents_path)
+    present = {e["symbol"].upper() for e in entries if e["ticker"]}
+    # 母股唔喺 watchlist 入面就冇得縮排（冇嘢可以「從屬」）
+    parents = {c: p for c, p in parents.items() if c in present and p in present}
+    suggest_unmapped(entries, parents)
 
     band_json = json.loads(band_path.read_text(encoding="utf-8")) if band_path.exists() else {}
     band_status = load_band_status(band_json)
@@ -157,6 +198,7 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "chg_pct": q.get("chg_pct"),
             "ext_chg_pct": q.get("ext_chg_pct"),
             "market_state": q.get("market_state"),
+            "parent": parents.get(e["symbol"].upper()),  # 母股symbol，前端用嚟縮排
             "margin": margin.get(ticker),  # None if not in margin.txt -- "唔顯示" per margin.txt's own convention
         })
 
@@ -179,6 +221,8 @@ if __name__ == "__main__":
     ap.add_argument("--indicators", default="indicator_signals.json", type=Path)
     ap.add_argument("--quotes", default="watchlist_quotes.json", type=Path)
     ap.add_argument("--margin", default="margin_cache.json", type=Path)
+    ap.add_argument("--parents", default="watchlist_parents.txt", type=Path)
     ap.add_argument("--out", default="watchlist_merged.json", type=Path)
     args = ap.parse_args()
-    run(args.watchlist, args.band, args.band_scan, args.indicators, args.quotes, args.margin, args.out)
+    run(args.watchlist, args.band, args.band_scan, args.indicators, args.quotes, args.margin, args.out,
+        parents_path=args.parents)
