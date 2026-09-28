@@ -159,6 +159,7 @@ jobs:
             --indicators frontend/public/indicator_signals.json \
             --quotes frontend/public/watchlist_quotes.json \
             --margin scanner/margin_cache.json \
+            --parents scanner/watchlist_parents.txt \
             --out frontend/public/watchlist_merged.json
 
       - name: Pull existing watchlist_merged.json from gh-pages (quote-only runs)
