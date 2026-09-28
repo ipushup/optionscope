@@ -98,7 +98,9 @@ export default function Watchlist({ isMobile, light }) {
   const [q, setQ] = useState("");
   const [section, setSection] = useState("");
   const [bandFilter, setBandFilter] = useState("");
-  const [sortKey, setSortKey] = useState("symbol");
+  // null = 跟 Watchlists.txt 原本section次序(INDICES → SECTION 1 → … → HONGKONG),
+  // 美股喺前、港股喺最尾。揀咗column先會改做按該column排序。
+  const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(1);
   C = light ? THEMES.light : THEMES.dark;
 
@@ -144,6 +146,7 @@ export default function Watchlist({ isMobile, light }) {
       };
     })
     .sort((a, b) => {
+      if (sortKey == null) return 0; // 保持原本section次序(Array.sort係stable)
       const av = a[sortKey], bv = b[sortKey];
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
@@ -152,9 +155,11 @@ export default function Watchlist({ isMobile, light }) {
       return String(av).localeCompare(String(bv)) * sortDir;
     });
 
+  // 三段式：㩒第一下升序 → 第二下降序 → 第三下返回預設(section次序)
   const toggleSort = key => {
-    if (sortKey === key) setSortDir(d => -d);
-    else { setSortKey(key); setSortDir(1); }
+    if (sortKey !== key) { setSortKey(key); setSortDir(1); }
+    else if (sortDir === 1) setSortDir(-1);
+    else { setSortKey(null); setSortDir(1); }
   };
 
   const elapsed = qAt ? Math.max(0, Math.round((Date.now() - new Date(qAt).getTime()) / 60000)) : null;
