@@ -243,6 +243,13 @@ export default function Watchlist({ isMobile, light }) {
                   {/* 從屬(ETF)縮入 10px：用 position:relative 平移，唔係加 padding，
                       所以唔會撐闊 Symbol 欄、亦唔會擠細其他欄 */}
                   <span style={{ position: "relative", left: r.parent ? 10 : 0 }} title={r.parent ? `${r.parent} 嘅 ETF` : undefined}>
+                    {/* └ 用 absolute 擺喺縮入出嚟嗰 10px 空位，唔佔 layout 闊度 */}
+                    {r.parent && (
+                      <span aria-hidden="true" style={{
+                        position: "absolute", left: -10, top: 0, fontSize: 11, fontWeight: 400,
+                        color: C.mute, pointerEvents: "none",
+                      }}>└</span>
+                    )}
                     {r.symbol}
                     {r.margin != null && (
                       <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
