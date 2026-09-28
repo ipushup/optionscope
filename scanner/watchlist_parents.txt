@@ -1,0 +1,52 @@
+# 從屬關係 — 每行： 子(ETF) 母(正股)
+#  用 Watchlists.txt 入面嘅 symbol 寫法（港股唔使補零，例如 700）
+#  母股要喺 Watchlist 入面先會縮排；冇就自動當獨立一行
+#  # 後面係註解
+#  新加 ETF 之後記得喺呢度補一行；merge_watchlist.py 每次 run 都會
+#  將「睇落似係從屬但未登記」嘅組合印出嚟提示你（只係提示，唔會自動猜）
+
+# ── 個股槓桿 / 收息 ETF ──
+NVDY NVDA
+NVDL NVDA
+ARMG ARM
+SMCX SMCI
+INTW INTC
+CBRG CBRS
+SNXX SNDK
+WDCX WDC
+MUU  MU
+MULL MU
+AAOX AAOI
+AXTX AXTI
+ORCU ORCL
+NBIL NBIS
+CRWG CRWV
+IRE  IREN
+APLX APLD
+VRTL VRT
+IONX IONQ
+RGTX RGTI
+QBTX QBTS
+RKLX RKLB
+ASTX ASTS
+PTIR PLTR
+TTDU TTD
+CRCG CRCL
+HOOG HOOD
+VSTL VST
+CEGX CEG
+OKLL OKLO
+BEX  BE
+
+# ── 商品 / 波幅（槓桿版跟返前面嗰隻）──
+UGL  GLD
+AGQ  SLV
+UVIX VIX
+
+# ── 你確認過嘅 ──
+SKHX SKHY
+7709 000660
+SPCH SPCX
+SSPC SPCX
+
+# 註：GRML 同 CRML 係兩間唔同公司，唔係從屬，所以冇登記。
