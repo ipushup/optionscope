@@ -240,12 +240,16 @@ export default function Watchlist({ isMobile, light }) {
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
                   fontWeight: 700, whiteSpace: "nowrap", fontFamily: M, fontVariantNumeric: "tabular-nums",
                 }}>
-                  {r.symbol}
-                  {r.margin != null && (
-                    <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
-                      {marginGlyph(r.margin)}
-                    </sup>
-                  )}
+                  {/* 從屬(ETF)縮入 10px：用 position:relative 平移，唔係加 padding，
+                      所以唔會撐闊 Symbol 欄、亦唔會擠細其他欄 */}
+                  <span style={{ position: "relative", left: r.parent ? 10 : 0 }} title={r.parent ? `${r.parent} 嘅 ETF` : undefined}>
+                    {r.symbol}
+                    {r.margin != null && (
+                      <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
+                        {marginGlyph(r.margin)}
+                      </sup>
+                    )}
+                  </span>
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right" }}>
                   {r.tband
