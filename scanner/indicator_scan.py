@@ -136,9 +136,11 @@ def wilder_atr(df: pd.DataFrame, period: int) -> pd.Series:
 
 
 def ut_bot_status(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1):
-    """Returns 'long' or 'short' as of the last closed bar. None if not enough data."""
+    """Returns (status, days) as of the last closed bar -- 'long'/'short' plus
+    how many consecutive closed bars pos has held that same direction (1 =
+    flipped on the most recent bar). None if not enough data."""
     if len(df) < max(atr_period, 2) + 5:
-        return None
+        return None, None
     atr = wilder_atr(df, atr_period)
     n_loss = (key_value * atr).values
     close = df["Close"].values
@@ -165,8 +167,14 @@ def ut_bot_status(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1)
 
     last = pos[-1]
     if last == 0:
-        return None
-    return "long" if last == 1 else "short"
+        return None, None
+    days = 0
+    for p in reversed(pos):
+        if p == last:
+            days += 1
+        else:
+            break
+    return ("long" if last == 1 else "short"), days
 
 
 def supertrend_status(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0):
@@ -238,10 +246,11 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                 df = df.dropna(subset=["Close"])
                 if df.empty:
                     continue
-                ut = ut_bot_status(df)
+                ut, ut_days = ut_bot_status(df)
                 st = supertrend_status(df)
                 results[t] = {
                     "ut_bot": ut,
+                    "ut_days": ut_days,
                     "supertrend": st,
                     "last_close": round(float(df["Close"].iloc[-1]), 4),
                     "asof_date": str(df.index[-1].date()),
