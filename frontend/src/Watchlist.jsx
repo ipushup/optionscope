@@ -60,8 +60,9 @@ const bandColor = k => ({ confirmed: C.up, forming: C.warn, candidate: C.acc, ex
 
 // 表格入面嘅TBand格 -- 全部同一種"dot"語言,靠顏色分狀態；
 // watch(觀察)用空心圈、flat(追蹤中)用細細粒實心點,兩個灰階狀態靠形狀分開，
-// 唔會撞晒樣。
-const TBandDot = ({ status }) => {
+// 唔會撞晒樣。有 tband_days(band.json嘅"bars"欄,淨係candidate/exit先有)
+// 就加個同色superscript,一眼睇到已經幾多日。
+const TBandDot = ({ status, days }) => {
   if (!status) return <span style={{ color: C.mute }}>–</span>;
   if (status === "watch") {
     return <span style={{
@@ -75,10 +76,19 @@ const TBandDot = ({ status }) => {
       background: C.mute, opacity: 0.65,
     }} />;
   }
-  return <span style={{
-    display: "inline-block", width: 9, height: 9, borderRadius: "50%",
-    background: bandColor(status),
-  }} />;
+  return (
+    <>
+      <span style={{
+        display: "inline-block", width: 9, height: 9, borderRadius: "50%",
+        background: bandColor(status),
+      }} />
+      {days != null && (
+        <sup style={{ marginLeft: 1, fontSize: "0.68em", fontWeight: 700, color: bandColor(status) }}>
+          {days}
+        </sup>
+      )}
+    </>
+  );
 };
 
 const BASE = process.env.PUBLIC_URL || "";
@@ -260,11 +270,20 @@ export default function Watchlist({ isMobile, light }) {
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right" }}>
                   {r.tband
-                    ? <TBandDot status={r.tband} />
+                    ? <TBandDot status={r.tband} days={r.tband_days} />
                     : <span style={{ color: C.mute }}>–</span>}
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontWeight: 700 }}>
-                  {r.ut ? <span style={{ color: r.ut === "long" ? C.up : C.dn }}>{r.ut === "long" ? "B" : "S"}</span> : <span style={{ color: C.mute }}>–</span>}
+                  {r.ut
+                    ? (
+                      <span style={{ color: r.ut === "long" ? C.up : C.dn }}>
+                        {r.ut === "long" ? "B" : "S"}
+                        {r.ut_days != null && (
+                          <sup style={{ marginLeft: 1, fontSize: "0.68em", fontWeight: 700 }}>{r.ut_days}</sup>
+                        )}
+                      </span>
+                    )
+                    : <span style={{ color: C.mute }}>–</span>}
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontWeight: 700 }}>
                   {r.st ? <span style={{ color: r.st === "long" ? C.up : C.dn }}>{r.st === "long" ? "B" : "S"}</span> : <span style={{ color: C.mute }}>–</span>}
