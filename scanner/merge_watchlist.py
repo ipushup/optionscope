@@ -178,6 +178,14 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             ut = "long" if b["ut_pos"] == 1 else "short"
         else:
             ut = ind.get("ut_bot")
+        # UT streak length always comes from indicator_scan.py's own count --
+        # band.json has no equivalent "days in this UT direction" field.
+        # Assumes indicator_scan's direction agrees with band.json's ut_pos
+        # when both exist (validated true for the overlap you checked
+        # earlier); if they ever disagree for a symbol, this days count
+        # would describe indicator_scan's own streak, not necessarily one
+        # that matches the ut value actually shown.
+        ut_days = ind.get("ut_days")
 
         if b:
             tband = b["status"]
@@ -185,6 +193,9 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             tband = "flat"  # in band's tracked universe, no active signal today
         else:
             tband = None  # outside band's tracked universe entirely
+        # "bars" only exists on candidates/exits in band.json (days since
+        # entry_date) -- None for every other status, including flat/forming.
+        tband_days = b.get("bars") if b else None
 
         merged.append({
             "ticker": ticker,
@@ -192,7 +203,9 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "exchange": e["exchange"],
             "section": e["section"],
             "tband": tband,
+            "tband_days": tband_days,
             "ut": ut,
+            "ut_days": ut_days,
             "st": ind.get("supertrend"),
             "last": q.get("last"),
             "chg_pct": q.get("chg_pct"),
