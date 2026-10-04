@@ -102,6 +102,40 @@ const saveHighlights = set => {
   try { localStorage.setItem(HL_KEY, JSON.stringify([...set])); } catch { /* 私隱模式 */ }
 };
 
+// ── 跨裝置sync：GitHub issue當輕量database ──────────────────────────────
+// localStorage只係一部機嘅cache；呢個issue嘅body(一個JSON array)先係
+// 「真」嘅嗰份，PC同mobile都讀寫緊同一個issue。
+// Token有意咁寫死喺度 -- 呢個係冇後端嘅public static site，寫落嚟就梗係
+// 會喺瀏覽器JS/devtools度見到，呢個exposure本身改唔到。但個token已經用
+// fine-grained PAT鎖死淨係呢個repo嘅Issues讀寫，唔掂到第啲repo或者你嘅
+// 帳戶，壞極有限，就係俾人亂改/spam呢一個issue。覺得風險上升咗就隨時去
+// GitHub Settings revoke呢個token再生成過。
+const GH_OWNER = "ipushup";
+const GH_REPO = "optionscope";
+const GH_ISSUE = 1;
+const GH_TOKEN = "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";
+const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/issues/${GH_ISSUE}`;
+const GH_HEADERS = { Accept: "application/vnd.github+json", Authorization: `Bearer ${GH_TOKEN}` };
+const GH_POLL_MS = 90_000; // 跟quote poll唔同頻率，避免同一秒撞兩個fetch
+
+async function fetchRemoteHighlights() {
+  const r = await fetch(GH_API, { headers: GH_HEADERS });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  let arr = [];
+  try { arr = JSON.parse(data.body || "[]"); } catch { arr = []; }
+  return new Set(Array.isArray(arr) ? arr : []);
+}
+
+async function pushRemoteHighlights(set) {
+  const r = await fetch(GH_API, {
+    method: "PATCH",
+    headers: { ...GH_HEADERS, "Content-Type": "application/json" },
+    body: JSON.stringify({ body: JSON.stringify([...set].sort()) }),
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+}
+
 const BASE = process.env.PUBLIC_URL || "";
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -123,22 +157,33 @@ export default function Watchlist({ isMobile, light }) {
   // 美股喺前、港股喺最尾。揀咗column先會改做按該column排序。
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(1);
-  const [highlighted, setHighlighted] = useState(loadHighlights);
+  const [highlighted, setHighlighted] = useState(loadHighlights); // local cache先行，GitHub fetch返嚟先覆蓋
+  const [syncErr, setSyncErr] = useState(false);
+
+  // 開頁即刻攞一次遠端(另一部機可能啱啱改過)，之後每90秒poll一次。
+  useEffect(() => {
+    let alive = true;
+    const pull = () => fetchRemoteHighlights()
+      .then(set => { if (alive) { setHighlighted(set); saveHighlights(set); setSyncErr(false); } })
+      .catch(() => { if (alive) setSyncErr(true); }); // fetch唔到就靜靜哋用返local cache，唔阻住個page
+    pull();
+    const id = setInterval(pull, GH_POLL_MS);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
 
   // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 先confirm先變色，
-  // 避免手滑㩒錯就整到成行變晒黃色。
+  // 避免手滑㩒錯就整到成行變晒黃色。兩種情況都即刻更新local(optimistic)，
+  // 再background push去GitHub issue俾第二部機見到。
   const toggleHighlight = (ticker, symbol) => {
     setHighlighted(prev => {
-      if (prev.has(ticker)) {
-        const next = new Set(prev);
-        next.delete(ticker);
-        saveHighlights(next);
-        return next;
-      }
-      if (!window.confirm(`Highlight ${symbol}？`)) return prev;
+      const willAdd = !prev.has(ticker);
+      if (willAdd && !window.confirm(`Highlight ${symbol}？`)) return prev;
       const next = new Set(prev);
-      next.add(ticker);
+      willAdd ? next.add(ticker) : next.delete(ticker);
       saveHighlights(next);
+      pushRemoteHighlights(next)
+        .then(() => setSyncErr(false))
+        .catch(() => setSyncErr(true)); // local已經改咗，淨係提示sync失敗
       return next;
     });
   };
@@ -227,6 +272,7 @@ export default function Watchlist({ isMobile, light }) {
           </span>
           <span style={{ fontSize: 10.5, fontFamily: M, color: C.mute }}>
             {status.band_bar_date ? `Triple Band ${status.band_bar_date}` : ""} · 報價 {elapsedLabel}
+            {syncErr && <span style={{ color: C.warn }}> · ⚠ highlight sync失敗(用緊local)</span>}
           </span>
         </div>
       </div>
