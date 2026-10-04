@@ -26,13 +26,13 @@ const THEMES = {
     bg: "#050d18", card: "#101f31", line: "#23394f", chip: "#0e1c2c",
     txt: "#eaf2fa", dim: "#a8bdd2", sub: "#c3d3e3", mute: "#7b93aa",
     up: "#2ee89a", dn: "#ff6b83", warn: "#ffb35c", acc: "#5cb3ff",
-    tabOn: "#1e4270",
+    tabOn: "#1e4270", hl: "rgba(255,196,0,0.16)",
   },
   light: {
     bg: "#f4f7fb", card: "#ffffff", line: "#d5e0ec", chip: "#e8eef6",
     txt: "#0e1c2c", dim: "#4a6480", sub: "#33506e", mute: "#7b93aa",
     up: "#00875a", dn: "#d1234a", warn: "#b56100", acc: "#0b6bcb",
-    tabOn: "#cfe3fa",
+    tabOn: "#cfe3fa", hl: "rgba(255,180,0,0.30)",
   },
 };
 let C = THEMES.dark;
@@ -91,6 +91,17 @@ const TBandDot = ({ status, days }) => {
   );
 };
 
+// 自己highlight嘅symbol，存落localStorage(同theme.js嘅osTheme一樣做法)，
+// 淨係呢部機／呢個瀏覽器記得住，跨session唔會唔見。
+const HL_KEY = "osWatchlistHighlights";
+const loadHighlights = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(HL_KEY)) || []); }
+  catch { return new Set(); }
+};
+const saveHighlights = set => {
+  try { localStorage.setItem(HL_KEY, JSON.stringify([...set])); } catch { /* 私隱模式 */ }
+};
+
 const BASE = process.env.PUBLIC_URL || "";
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -112,6 +123,25 @@ export default function Watchlist({ isMobile, light }) {
   // 美股喺前、港股喺最尾。揀咗column先會改做按該column排序。
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(1);
+  const [highlighted, setHighlighted] = useState(loadHighlights);
+
+  // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 先confirm先變色，
+  // 避免手滑㩒錯就整到成行變晒黃色。
+  const toggleHighlight = (ticker, symbol) => {
+    setHighlighted(prev => {
+      if (prev.has(ticker)) {
+        const next = new Set(prev);
+        next.delete(ticker);
+        saveHighlights(next);
+        return next;
+      }
+      if (!window.confirm(`Highlight ${symbol}？`)) return prev;
+      const next = new Set(prev);
+      next.add(ticker);
+      saveHighlights(next);
+      return next;
+    });
+  };
   C = light ? THEMES.light : THEMES.dark;
 
   useEffect(() => {
@@ -245,7 +275,11 @@ export default function Watchlist({ isMobile, light }) {
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={r.ticker}>
+              <tr
+                key={r.ticker}
+                onClick={() => toggleHighlight(r.ticker, r.symbol)}
+                style={{ cursor: "pointer", background: highlighted.has(r.ticker) ? C.hl : undefined }}
+              >
                 <td style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
                   fontWeight: 700, whiteSpace: "nowrap", fontFamily: M, fontVariantNumeric: "tabular-nums",
