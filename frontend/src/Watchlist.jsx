@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 /**
  * Watchlist.jsx — 你原本 TradingView watchlist 加埋 Triple Band / UT Bot /
@@ -123,7 +123,11 @@ if (GH_TOKEN) GH_HEADERS.Authorization = `Bearer ${GH_TOKEN}`;
 const GH_POLL_MS = 90_000; // 跟quote poll唔同頻率，避免同一秒撞兩個fetch
 
 async function fetchRemoteHighlights() {
-  const r = await fetch(GH_API, { headers: GH_HEADERS });
+  // cache:"no-store" + 加個timestamp query -- GitHub嘅issues GET response
+  // 會夾Cache-Control，mobile瀏覽器好容易將第一次攞到嗰份cache住，之後
+  // poll即使PATCH已經成功都攞返舊cache，將啱啱highlight咗嘅symbol覆蓋走。
+  // 呢個先係實際報到嘅bug嘅根源，唔淨係靠pendingRef嗰層保護。
+  const r = await fetch(`${GH_API}?t=${Date.now()}`, { headers: GH_HEADERS, cache: "no-store" });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const data = await r.json();
   let arr = [];
@@ -138,6 +142,20 @@ async function pushRemoteHighlights(set) {
     body: JSON.stringify({ body: JSON.stringify([...set].sort()) }),
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
+}
+
+// PATCH失敗(或者未PATCH完)嗰陣,下一輪poll嘅GET唔應該用返舊data覆蓋走個
+// 剛剛先做嘅local改動——之前個bug就係咁：highlight咗，但poll隔90秒後
+// 攞到仲未更新嘅舊list，直接clobber返個local highlight，睇落好似「自己
+// 唔見咗」。用pendingPushes追蹤緊邊幾個toggle重未confirm成功push到
+// GitHub，poll期間淨係跳過呢啲，其他symbol照用返remote(等第二部機嘅
+// 改動都sync到)。
+async function pushWithRetry(set, attempts = 3) {
+  for (let i = 0; i < attempts; i++) {
+    try { await pushRemoteHighlights(set); return true; }
+    catch { if (i < attempts - 1) await new Promise(res => setTimeout(res, 1500 * (i + 1))); }
+  }
+  return false;
 }
 
 const BASE = process.env.PUBLIC_URL || "";
@@ -163,12 +181,30 @@ export default function Watchlist({ isMobile, light }) {
   const [sortDir, setSortDir] = useState(1);
   const [highlighted, setHighlighted] = useState(loadHighlights); // local cache先行，GitHub fetch返嚟先覆蓋
   const [syncErr, setSyncErr] = useState(false);
+  // 邊幾個ticker重有個local toggle未confirm成功push到GitHub -- poll攞到
+  // 新嘅remote set嗰陣，呢幾個要保留返local嘅版本，唔好俾poll用（可能係
+  // push完成之前攞到嘅）舊data覆蓋走，呢個正正係之前「highlight咗，90秒
+  // 後自己唔見咗」嗰個bug嘅根源。
+  const pendingRef = useRef(new Set());
 
   // 開頁即刻攞一次遠端(另一部機可能啱啱改過)，之後每90秒poll一次。
   useEffect(() => {
     let alive = true;
     const pull = () => fetchRemoteHighlights()
-      .then(set => { if (alive) { setHighlighted(set); saveHighlights(set); setSyncErr(false); } })
+      .then(remote => {
+        if (!alive) return;
+        setHighlighted(prev => {
+          // 保留住重pending緊嘅local改動，其餘用返remote(等第二部機嘅
+          // 改動都sync到)
+          const merged = new Set(remote);
+          for (const t of pendingRef.current) {
+            if (prev.has(t)) merged.add(t); else merged.delete(t);
+          }
+          saveHighlights(merged);
+          return merged;
+        });
+        setSyncErr(false);
+      })
       .catch(() => { if (alive) setSyncErr(true); }); // fetch唔到就靜靜哋用返local cache，唔阻住個page
     pull();
     const id = setInterval(pull, GH_POLL_MS);
@@ -177,7 +213,7 @@ export default function Watchlist({ isMobile, light }) {
 
   // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 先confirm先變色，
   // 避免手滑㩒錯就整到成行變晒黃色。兩種情況都即刻更新local(optimistic)，
-  // 再background push去GitHub issue俾第二部機見到。
+  // 再background push去GitHub issue俾第二部機見到，失敗自動retry3次。
   const toggleHighlight = (ticker, symbol) => {
     setHighlighted(prev => {
       const willAdd = !prev.has(ticker);
@@ -185,9 +221,12 @@ export default function Watchlist({ isMobile, light }) {
       const next = new Set(prev);
       willAdd ? next.add(ticker) : next.delete(ticker);
       saveHighlights(next);
-      pushRemoteHighlights(next)
-        .then(() => setSyncErr(false))
-        .catch(() => setSyncErr(true)); // local已經改咗，淨係提示sync失敗
+
+      pendingRef.current.add(ticker);
+      pushWithRetry(next).then(ok => {
+        pendingRef.current.delete(ticker);
+        setSyncErr(!ok); // retry 3次都失敗至會警告 -- local改動本身冇走
+      });
       return next;
     });
   };
