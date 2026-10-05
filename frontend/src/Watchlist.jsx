@@ -105,17 +105,21 @@ const saveHighlights = set => {
 // ── 跨裝置sync：GitHub issue當輕量database ──────────────────────────────
 // localStorage只係一部機嘅cache；呢個issue嘅body(一個JSON array)先係
 // 「真」嘅嗰份，PC同mobile都讀寫緊同一個issue。
-// Token有意咁寫死喺度 -- 呢個係冇後端嘅public static site，寫落嚟就梗係
-// 會喺瀏覽器JS/devtools度見到，呢個exposure本身改唔到。但個token已經用
-// fine-grained PAT鎖死淨係呢個repo嘅Issues讀寫，唔掂到第啲repo或者你嘅
-// 帳戶，壞極有限，就係俾人亂改/spam呢一個issue。覺得風險上升咗就隨時去
-// GitHub Settings revoke呢個token再生成過。
+// Token刻意唔喺呢個source file度寫死 -- 咁至少唔會留喺git history，可以隨
+// 時轉。Token本身喺build time經 REACT_APP_GH_TOKEN 注入(deploy.yml嗰個
+// WATCHLIST_GH_TOKEN repo secret)，但注入完之後仲係會落咗去build出嚟嗰份
+// public JS bundle，瀏覽器devtools照舊見到 -- 呢個exposure本身改唔到，淨
+// 係靠fine-grained PAT鎖死淨係呢個repo嘅Issues讀寫嚟縮細blast radius。
+// 覺得風險上升咗就隨時去GitHub Settings revoke呢個token再生成過。
 const GH_OWNER = "ipushup";
 const GH_REPO = "optionscope";
 const GH_ISSUE = 1;
-const GH_TOKEN = "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";
+const GH_TOKEN = process.env.REACT_APP_GH_TOKEN;
 const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/issues/${GH_ISSUE}`;
-const GH_HEADERS = { Accept: "application/vnd.github+json", Authorization: `Bearer ${GH_TOKEN}` };
+// GET唔需要token(public repo都讀得到)，冇設定env var時至少讀仲work得到；
+// PATCH就一定要token，冇嘅話pushRemoteHighlights會401，由catch處理成syncErr。
+const GH_HEADERS = { Accept: "application/vnd.github+json" };
+if (GH_TOKEN) GH_HEADERS.Authorization = `Bearer ${GH_TOKEN}`;
 const GH_POLL_MS = 90_000; // 跟quote poll唔同頻率，避免同一秒撞兩個fetch
 
 async function fetchRemoteHighlights() {
