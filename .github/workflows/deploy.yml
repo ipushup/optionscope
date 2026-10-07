@@ -25,13 +25,10 @@ jobs:
 
       - name: Install & Build React app
         working-directory: frontend
-        env:
-          # Watchlist.jsx嘅highlight跨裝置sync用 -- fine-grained PAT，
-          # scope鎖死淨係 ipushup/optionscope 呢個repo嘅 Issues: read/write。
-          # CRA會喺build嗰陣將REACT_APP_*環境變數inline入最終JS bundle，
-          # 所以token本身仍然會喺瀏覽器devtools見到(呢個係已知、接受咗嘅
-          # trade-off)，呢度做嘅淨係避免token出現喺repo嘅git history度。
-          REACT_APP_GH_TOKEN: ${{ secrets.WATCHLIST_GH_TOKEN }}
+        # Watchlist.jsx嘅highlight跨裝置sync而家經Cloudflare Worker代理，
+        # 真token存喺Worker嘅secret度，唔再需要呢度注入REACT_APP_GH_TOKEN
+        # (之前個做法令token跌落build出嚟嗰份public JS bundle，俾GitHub
+        # push protection擋咗push，所以改做而家呢個中間人架構)。
         run: |
           npm install
           npm run build
