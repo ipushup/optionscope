@@ -102,33 +102,27 @@ const saveHighlights = set => {
   try { localStorage.setItem(HL_KEY, JSON.stringify([...set])); } catch { /* 私隱模式 */ }
 };
 
-// ── 跨裝置sync：GitHub issue當輕量database ──────────────────────────────
-// localStorage只係一部機嘅cache；呢個issue嘅body(一個JSON array)先係
+// ── 跨裝置sync：經Cloudflare Worker代理去GitHub issue當輕量database ─────
+// localStorage只係一部機嘅cache；GitHub issue嘅body(一個JSON array)先係
 // 「真」嘅嗰份，PC同mobile都讀寫緊同一個issue。
-// Token刻意唔喺呢個source file度寫死 -- 咁至少唔會留喺git history，可以隨
-// 時轉。Token本身喺build time經 REACT_APP_GH_TOKEN 注入(deploy.yml嗰個
-// WATCHLIST_GH_TOKEN repo secret)，但注入完之後仲係會落咗去build出嚟嗰份
-// public JS bundle，瀏覽器devtools照舊見到 -- 呢個exposure本身改唔到，淨
-// 係靠fine-grained PAT鎖死淨係呢個repo嘅Issues讀寫嚟縮細blast radius。
-// 覺得風險上升咗就隨時去GitHub Settings revoke呢個token再生成過。
-const GH_OWNER = "ipushup";
-const GH_REPO = "optionscope";
-const GH_ISSUE = 1;
-const GH_TOKEN = process.env.REACT_APP_GH_TOKEN;
-const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/issues/${GH_ISSUE}`;
-// GET唔需要token(public repo都讀得到)，冇設定env var時至少讀仲work得到；
-// PATCH就一定要token，冇嘅話pushRemoteHighlights會401，由catch處理成syncErr。
-const GH_HEADERS = { Accept: "application/vnd.github+json" };
-if (GH_TOKEN) GH_HEADERS.Authorization = `Bearer ${GH_TOKEN}`;
+// 真·token而家淨係存喺Worker嘅secret(GH_TOKEN)度，唔會再出現喺任何前端
+// JS bundle或者git history -- 之前直接embed落bundle嗰個做法俾GitHub
+// push protection主動擋咗，所以改用呢個中間人。前端淨係call自己個
+// Worker，Worker先用真token幫手call GitHub。
+const WORKER_API = "https://long-hill-a5b7.emacaunet.workers.dev";
 const GH_POLL_MS = 90_000; // 跟quote poll唔同頻率，避免同一秒撞兩個fetch
 
 async function fetchRemoteHighlights() {
-  // cache:"no-store" + 加個timestamp query -- GitHub嘅issues GET response
-  // 會夾Cache-Control，mobile瀏覽器好容易將第一次攞到嗰份cache住，之後
-  // poll即使PATCH已經成功都攞返舊cache，將啱啱highlight咗嘅symbol覆蓋走。
-  // 呢個先係實際報到嘅bug嘅根源，唔淨係靠pendingRef嗰層保護。
-  const r = await fetch(`${GH_API}?t=${Date.now()}`, { headers: GH_HEADERS, cache: "no-store" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  // cache:"no-store" + 加個timestamp query -- 防止瀏覽器(尤其mobile)將
+  // response cache住，poll嗰陣攞返stale舊data，將啱啱highlight咗嘅
+  // symbol覆蓋走(之前實際報到嘅bug)。Worker自己個fetch去GitHub都已經
+  // cf:{cacheTtl:0}，呢度係多一重防禦。
+  const r = await fetch(`${WORKER_API}/?t=${Date.now()}`, { cache: "no-store" });
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    console.error(`[watchlist-highlight] GET ${WORKER_API} → HTTP ${r.status}`, body);
+    throw new Error(`HTTP ${r.status}`);
+  }
   const data = await r.json();
   let arr = [];
   try { arr = JSON.parse(data.body || "[]"); } catch { arr = []; }
@@ -136,12 +130,18 @@ async function fetchRemoteHighlights() {
 }
 
 async function pushRemoteHighlights(set) {
-  const r = await fetch(GH_API, {
+  const r = await fetch(WORKER_API, {
     method: "PATCH",
-    headers: { ...GH_HEADERS, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ body: JSON.stringify([...set].sort()) }),
   });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    // 常見原因：Worker嘅GH_TOKEN secret未set/已經唔work，或者worker個
+    // GH_OWNER/GH_REPO/GH_ISSUE set錯 -- 睇body個message。
+    console.error(`[watchlist-highlight] PATCH ${WORKER_API} → HTTP ${r.status}`, body);
+    throw new Error(`HTTP ${r.status}`);
+  }
 }
 
 // PATCH失敗(或者未PATCH完)嗰陣,下一輪poll嘅GET唔應該用返舊data覆蓋走個
