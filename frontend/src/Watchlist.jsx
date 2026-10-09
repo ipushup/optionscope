@@ -26,13 +26,15 @@ const THEMES = {
     bg: "#050d18", card: "#101f31", line: "#23394f", chip: "#0e1c2c",
     txt: "#eaf2fa", dim: "#a8bdd2", sub: "#c3d3e3", mute: "#7b93aa",
     up: "#2ee89a", dn: "#ff6b83", warn: "#ffb35c", acc: "#5cb3ff",
-    tabOn: "#1e4270", hl: "rgba(255,196,0,0.16)",
+    tabOn: "#1e4270",
+    hlYellow: "rgba(255,196,0,0.16)", hlRed: "rgba(255,90,90,0.18)", hlBlue: "rgba(92,179,255,0.18)",
   },
   light: {
     bg: "#f4f7fb", card: "#ffffff", line: "#d5e0ec", chip: "#e8eef6",
     txt: "#0e1c2c", dim: "#4a6480", sub: "#33506e", mute: "#7b93aa",
     up: "#00875a", dn: "#d1234a", warn: "#b56100", acc: "#0b6bcb",
-    tabOn: "#cfe3fa", hl: "rgba(255,180,0,0.30)",
+    tabOn: "#cfe3fa",
+    hlYellow: "rgba(255,180,0,0.30)", hlRed: "rgba(255,90,90,0.30)", hlBlue: "rgba(92,179,255,0.30)",
   },
 };
 let C = THEMES.dark;
@@ -91,15 +93,33 @@ const TBandDot = ({ status, days }) => {
   );
 };
 
+// 3色提醒：黃=短線、紅=咪call/咪買、藍=長線。
+const HILITE = {
+  yellow: { label: "短線提醒", swatch: "#ffcc33" },
+  red: { label: "咪call/咪買", swatch: "#ff5c5c" },
+  blue: { label: "長線提醒", swatch: "#5cb3ff" },
+};
+const hlBg = colorKey => C[`hl${colorKey[0].toUpperCase()}${colorKey.slice(1)}`];
+
 // 自己highlight嘅symbol，存落localStorage(同theme.js嘅osTheme一樣做法)，
 // 淨係呢部機／呢個瀏覽器記得住，跨session唔會唔見。
+// 格式 {ticker: colorKey}。舊版本存嘅係一個純array(淨係on/off，冇顏色)，
+// 讀到嗰陣自動當成全部"yellow"，唔會炸、都唔會漏返舊highlight。
 const HL_KEY = "osWatchlistHighlights";
-const loadHighlights = () => {
-  try { return new Set(JSON.parse(localStorage.getItem(HL_KEY)) || []); }
-  catch { return new Set(); }
+const normaliseHighlights = raw => {
+  if (Array.isArray(raw)) {
+    const out = {};
+    for (const t of raw) out[t] = "yellow";
+    return out;
+  }
+  return raw && typeof raw === "object" ? raw : {};
 };
-const saveHighlights = set => {
-  try { localStorage.setItem(HL_KEY, JSON.stringify([...set])); } catch { /* 私隱模式 */ }
+const loadHighlights = () => {
+  try { return normaliseHighlights(JSON.parse(localStorage.getItem(HL_KEY))); }
+  catch { return {}; }
+};
+const saveHighlights = obj => {
+  try { localStorage.setItem(HL_KEY, JSON.stringify(obj)); } catch { /* 私隱模式 */ }
 };
 
 // ── 跨裝置sync：經Cloudflare Worker代理去GitHub issue當輕量database ─────
@@ -124,16 +144,19 @@ async function fetchRemoteHighlights() {
     throw new Error(`HTTP ${r.status}`);
   }
   const data = await r.json();
-  let arr = [];
-  try { arr = JSON.parse(data.body || "[]"); } catch { arr = []; }
-  return new Set(Array.isArray(arr) ? arr : []);
+  let raw = {};
+  try { raw = JSON.parse(data.body || "{}"); } catch { raw = {}; }
+  return normaliseHighlights(raw);
 }
 
-async function pushRemoteHighlights(set) {
+async function pushRemoteHighlights(obj) {
+  // keys排序，淨係為咗個issue body每次改動嘅diff睇落穩定啲，方便你自己
+  // 手動睇個issue history嗰陣對得到邊次改咗咩。
+  const sorted = Object.fromEntries(Object.keys(obj).sort().map(k => [k, obj[k]]));
   const r = await fetch(WORKER_API, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ body: JSON.stringify([...set].sort()) }),
+    body: JSON.stringify({ body: JSON.stringify(sorted) }),
   });
   if (!r.ok) {
     const body = await r.text().catch(() => "");
@@ -150,9 +173,9 @@ async function pushRemoteHighlights(set) {
 // 唔見咗」。用pendingPushes追蹤緊邊幾個toggle重未confirm成功push到
 // GitHub，poll期間淨係跳過呢啲，其他symbol照用返remote(等第二部機嘅
 // 改動都sync到)。
-async function pushWithRetry(set, attempts = 3) {
+async function pushWithRetry(obj, attempts = 3) {
   for (let i = 0; i < attempts; i++) {
-    try { await pushRemoteHighlights(set); return true; }
+    try { await pushRemoteHighlights(obj); return true; }
     catch { if (i < attempts - 1) await new Promise(res => setTimeout(res, 1500 * (i + 1))); }
   }
   return false;
@@ -179,9 +202,10 @@ export default function Watchlist({ isMobile, light }) {
   // 美股喺前、港股喺最尾。揀咗column先會改做按該column排序。
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(1);
-  const [highlighted, setHighlighted] = useState(loadHighlights); // local cache先行，GitHub fetch返嚟先覆蓋
+  const [highlighted, setHighlighted] = useState(loadHighlights); // {ticker: colorKey}；local cache先行，GitHub fetch返嚟先覆蓋
   const [syncErr, setSyncErr] = useState(false);
-  // 邊幾個ticker重有個local toggle未confirm成功push到GitHub -- poll攞到
+  const [picker, setPicker] = useState(null); // {ticker, symbol} | null -- 揀色popup開緊邊個symbol
+  // 邊幾個ticker重有個local改動未confirm成功push到GitHub -- poll攞到
   // 新嘅remote set嗰陣，呢幾個要保留返local嘅版本，唔好俾poll用（可能係
   // push完成之前攞到嘅）舊data覆蓋走，呢個正正係之前「highlight咗，90秒
   // 後自己唔見咗」嗰個bug嘅根源。
@@ -196,9 +220,9 @@ export default function Watchlist({ isMobile, light }) {
         setHighlighted(prev => {
           // 保留住重pending緊嘅local改動，其餘用返remote(等第二部機嘅
           // 改動都sync到)
-          const merged = new Set(remote);
+          const merged = { ...remote };
           for (const t of pendingRef.current) {
-            if (prev.has(t)) merged.add(t); else merged.delete(t);
+            if (t in prev) merged[t] = prev[t]; else delete merged[t];
           }
           saveHighlights(merged);
           return merged;
@@ -211,24 +235,32 @@ export default function Watchlist({ isMobile, light }) {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 先confirm先變色，
-  // 避免手滑㩒錯就整到成行變晒黃色。兩種情況都即刻更新local(optimistic)，
-  // 再background push去GitHub issue俾第二部機見到，失敗自動retry3次。
-  const toggleHighlight = (ticker, symbol) => {
+  // 共用嘅「改咗一個ticker → local即刻生效、background push、失敗retry3次」
+  const applyHighlightChange = (ticker, next) => {
     setHighlighted(prev => {
-      const willAdd = !prev.has(ticker);
-      if (willAdd && !window.confirm(`Highlight ${symbol}？`)) return prev;
-      const next = new Set(prev);
-      willAdd ? next.add(ticker) : next.delete(ticker);
-      saveHighlights(next);
+      const merged = { ...prev };
+      if (next) merged[ticker] = next; else delete merged[ticker];
+      saveHighlights(merged);
 
       pendingRef.current.add(ticker);
-      pushWithRetry(next).then(ok => {
+      pushWithRetry(merged).then(ok => {
         pendingRef.current.delete(ticker);
         setSyncErr(!ok); // retry 3次都失敗至會警告 -- local改動本身冇走
       });
-      return next;
+      return merged;
     });
+  };
+
+  // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 彈個3色揀色
+  // popup，㩒邊個色就即刻confirm用嗰隻色（唔使再多撳一次OK），避免手滑
+  // 㩒錯就整到成行變色。
+  const toggleHighlight = (ticker, symbol) => {
+    if (highlighted[ticker]) applyHighlightChange(ticker, null);
+    else setPicker({ ticker, symbol });
+  };
+  const chooseColor = colorKey => {
+    if (picker) applyHighlightChange(picker.ticker, colorKey);
+    setPicker(null);
   };
   C = light ? THEMES.light : THEMES.dark;
 
@@ -367,7 +399,7 @@ export default function Watchlist({ isMobile, light }) {
               <tr
                 key={r.ticker}
                 onClick={() => toggleHighlight(r.ticker, r.symbol)}
-                style={{ cursor: "pointer", background: highlighted.has(r.ticker) ? C.hl : undefined }}
+                style={{ cursor: "pointer", background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}
               >
                 <td style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
@@ -429,6 +461,53 @@ export default function Watchlist({ isMobile, light }) {
       <div style={{ marginTop: 8, fontSize: 11, color: C.mute, fontFamily: M }}>
         {rows.length} / {status.count} symbols
       </div>
+
+      {picker && (
+        <div
+          onClick={() => setPicker(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: C.card, border: `1px solid ${C.line}`, borderRadius: 10,
+              padding: "18px 20px", minWidth: 220, fontFamily: F,
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 14 }}>
+              Highlight {picker.symbol}
+            </div>
+            <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+              {Object.entries(HILITE).map(([key, { label, swatch }]) => (
+                <button
+                  key={key}
+                  onClick={() => chooseColor(key)}
+                  title={label}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                    background: "none", border: "none", cursor: "pointer", padding: 4,
+                  }}
+                >
+                  <span style={{
+                    display: "block", width: 28, height: 28, borderRadius: "50%",
+                    background: swatch, border: `1px solid ${C.line}`,
+                  }} />
+                  <span style={{ fontSize: 10, fontFamily: M, color: C.sub }}>{label}</span>
+                </button>
+              ))}
+            </div>
+            <div
+              onClick={() => setPicker(null)}
+              style={{ marginTop: 14, textAlign: "center", fontSize: 11, color: C.mute, fontFamily: M, cursor: "pointer" }}
+            >
+              取消
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
