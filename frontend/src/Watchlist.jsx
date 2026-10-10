@@ -27,7 +27,7 @@ const THEMES = {
     txt: "#eaf2fa", dim: "#a8bdd2", sub: "#c3d3e3", mute: "#7b93aa",
     up: "#2ee89a", dn: "#ff6b83", warn: "#ffb35c", acc: "#5cb3ff",
     tabOn: "#1e4270",
-    hlYellow: "rgba(255,196,0,0.16)", hlRed: "rgba(255,90,90,0.18)", hlBlue: "rgba(92,179,255,0.18)",
+    hlYellow: "rgba(255,196,0,0.26)", hlRed: "rgba(255,90,90,0.26)", hlBlue: "rgba(92,179,255,0.26)",
   },
   light: {
     bg: "#f4f7fb", card: "#ffffff", line: "#d5e0ec", chip: "#e8eef6",
