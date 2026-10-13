@@ -1,7 +1,7 @@
 {
-  "scanned_at": "2026-10-13T01:06:36.408471Z",
+  "scanned_at": "2026-10-13T01:34:50.703896Z",
   "total_scanned": 246,
-  "total_results": 142,
+  "total_results": 180,
   "categories": [
     "meme",
     "crypto",
@@ -117,7 +117,85 @@
         "scenario_at_protect": -628.0,
         "halfway_price": 67.5
       },
-      "scanned_at": "2026-10-13T01:03:24.762537Z"
+      "scanned_at": "2026-10-13T01:31:04.329376Z"
+    },
+    {
+      "ticker": "EDIT",
+      "category": "biotech",
+      "iv_source": "options",
+      "price": 2.75,
+      "iv_current": 113.2,
+      "iv_rank": 99,
+      "risk_reversal": 25.0,
+      "trend": "bearish",
+      "rsi": 50.6,
+      "adx": 34.7,
+      "ema9": 2.75,
+      "ema21": 2.75,
+      "ema50": 2.81,
+      "volume_spike": 0.38,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 2.59,
+        "high": 2.91
+      },
+      "range_1w": {
+        "low": 2.32,
+        "high": 3.18
+      },
+      "range_1m": {
+        "low": 1.86,
+        "high": 3.64
+      },
+      "suggest_strike": 2.5,
+      "suggest_premium": 0.52,
+      "suggest_premium_contract": 52.5,
+      "suggest_otm_pct": 9.1,
+      "suggest_strike_iv": 113.2,
+      "suggest_dte": 38,
+      "suggest_expiry": "2026-11-20",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.66,
+      "call_wall": 5.0,
+      "put_wall": 2.5,
+      "max_pain": 2.5,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 5.0,
+          "oi": 1323,
+          "vol": 105
+        },
+        {
+          "strike": 7.5,
+          "oi": 707,
+          "vol": 15
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 2.5,
+          "oi": 369,
+          "vol": 6
+        },
+        {
+          "strike": 2.0,
+          "oi": 138,
+          "vol": 100
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {},
+      "scanned_at": "2026-10-13T01:31:43.887845Z"
     },
     {
       "ticker": "GILD",
@@ -218,7 +296,145 @@
         "scenario_at_protect": -1787.0,
         "halfway_price": 142.0
       },
-      "scanned_at": "2026-10-13T01:04:00.660325Z"
+      "scanned_at": "2026-10-13T01:31:48.814859Z"
+    },
+    {
+      "ticker": "SNAP",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 6.53,
+      "iv_current": 88.3,
+      "iv_rank": 99,
+      "risk_reversal": 99,
+      "trend": "bullish",
+      "rsi": 84.1,
+      "adx": 35.6,
+      "ema9": 5.93,
+      "ema21": 5.72,
+      "ema50": 5.51,
+      "volume_spike": 1.36,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 6.23,
+        "high": 6.83
+      },
+      "range_1w": {
+        "low": 5.73,
+        "high": 7.33
+      },
+      "range_1m": {
+        "low": 4.88,
+        "high": 8.18
+      },
+      "suggest_strike": 6.0,
+      "suggest_premium": 0.37,
+      "suggest_premium_contract": 37.0,
+      "suggest_otm_pct": 8.1,
+      "suggest_strike_iv": 83.9,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "balanced",
+      "fill_side": "mid",
+      "pc_ratio": 0.33,
+      "call_wall": 7.0,
+      "put_wall": 4.5,
+      "max_pain": 5.5,
+      "signal_matrix": "VOLATILE",
+      "oi_top_calls": [
+        {
+          "strike": 7.0,
+          "oi": 1112,
+          "vol": 358
+        },
+        {
+          "strike": 7.5,
+          "oi": 149,
+          "vol": 257
+        },
+        {
+          "strike": 8.5,
+          "oi": 116,
+          "vol": 28
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 4.5,
+          "oi": 166,
+          "vol": 81
+        },
+        {
+          "strike": 4.0,
+          "oi": 115,
+          "vol": 0
+        },
+        {
+          "strike": 5.0,
+          "oi": 106,
+          "vol": 110
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 8.0,
+          "type": "call",
+          "volume": 153,
+          "oi": 79,
+          "vol_oi_ratio": 1.9,
+          "bid": 0.23,
+          "ask": 0.29
+        },
+        {
+          "strike": 7.5,
+          "type": "call",
+          "volume": 257,
+          "oi": 149,
+          "vol_oi_ratio": 1.7,
+          "bid": 0.29,
+          "ask": 0.37
+        },
+        {
+          "strike": 5.5,
+          "type": "put",
+          "volume": 125,
+          "oi": 98,
+          "vol_oi_ratio": 1.3,
+          "bid": 0.19,
+          "ask": 0.22
+        },
+        {
+          "strike": 5.0,
+          "type": "put",
+          "volume": 110,
+          "oi": 106,
+          "vol_oi_ratio": 1.0,
+          "bid": 0.06,
+          "ask": 0.1
+        }
+      ],
+      "spread": {
+        "protect_strike": 4.5,
+        "protect_premium": 0.06,
+        "protect_contract": 6.0,
+        "net_premium": 0.31,
+        "net_contract": 31.0,
+        "max_profit": 31.0,
+        "max_loss": 119.0,
+        "breakeven": 5.69,
+        "return_on_risk": 26.1,
+        "scenario_above_sell": 31.0,
+        "scenario_at_protect": -119.0,
+        "halfway_price": 5.25
+      },
+      "scanned_at": "2026-10-13T01:31:58.019793Z"
     },
     {
       "ticker": "PG",
@@ -329,7 +545,7 @@
         "scenario_at_protect": -1441.0,
         "halfway_price": 144.0
       },
-      "scanned_at": "2026-10-13T01:05:06.379045Z"
+      "scanned_at": "2026-10-13T01:33:08.361708Z"
     },
     {
       "ticker": "BMY",
@@ -430,7 +646,7 @@
         "scenario_at_protect": -369.0,
         "halfway_price": 61.5
       },
-      "scanned_at": "2026-10-13T01:05:23.872866Z"
+      "scanned_at": "2026-10-13T01:33:29.868051Z"
     },
     {
       "ticker": "PNC",
@@ -513,7 +729,7 @@
       ],
       "vol_anomaly_strikes": [],
       "spread": {},
-      "scanned_at": "2026-10-13T01:06:10.923396Z"
+      "scanned_at": "2026-10-13T01:34:20.343839Z"
     },
     {
       "ticker": "MPC",
@@ -642,7 +858,7 @@
         "scenario_at_protect": -2585.0,
         "halfway_price": 420.0
       },
-      "scanned_at": "2026-10-13T01:06:21.151791Z"
+      "scanned_at": "2026-10-13T01:34:32.609185Z"
     },
     {
       "ticker": "VLO",
@@ -743,7 +959,7 @@
         "scenario_at_protect": -630.0,
         "halfway_price": 392.5
       },
-      "scanned_at": "2026-10-13T01:06:22.075934Z"
+      "scanned_at": "2026-10-13T01:34:33.594186Z"
     },
     {
       "ticker": "PFE",
@@ -854,7 +1070,7 @@
         "scenario_at_protect": -116.0,
         "halfway_price": 26.0
       },
-      "scanned_at": "2026-10-13T01:06:31.515846Z"
+      "scanned_at": "2026-10-13T01:34:44.889748Z"
     },
     {
       "ticker": "LIN",
@@ -955,7 +1171,7 @@
         "scenario_at_protect": -5530.0,
         "halfway_price": 462.5
       },
-      "scanned_at": "2026-10-13T01:05:29.384671Z"
+      "scanned_at": "2026-10-13T01:33:36.280552Z"
     },
     {
       "ticker": "BLK",
@@ -1056,7 +1272,7 @@
         "scenario_at_protect": -3345.0,
         "halfway_price": 985.0
       },
-      "scanned_at": "2026-10-13T01:05:22.051046Z"
+      "scanned_at": "2026-10-13T01:33:27.830014Z"
     },
     {
       "ticker": "AFL",
@@ -1157,7 +1373,108 @@
         "scenario_at_protect": -425.0,
         "halfway_price": 122.0
       },
-      "scanned_at": "2026-10-13T01:06:13.477245Z"
+      "scanned_at": "2026-10-13T01:34:23.315980Z"
+    },
+    {
+      "ticker": "DKNG",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 19.66,
+      "iv_current": 66.4,
+      "iv_rank": 86.2,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 41.9,
+      "adx": 26.0,
+      "ema9": 19.79,
+      "ema21": 20.81,
+      "ema50": 22.38,
+      "volume_spike": 0.63,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 18.98,
+        "high": 20.34
+      },
+      "range_1w": {
+        "low": 17.85,
+        "high": 21.47
+      },
+      "range_1m": {
+        "low": 15.92,
+        "high": 23.4
+      },
+      "suggest_strike": 22.0,
+      "suggest_premium": 0.62,
+      "suggest_premium_contract": 62.5,
+      "suggest_otm_pct": 11.9,
+      "suggest_strike_iv": 61.6,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.39,
+      "call_wall": 20.0,
+      "put_wall": 17.0,
+      "max_pain": 19.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 27.0,
+          "oi": 105,
+          "vol": 8
+        },
+        {
+          "strike": 28.0,
+          "oi": 89,
+          "vol": 3
+        },
+        {
+          "strike": 20.0,
+          "oi": 79,
+          "vol": 23
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 17.0,
+          "oi": 130,
+          "vol": 23
+        },
+        {
+          "strike": 15.0,
+          "oi": 119,
+          "vol": 32
+        },
+        {
+          "strike": 18.0,
+          "oi": 107,
+          "vol": 4
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 20.0,
+        "protect_premium": 1.4,
+        "protect_contract": 140.0,
+        "net_premium": -0.78,
+        "net_contract": -78.0,
+        "max_profit": -78.0,
+        "max_loss": 278.0,
+        "breakeven": 21.22,
+        "return_on_risk": -28.1,
+        "scenario_above_sell": -78.0,
+        "scenario_at_protect": -278.0,
+        "halfway_price": 21.0
+      },
+      "scanned_at": "2026-10-13T01:32:00.008968Z"
     },
     {
       "ticker": "PH",
@@ -1258,7 +1575,7 @@
         "scenario_at_protect": -10150.0,
         "halfway_price": 900.0
       },
-      "scanned_at": "2026-10-13T01:06:06.395421Z"
+      "scanned_at": "2026-10-13T01:34:14.990958Z"
     },
     {
       "ticker": "CVX",
@@ -1359,7 +1676,7 @@
         "scenario_at_protect": -1839.0,
         "halfway_price": 202.5
       },
-      "scanned_at": "2026-10-13T01:06:34.231234Z"
+      "scanned_at": "2026-10-13T01:34:48.081188Z"
     },
     {
       "ticker": "MMM",
@@ -1460,7 +1777,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 175.0
       },
-      "scanned_at": "2026-10-13T01:05:49.965320Z"
+      "scanned_at": "2026-10-13T01:33:59.962376Z"
     },
     {
       "ticker": "TMO",
@@ -1561,7 +1878,7 @@
         "scenario_at_protect": -2505.0,
         "halfway_price": 610.0
       },
-      "scanned_at": "2026-10-13T01:05:11.730890Z"
+      "scanned_at": "2026-10-13T01:33:14.964448Z"
     },
     {
       "ticker": "FTNT",
@@ -1662,7 +1979,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 175.0
       },
-      "scanned_at": "2026-10-13T01:04:14.525999Z"
+      "scanned_at": "2026-10-13T01:32:06.049368Z"
     },
     {
       "ticker": "RTX",
@@ -1763,7 +2080,7 @@
         "scenario_at_protect": -563.0,
         "halfway_price": 202.5
       },
-      "scanned_at": "2026-10-13T01:04:51.341540Z"
+      "scanned_at": "2026-10-13T01:32:49.911284Z"
     },
     {
       "ticker": "BAC",
@@ -1874,7 +2191,7 @@
         "scenario_at_protect": -638.0,
         "halfway_price": 57.5
       },
-      "scanned_at": "2026-10-13T01:04:24.924347Z"
+      "scanned_at": "2026-10-13T01:32:18.206428Z"
     },
     {
       "ticker": "JNJ",
@@ -1975,7 +2292,7 @@
         "scenario_at_protect": -3183.0,
         "halfway_price": 277.5
       },
-      "scanned_at": "2026-10-13T01:05:05.511595Z"
+      "scanned_at": "2026-10-13T01:33:07.284305Z"
     },
     {
       "ticker": "MCD",
@@ -2076,7 +2393,7 @@
         "scenario_at_protect": -2440.0,
         "halfway_price": 250.0
       },
-      "scanned_at": "2026-10-13T01:05:10.860953Z"
+      "scanned_at": "2026-10-13T01:33:13.777134Z"
     },
     {
       "ticker": "WFC",
@@ -2196,7 +2513,7 @@
         "scenario_at_protect": -602.0,
         "halfway_price": 89.5
       },
-      "scanned_at": "2026-10-13T01:05:31.337270Z"
+      "scanned_at": "2026-10-13T01:33:38.420861Z"
     },
     {
       "ticker": "LOW",
@@ -2297,7 +2614,7 @@
         "scenario_at_protect": -1868.0,
         "halfway_price": 197.5
       },
-      "scanned_at": "2026-10-13T01:05:35.629896Z"
+      "scanned_at": "2026-10-13T01:33:43.799067Z"
     },
     {
       "ticker": "BDX",
@@ -2398,7 +2715,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 170.0
       },
-      "scanned_at": "2026-10-13T01:05:58.028366Z"
+      "scanned_at": "2026-10-13T01:34:04.917409Z"
     },
     {
       "ticker": "APO",
@@ -2499,7 +2816,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 130.0
       },
-      "scanned_at": "2026-10-13T01:05:49.083560Z"
+      "scanned_at": "2026-10-13T01:33:58.926308Z"
     },
     {
       "ticker": "T",
@@ -2600,7 +2917,118 @@
         "scenario_at_protect": -196.0,
         "halfway_price": 23.75
       },
-      "scanned_at": "2026-10-13T01:06:30.696811Z"
+      "scanned_at": "2026-10-13T01:34:43.851453Z"
+    },
+    {
+      "ticker": "UBER",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 71.5,
+      "iv_current": 41.8,
+      "iv_rank": 76.5,
+      "risk_reversal": 39.8,
+      "trend": "bearish",
+      "rsi": 63.6,
+      "adx": 34.7,
+      "ema9": 70.05,
+      "ema21": 70.46,
+      "ema50": 71.78,
+      "volume_spike": 0.72,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 69.94,
+        "high": 73.06
+      },
+      "range_1w": {
+        "low": 67.36,
+        "high": 75.64
+      },
+      "range_1m": {
+        "low": 62.94,
+        "high": 80.06
+      },
+      "suggest_strike": 79.0,
+      "suggest_premium": 1.08,
+      "suggest_premium_contract": 108.5,
+      "suggest_otm_pct": 10.5,
+      "suggest_strike_iv": 41.1,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 30.88,
+      "call_wall": 75.0,
+      "put_wall": 69.0,
+      "max_pain": 69.0,
+      "signal_matrix": "BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 81.0,
+          "oi": 2032,
+          "vol": 12
+        },
+        {
+          "strike": 75.0,
+          "oi": 175,
+          "vol": 25
+        },
+        {
+          "strike": 80.0,
+          "oi": 122,
+          "vol": 69
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 61.0,
+          "oi": 6889,
+          "vol": 6880
+        },
+        {
+          "strike": 65.0,
+          "oi": 119,
+          "vol": 34
+        },
+        {
+          "strike": 59.0,
+          "oi": 77,
+          "vol": 2
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 60.0,
+          "type": "put",
+          "volume": 115,
+          "oi": 70,
+          "vol_oi_ratio": 1.6,
+          "bid": 0.24,
+          "ask": 0.36
+        }
+      ],
+      "spread": {
+        "protect_strike": 75.0,
+        "protect_premium": 2.02,
+        "protect_contract": 202.0,
+        "net_premium": -0.94,
+        "net_contract": -94.0,
+        "max_profit": -94.0,
+        "max_loss": 494.0,
+        "breakeven": 78.06,
+        "return_on_risk": -19.0,
+        "scenario_above_sell": -94.0,
+        "scenario_at_protect": -494.0,
+        "halfway_price": 77.0
+      },
+      "scanned_at": "2026-10-13T01:32:00.974481Z"
     },
     {
       "ticker": "BX",
@@ -2701,7 +3129,7 @@
         "scenario_at_protect": -1450.0,
         "halfway_price": 120.5
       },
-      "scanned_at": "2026-10-13T01:06:00.638592Z"
+      "scanned_at": "2026-10-13T01:34:07.865523Z"
     },
     {
       "ticker": "FDX",
@@ -2802,7 +3230,7 @@
         "scenario_at_protect": -2535.0,
         "halfway_price": 310.0
       },
-      "scanned_at": "2026-10-13T01:06:17.729066Z"
+      "scanned_at": "2026-10-13T01:34:28.509755Z"
     },
     {
       "ticker": "GM",
@@ -2903,7 +3331,7 @@
         "scenario_at_protect": -917.0,
         "halfway_price": 86.5
       },
-      "scanned_at": "2026-10-13T01:06:20.237276Z"
+      "scanned_at": "2026-10-13T01:34:31.607050Z"
     },
     {
       "ticker": "WELL",
@@ -3004,7 +3432,108 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 250.0
       },
-      "scanned_at": "2026-10-13T01:06:09.027205Z"
+      "scanned_at": "2026-10-13T01:34:18.229241Z"
+    },
+    {
+      "ticker": "AFRM",
+      "category": "fintech",
+      "iv_source": "options",
+      "price": 78.63,
+      "iv_current": 66.3,
+      "iv_rank": 74.5,
+      "risk_reversal": 99,
+      "trend": "bullish",
+      "rsi": 67.7,
+      "adx": 26.3,
+      "ema9": 75.65,
+      "ema21": 73.75,
+      "ema50": 73.4,
+      "volume_spike": 0.73,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 75.9,
+        "high": 81.36
+      },
+      "range_1w": {
+        "low": 71.41,
+        "high": 85.85
+      },
+      "range_1m": {
+        "low": 63.69,
+        "high": 93.57
+      },
+      "suggest_strike": 71.0,
+      "suggest_premium": 2.27,
+      "suggest_premium_contract": 226.5,
+      "suggest_otm_pct": 9.7,
+      "suggest_strike_iv": 61.4,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 3.42,
+      "call_wall": 85.0,
+      "put_wall": 70.0,
+      "max_pain": 70.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 95.0,
+          "oi": 214,
+          "vol": 0
+        },
+        {
+          "strike": 90.0,
+          "oi": 119,
+          "vol": 2
+        },
+        {
+          "strike": 85.0,
+          "oi": 28,
+          "vol": 0
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 60.0,
+          "oi": 55,
+          "vol": 10
+        },
+        {
+          "strike": 70.0,
+          "oi": 55,
+          "vol": 4
+        },
+        {
+          "strike": 58.0,
+          "oi": 51,
+          "vol": 12
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 70.0,
+        "protect_premium": 2.13,
+        "protect_contract": 213.0,
+        "net_premium": 0.14,
+        "net_contract": 14.0,
+        "max_profit": 14.0,
+        "max_loss": 86.0,
+        "breakeven": 70.86,
+        "return_on_risk": 16.3,
+        "scenario_above_sell": 14.0,
+        "scenario_at_protect": -86.0,
+        "halfway_price": 70.5
+      },
+      "scanned_at": "2026-10-13T01:32:13.209420Z"
     },
     {
       "ticker": "JCI",
@@ -3115,7 +3644,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 140.0
       },
-      "scanned_at": "2026-10-13T01:06:18.542283Z"
+      "scanned_at": "2026-10-13T01:34:29.549489Z"
     },
     {
       "ticker": "BKNG",
@@ -3216,7 +3745,7 @@
         "scenario_at_protect": -628.0,
         "halfway_price": 172.5
       },
-      "scanned_at": "2026-10-13T01:04:17.825292Z"
+      "scanned_at": "2026-10-13T01:32:09.888457Z"
     },
     {
       "ticker": "MA",
@@ -3327,7 +3856,7 @@
         "scenario_at_protect": -5155.0,
         "halfway_price": 557.5
       },
-      "scanned_at": "2026-10-13T01:04:29.254653Z"
+      "scanned_at": "2026-10-13T01:32:23.407848Z"
     },
     {
       "ticker": "HON",
@@ -3415,7 +3944,7 @@
       ],
       "vol_anomaly_strikes": [],
       "spread": {},
-      "scanned_at": "2026-10-13T01:05:18.582182Z"
+      "scanned_at": "2026-10-13T01:33:23.407396Z"
     },
     {
       "ticker": "WM",
@@ -3516,7 +4045,108 @@
         "scenario_at_protect": -1213.0,
         "halfway_price": 225.0
       },
-      "scanned_at": "2026-10-13T01:06:10.062482Z"
+      "scanned_at": "2026-10-13T01:34:19.255467Z"
+    },
+    {
+      "ticker": "LABU",
+      "category": "leveraged_etfs",
+      "iv_source": "options",
+      "price": 231.99,
+      "iv_current": 96.5,
+      "iv_rank": 73.0,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 39.8,
+      "adx": 26.0,
+      "ema9": 240.65,
+      "ema21": 253.0,
+      "ema50": 261.63,
+      "volume_spike": 0.65,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 220.27,
+        "high": 243.71
+      },
+      "range_1w": {
+        "low": 200.98,
+        "high": 263.0
+      },
+      "range_1m": {
+        "low": 167.8,
+        "high": 296.18
+      },
+      "suggest_strike": 255.0,
+      "suggest_premium": 16.95,
+      "suggest_premium_contract": 1695.0,
+      "suggest_otm_pct": 9.9,
+      "suggest_strike_iv": 94.1,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "bid",
+      "pc_ratio": 27.33,
+      "call_wall": 265.0,
+      "put_wall": 220.0,
+      "max_pain": 212.5,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 320.0,
+          "oi": 25,
+          "vol": 0
+        },
+        {
+          "strike": 325.0,
+          "oi": 25,
+          "vol": 0
+        },
+        {
+          "strike": 265.0,
+          "oi": 3,
+          "vol": 3
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 165.0,
+          "oi": 28,
+          "vol": 25
+        },
+        {
+          "strike": 175.0,
+          "oi": 27,
+          "vol": 25
+        },
+        {
+          "strike": 220.0,
+          "oi": 13,
+          "vol": 0
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 265.0,
+        "protect_premium": 14.45,
+        "protect_contract": 1445.0,
+        "net_premium": 2.5,
+        "net_contract": 250.0,
+        "max_profit": 250.0,
+        "max_loss": 750.0,
+        "breakeven": 257.5,
+        "return_on_risk": 33.3,
+        "scenario_above_sell": 250.0,
+        "scenario_at_protect": -750.0,
+        "halfway_price": 260.0
+      },
+      "scanned_at": "2026-10-13T01:32:28.483881Z"
     },
     {
       "ticker": "TFC",
@@ -3617,7 +4247,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 52.5
       },
-      "scanned_at": "2026-10-13T01:06:16.034570Z"
+      "scanned_at": "2026-10-13T01:34:26.444491Z"
     },
     {
       "ticker": "JPM",
@@ -3728,7 +4358,118 @@
         "scenario_at_protect": -2387.0,
         "halfway_price": 360.0
       },
-      "scanned_at": "2026-10-13T01:04:27.600899Z"
+      "scanned_at": "2026-10-13T01:32:21.352447Z"
+    },
+    {
+      "ticker": "META",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 742.96,
+      "iv_current": 44.7,
+      "iv_rank": 70.6,
+      "risk_reversal": 97.6,
+      "trend": "bullish",
+      "rsi": 61.9,
+      "adx": 33.5,
+      "ema9": 728.92,
+      "ema21": 710.12,
+      "ema50": 668.91,
+      "volume_spike": 1.13,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 725.6,
+        "high": 760.32
+      },
+      "range_1w": {
+        "low": 697.02,
+        "high": 788.9
+      },
+      "range_1m": {
+        "low": 647.85,
+        "high": 838.07
+      },
+      "suggest_strike": 670.0,
+      "suggest_premium": 10.88,
+      "suggest_premium_contract": 1087.5,
+      "suggest_otm_pct": 9.8,
+      "suggest_strike_iv": 45.3,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 0.9,
+      "call_wall": 745.0,
+      "put_wall": 715.0,
+      "max_pain": 715.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 930.0,
+          "oi": 118,
+          "vol": 5
+        },
+        {
+          "strike": 800.0,
+          "oi": 109,
+          "vol": 99
+        },
+        {
+          "strike": 820.0,
+          "oi": 89,
+          "vol": 11
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 610.0,
+          "oi": 2613,
+          "vol": 17
+        },
+        {
+          "strike": 615.0,
+          "oi": 210,
+          "vol": 2
+        },
+        {
+          "strike": 715.0,
+          "oi": 126,
+          "vol": 1
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 680.0,
+          "type": "put",
+          "volume": 117,
+          "oi": 38,
+          "vol_oi_ratio": 3.1,
+          "bid": 12.65,
+          "ask": 13.9
+        }
+      ],
+      "spread": {
+        "protect_strike": 715.0,
+        "protect_premium": 24.58,
+        "protect_contract": 2458.0,
+        "net_premium": -13.7,
+        "net_contract": -1370.0,
+        "max_profit": -1370.0,
+        "max_loss": 5870.0,
+        "breakeven": 683.7,
+        "return_on_risk": -23.3,
+        "scenario_above_sell": -1370.0,
+        "scenario_at_protect": -5870.0,
+        "halfway_price": 692.5
+      },
+      "scanned_at": "2026-10-13T01:31:53.954565Z"
     },
     {
       "ticker": "TDG",
@@ -3829,7 +4570,219 @@
         "scenario_at_protect": -11695.0,
         "halfway_price": 1185.0
       },
-      "scanned_at": "2026-10-13T01:06:11.778298Z"
+      "scanned_at": "2026-10-13T01:34:21.328380Z"
+    },
+    {
+      "ticker": "UPST",
+      "category": "fintech",
+      "iv_source": "options",
+      "price": 23.75,
+      "iv_current": 74.7,
+      "iv_rank": 70.1,
+      "risk_reversal": 16.3,
+      "trend": "neutral",
+      "rsi": 43.2,
+      "adx": 18.7,
+      "ema9": 23.91,
+      "ema21": 24.56,
+      "ema50": 26.34,
+      "volume_spike": 0.63,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 22.82,
+        "high": 24.68
+      },
+      "range_1w": {
+        "low": 21.29,
+        "high": 26.21
+      },
+      "range_1m": {
+        "low": 18.66,
+        "high": 28.84
+      },
+      "suggest_strike": 21.0,
+      "suggest_premium": 0.89,
+      "suggest_premium_contract": 89.0,
+      "suggest_otm_pct": 11.6,
+      "suggest_strike_iv": 77.2,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "call_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 0.19,
+      "call_wall": 27.0,
+      "put_wall": 23.0,
+      "max_pain": 25.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 30.0,
+          "oi": 90,
+          "vol": 11
+        },
+        {
+          "strike": 27.0,
+          "oi": 90,
+          "vol": 15
+        },
+        {
+          "strike": 28.0,
+          "oi": 65,
+          "vol": 7
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 21.0,
+          "oi": 179,
+          "vol": 0
+        },
+        {
+          "strike": 23.0,
+          "oi": 103,
+          "vol": 1
+        },
+        {
+          "strike": 19.0,
+          "oi": 95,
+          "vol": 0
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 32.0,
+          "type": "call",
+          "volume": 106,
+          "oi": 8,
+          "vol_oi_ratio": 13.2,
+          "bid": 0.05,
+          "ask": 0.46
+        }
+      ],
+      "spread": {
+        "protect_strike": 23.0,
+        "protect_premium": 1.65,
+        "protect_contract": 165.0,
+        "net_premium": -0.76,
+        "net_contract": -76.0,
+        "max_profit": -76.0,
+        "max_loss": 276.0,
+        "breakeven": 21.76,
+        "return_on_risk": -27.5,
+        "scenario_above_sell": -76.0,
+        "scenario_at_protect": -276.0,
+        "halfway_price": 22.0
+      },
+      "scanned_at": "2026-10-13T01:32:14.166404Z"
+    },
+    {
+      "ticker": "ABBV",
+      "category": "biotech",
+      "iv_source": "options",
+      "price": 281.12,
+      "iv_current": 30.1,
+      "iv_rank": 69.8,
+      "risk_reversal": 99,
+      "trend": "bullish",
+      "rsi": 85.9,
+      "adx": 38.0,
+      "ema9": 271.26,
+      "ema21": 266.66,
+      "ema50": 260.03,
+      "volume_spike": 1.22,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 276.69,
+        "high": 285.55
+      },
+      "range_1w": {
+        "low": 269.39,
+        "high": 292.85
+      },
+      "range_1m": {
+        "low": 256.83,
+        "high": 305.41
+      },
+      "suggest_strike": 255.0,
+      "suggest_premium": 2.5,
+      "suggest_premium_contract": 250.0,
+      "suggest_otm_pct": 9.3,
+      "suggest_strike_iv": 36.2,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 0.07,
+      "call_wall": 285.0,
+      "put_wall": 240.0,
+      "max_pain": 250.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 290.0,
+          "oi": 888,
+          "vol": 30
+        },
+        {
+          "strike": 285.0,
+          "oi": 132,
+          "vol": 120
+        },
+        {
+          "strike": 300.0,
+          "oi": 76,
+          "vol": 18
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 220.0,
+          "oi": 100,
+          "vol": 1
+        },
+        {
+          "strike": 235.0,
+          "oi": 20,
+          "vol": 5
+        },
+        {
+          "strike": 240.0,
+          "oi": 18,
+          "vol": 2
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 240.0,
+        "protect_premium": 0.76,
+        "protect_contract": 76.0,
+        "net_premium": 1.74,
+        "net_contract": 174.0,
+        "max_profit": 174.0,
+        "max_loss": 1326.0,
+        "breakeven": 253.26,
+        "return_on_risk": 13.1,
+        "scenario_above_sell": 174.0,
+        "scenario_at_protect": -1326.0,
+        "halfway_price": 247.5
+      },
+      "scanned_at": "2026-10-13T01:31:46.884156Z"
     },
     {
       "ticker": "SYK",
@@ -3930,7 +4883,7 @@
         "scenario_at_protect": -1220.0,
         "halfway_price": 305.0
       },
-      "scanned_at": "2026-10-13T01:05:40.206645Z"
+      "scanned_at": "2026-10-13T01:33:48.793085Z"
     },
     {
       "ticker": "CDNS",
@@ -4031,7 +4984,7 @@
         "scenario_at_protect": -1935.0,
         "halfway_price": 322.5
       },
-      "scanned_at": "2026-10-13T01:06:04.689785Z"
+      "scanned_at": "2026-10-13T01:34:12.901730Z"
     },
     {
       "ticker": "CSCO",
@@ -4142,7 +5095,7 @@
         "scenario_at_protect": -1433.0,
         "halfway_price": 109.5
       },
-      "scanned_at": "2026-10-13T01:05:12.521304Z"
+      "scanned_at": "2026-10-13T01:33:16.046513Z"
     },
     {
       "ticker": "NFLX",
@@ -4253,7 +5206,7 @@
         "scenario_at_protect": -932.0,
         "halfway_price": 74.5
       },
-      "scanned_at": "2026-10-13T01:04:07.338456Z"
+      "scanned_at": "2026-10-13T01:31:56.980217Z"
     },
     {
       "ticker": "XOM",
@@ -4364,7 +5317,7 @@
         "scenario_at_protect": -1202.0,
         "halfway_price": 160.0
       },
-      "scanned_at": "2026-10-13T01:06:35.075017Z"
+      "scanned_at": "2026-10-13T01:34:49.176639Z"
     },
     {
       "ticker": "ITW",
@@ -4465,7 +5418,7 @@
         "scenario_at_protect": -2543.0,
         "halfway_price": 280.0
       },
-      "scanned_at": "2026-10-13T01:06:07.251102Z"
+      "scanned_at": "2026-10-13T01:34:16.112097Z"
     },
     {
       "ticker": "CAT",
@@ -4566,7 +5519,7 @@
         "scenario_at_protect": -10318.0,
         "halfway_price": 842.5
       },
-      "scanned_at": "2026-10-13T01:05:19.469203Z"
+      "scanned_at": "2026-10-13T01:33:24.542305Z"
     },
     {
       "ticker": "ABT",
@@ -4667,7 +5620,7 @@
         "scenario_at_protect": -1260.0,
         "halfway_price": 107.0
       },
-      "scanned_at": "2026-10-13T01:05:13.404687Z"
+      "scanned_at": "2026-10-13T01:33:17.055698Z"
     },
     {
       "ticker": "ADP",
@@ -4768,7 +5721,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 240.0
       },
-      "scanned_at": "2026-10-13T01:05:43.779182Z"
+      "scanned_at": "2026-10-13T01:33:52.952949Z"
     },
     {
       "ticker": "LLY",
@@ -4879,7 +5832,7 @@
         "scenario_at_protect": -14015.0,
         "halfway_price": 1117.5
       },
-      "scanned_at": "2026-10-13T01:05:09.048679Z"
+      "scanned_at": "2026-10-13T01:33:11.512235Z"
     },
     {
       "ticker": "NEE",
@@ -4990,7 +5943,7 @@
         "scenario_at_protect": -728.0,
         "halfway_price": 83.0
       },
-      "scanned_at": "2026-10-13T01:05:33.884037Z"
+      "scanned_at": "2026-10-13T01:33:41.674596Z"
     },
     {
       "ticker": "DUK",
@@ -5091,7 +6044,7 @@
         "scenario_at_protect": -545.0,
         "halfway_price": 127.5
       },
-      "scanned_at": "2026-10-13T01:05:57.079230Z"
+      "scanned_at": "2026-10-13T01:34:03.915386Z"
     },
     {
       "ticker": "AON",
@@ -5192,7 +6145,7 @@
         "scenario_at_protect": -2615.0,
         "halfway_price": 290.0
       },
-      "scanned_at": "2026-10-13T01:06:08.135954Z"
+      "scanned_at": "2026-10-13T01:34:17.110270Z"
     },
     {
       "ticker": "NOC",
@@ -5293,7 +6246,7 @@
         "scenario_at_protect": -4463.0,
         "halfway_price": 517.5
       },
-      "scanned_at": "2026-10-13T01:04:52.269999Z"
+      "scanned_at": "2026-10-13T01:32:50.900296Z"
     },
     {
       "ticker": "UNP",
@@ -5394,7 +6347,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 305.0
       },
-      "scanned_at": "2026-10-13T01:05:20.274465Z"
+      "scanned_at": "2026-10-13T01:33:25.682368Z"
     },
     {
       "ticker": "GOOGL",
@@ -5514,7 +6467,7 @@
         "scenario_at_protect": -3109.0,
         "halfway_price": 327.5
       },
-      "scanned_at": "2026-10-13T01:04:05.624133Z"
+      "scanned_at": "2026-10-13T01:31:54.894158Z"
     },
     {
       "ticker": "MS",
@@ -5615,7 +6568,7 @@
         "scenario_at_protect": -1885.0,
         "halfway_price": 202.5
       },
-      "scanned_at": "2026-10-13T01:04:23.988431Z"
+      "scanned_at": "2026-10-13T01:32:17.170927Z"
     },
     {
       "ticker": "BA",
@@ -5726,7 +6679,7 @@
         "scenario_at_protect": -2599.0,
         "halfway_price": 200.0
       },
-      "scanned_at": "2026-10-13T01:05:24.729018Z"
+      "scanned_at": "2026-10-13T01:33:30.937026Z"
     },
     {
       "ticker": "MRK",
@@ -5827,7 +6780,7 @@
         "scenario_at_protect": -1272.0,
         "halfway_price": 155.0
       },
-      "scanned_at": "2026-10-13T01:05:08.076755Z"
+      "scanned_at": "2026-10-13T01:33:10.374880Z"
     },
     {
       "ticker": "DHR",
@@ -5928,7 +6881,7 @@
         "scenario_at_protect": -2572.0,
         "halfway_price": 210.0
       },
-      "scanned_at": "2026-10-13T01:05:34.686636Z"
+      "scanned_at": "2026-10-13T01:33:42.707501Z"
     },
     {
       "ticker": "SCHW",
@@ -6029,7 +6982,7 @@
         "scenario_at_protect": -1143.0,
         "halfway_price": 102.5
       },
-      "scanned_at": "2026-10-13T01:04:22.104143Z"
+      "scanned_at": "2026-10-13T01:32:15.191542Z"
     },
     {
       "ticker": "HD",
@@ -6140,7 +7093,7 @@
         "scenario_at_protect": -3158.0,
         "halfway_price": 307.5
       },
-      "scanned_at": "2026-10-13T01:05:07.206276Z"
+      "scanned_at": "2026-10-13T01:33:09.347402Z"
     },
     {
       "ticker": "LMT",
@@ -6241,7 +7194,7 @@
         "scenario_at_protect": -5265.0,
         "halfway_price": 535.0
       },
-      "scanned_at": "2026-10-13T01:04:50.490993Z"
+      "scanned_at": "2026-10-13T01:32:48.817265Z"
     },
     {
       "ticker": "ADBE",
@@ -6342,7 +7295,7 @@
         "scenario_at_protect": -2694.0,
         "halfway_price": 250.0
       },
-      "scanned_at": "2026-10-13T01:05:17.702850Z"
+      "scanned_at": "2026-10-13T01:33:22.361791Z"
     },
     {
       "ticker": "GE",
@@ -6443,7 +7396,7 @@
         "scenario_at_protect": -4019.0,
         "halfway_price": 325.0
       },
-      "scanned_at": "2026-10-13T01:05:48.251972Z"
+      "scanned_at": "2026-10-13T01:33:57.972035Z"
     },
     {
       "ticker": "SHW",
@@ -6544,7 +7497,7 @@
         "scenario_at_protect": -2570.0,
         "halfway_price": 340.0
       },
-      "scanned_at": "2026-10-13T01:06:02.283621Z"
+      "scanned_at": "2026-10-13T01:34:09.808670Z"
     },
     {
       "ticker": "OXY",
@@ -6645,7 +7598,7 @@
         "scenario_at_protect": -649.0,
         "halfway_price": 57.5
       },
-      "scanned_at": "2026-10-13T01:06:23.757140Z"
+      "scanned_at": "2026-10-13T01:34:35.603939Z"
     },
     {
       "ticker": "AIG",
@@ -6733,7 +7686,108 @@
       ],
       "vol_anomaly_strikes": [],
       "spread": {},
-      "scanned_at": "2026-10-13T01:06:27.228378Z"
+      "scanned_at": "2026-10-13T01:34:39.720956Z"
+    },
+    {
+      "ticker": "DASH",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 194.24,
+      "iv_current": 57.6,
+      "iv_rank": 59.8,
+      "risk_reversal": 45.0,
+      "trend": "bearish",
+      "rsi": 54.1,
+      "adx": 22.8,
+      "ema9": 192.09,
+      "ema21": 194.17,
+      "ema50": 197.22,
+      "volume_spike": 0.5,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 188.38,
+        "high": 200.1
+      },
+      "range_1w": {
+        "low": 178.73,
+        "high": 209.75
+      },
+      "range_1m": {
+        "low": 162.14,
+        "high": 226.34
+      },
+      "suggest_strike": 215.0,
+      "suggest_premium": 5.72,
+      "suggest_premium_contract": 572.5,
+      "suggest_otm_pct": 10.7,
+      "suggest_strike_iv": 56.4,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 9.0,
+      "call_wall": 200.0,
+      "put_wall": 175.0,
+      "max_pain": 190.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 235.0,
+          "oi": 11,
+          "vol": 0
+        },
+        {
+          "strike": 225.0,
+          "oi": 3,
+          "vol": 3
+        },
+        {
+          "strike": 250.0,
+          "oi": 3,
+          "vol": 0
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 175.0,
+          "oi": 38,
+          "vol": 35
+        },
+        {
+          "strike": 170.0,
+          "oi": 35,
+          "vol": 3
+        },
+        {
+          "strike": 165.0,
+          "oi": 28,
+          "vol": 0
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 200.0,
+        "protect_premium": 10.75,
+        "protect_contract": 1075.0,
+        "net_premium": -5.03,
+        "net_contract": -503.0,
+        "max_profit": -503.0,
+        "max_loss": 2003.0,
+        "breakeven": 209.97,
+        "return_on_risk": -25.1,
+        "scenario_above_sell": -503.0,
+        "scenario_at_protect": -2003.0,
+        "halfway_price": 207.5
+      },
+      "scanned_at": "2026-10-13T01:32:04.051959Z"
     },
     {
       "ticker": "UPS",
@@ -6834,7 +7888,7 @@
         "scenario_at_protect": -619.0,
         "halfway_price": 102.5
       },
-      "scanned_at": "2026-10-13T01:05:36.601680Z"
+      "scanned_at": "2026-10-13T01:33:44.759207Z"
     },
     {
       "ticker": "TJX",
@@ -6935,7 +7989,118 @@
         "scenario_at_protect": -780.0,
         "halfway_price": 131.5
       },
-      "scanned_at": "2026-10-13T01:05:38.511536Z"
+      "scanned_at": "2026-10-13T01:33:46.758815Z"
+    },
+    {
+      "ticker": "PANW",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 403.83,
+      "iv_current": 50.7,
+      "iv_rank": 59.2,
+      "risk_reversal": 96.0,
+      "trend": "bullish",
+      "rsi": 54.1,
+      "adx": 26.6,
+      "ema9": 403.51,
+      "ema21": 391.11,
+      "ema50": 369.75,
+      "volume_spike": 0.84,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 393.12,
+        "high": 414.54
+      },
+      "range_1w": {
+        "low": 375.5,
+        "high": 432.16
+      },
+      "range_1m": {
+        "low": 345.18,
+        "high": 462.48
+      },
+      "suggest_strike": 365.0,
+      "suggest_premium": 8.32,
+      "suggest_premium_contract": 832.5,
+      "suggest_otm_pct": 9.6,
+      "suggest_strike_iv": 51.9,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "call_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 0.5,
+      "call_wall": 405.0,
+      "put_wall": 400.0,
+      "max_pain": 385.0,
+      "signal_matrix": "BULL",
+      "oi_top_calls": [
+        {
+          "strike": 410.0,
+          "oi": 590,
+          "vol": 36
+        },
+        {
+          "strike": 405.0,
+          "oi": 204,
+          "vol": 23
+        },
+        {
+          "strike": 460.0,
+          "oi": 57,
+          "vol": 2
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 350.0,
+          "oi": 277,
+          "vol": 36
+        },
+        {
+          "strike": 380.0,
+          "oi": 92,
+          "vol": 14
+        },
+        {
+          "strike": 400.0,
+          "oi": 83,
+          "vol": 8
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 400.0,
+          "type": "call",
+          "volume": 108,
+          "oi": 63,
+          "vol_oi_ratio": 1.7,
+          "bid": 23.9,
+          "ask": 28.95
+        }
+      ],
+      "spread": {
+        "protect_strike": 400.0,
+        "protect_premium": 21.52,
+        "protect_contract": 2152.0,
+        "net_premium": -13.2,
+        "net_contract": -1320.0,
+        "max_profit": -1320.0,
+        "max_loss": 4820.0,
+        "breakeven": 378.2,
+        "return_on_risk": -27.4,
+        "scenario_above_sell": -1320.0,
+        "scenario_at_protect": -4820.0,
+        "halfway_price": 382.5
+      },
+      "scanned_at": "2026-10-13T01:32:05.116359Z"
     },
     {
       "ticker": "ROP",
@@ -7036,7 +8201,7 @@
         "scenario_at_protect": -3985.0,
         "halfway_price": 385.0
       },
-      "scanned_at": "2026-10-13T01:06:19.379186Z"
+      "scanned_at": "2026-10-13T01:34:30.621629Z"
     },
     {
       "ticker": "PSA",
@@ -7137,7 +8302,108 @@
         "scenario_at_protect": -1110.0,
         "halfway_price": 315.0
       },
-      "scanned_at": "2026-10-13T01:06:16.875385Z"
+      "scanned_at": "2026-10-13T01:34:27.446543Z"
+    },
+    {
+      "ticker": "ANET",
+      "category": "sp100_core",
+      "iv_source": "options",
+      "price": 210.88,
+      "iv_current": 55.5,
+      "iv_rank": 57.9,
+      "risk_reversal": 95.8,
+      "trend": "bullish",
+      "rsi": 54.9,
+      "adx": 27.2,
+      "ema9": 210.66,
+      "ema21": 205.96,
+      "ema50": 197.24,
+      "volume_spike": 0.7,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 204.75,
+        "high": 217.01
+      },
+      "range_1w": {
+        "low": 194.67,
+        "high": 227.09
+      },
+      "range_1m": {
+        "low": 177.32,
+        "high": 244.44
+      },
+      "suggest_strike": 190.0,
+      "suggest_premium": 4.58,
+      "suggest_premium_contract": 457.5,
+      "suggest_otm_pct": 9.9,
+      "suggest_strike_iv": 54.1,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 0.76,
+      "call_wall": 220.0,
+      "put_wall": 190.0,
+      "max_pain": 205.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 240.0,
+          "oi": 886,
+          "vol": 37
+        },
+        {
+          "strike": 250.0,
+          "oi": 100,
+          "vol": 23
+        },
+        {
+          "strike": 235.0,
+          "oi": 96,
+          "vol": 45
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 190.0,
+          "oi": 120,
+          "vol": 10
+        },
+        {
+          "strike": 165.0,
+          "oi": 118,
+          "vol": 2
+        },
+        {
+          "strike": 180.0,
+          "oi": 56,
+          "vol": 10
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 190.0,
+        "protect_premium": 4.58,
+        "protect_contract": 458.0,
+        "net_premium": 0.0,
+        "net_contract": 0.0,
+        "max_profit": 0.0,
+        "max_loss": 0.0,
+        "breakeven": 190.0,
+        "return_on_risk": 0,
+        "scenario_above_sell": 0.0,
+        "scenario_at_protect": -0.0,
+        "halfway_price": 190.0
+      },
+      "scanned_at": "2026-10-13T01:34:08.805461Z"
     },
     {
       "ticker": "AAPL",
@@ -7284,7 +8550,7 @@
         "scenario_at_protect": -4318.0,
         "halfway_price": 322.5
       },
-      "scanned_at": "2026-10-13T01:05:02.785765Z"
+      "scanned_at": "2026-10-13T01:33:03.984483Z"
     },
     {
       "ticker": "MCO",
@@ -7385,7 +8651,7 @@
         "scenario_at_protect": -2432.0,
         "halfway_price": 510.0
       },
-      "scanned_at": "2026-10-13T01:06:03.921285Z"
+      "scanned_at": "2026-10-13T01:34:11.921211Z"
     },
     {
       "ticker": "COF",
@@ -7486,7 +8752,108 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 220.0
       },
-      "scanned_at": "2026-10-13T01:04:26.799527Z"
+      "scanned_at": "2026-10-13T01:32:20.286836Z"
+    },
+    {
+      "ticker": "ABNB",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 163.5,
+      "iv_current": 44.2,
+      "iv_rank": 56.1,
+      "risk_reversal": 19.5,
+      "trend": "bearish",
+      "rsi": 52.7,
+      "adx": 21.6,
+      "ema9": 162.49,
+      "ema21": 163.75,
+      "ema50": 164.28,
+      "volume_spike": 0.72,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 159.72,
+        "high": 167.28
+      },
+      "range_1w": {
+        "low": 153.5,
+        "high": 173.5
+      },
+      "range_1m": {
+        "low": 142.8,
+        "high": 184.2
+      },
+      "suggest_strike": 180.0,
+      "suggest_premium": 3.2,
+      "suggest_premium_contract": 320.0,
+      "suggest_otm_pct": 10.1,
+      "suggest_strike_iv": 45.0,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 1.18,
+      "call_wall": 170.0,
+      "put_wall": 155.0,
+      "max_pain": 160.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 175.0,
+          "oi": 63,
+          "vol": 0
+        },
+        {
+          "strike": 170.0,
+          "oi": 27,
+          "vol": 1
+        },
+        {
+          "strike": 190.0,
+          "oi": 19,
+          "vol": 29
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 140.0,
+          "oi": 163,
+          "vol": 0
+        },
+        {
+          "strike": 155.0,
+          "oi": 69,
+          "vol": 2
+        },
+        {
+          "strike": 152.5,
+          "oi": 25,
+          "vol": 0
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 170.0,
+        "protect_premium": 5.65,
+        "protect_contract": 565.0,
+        "net_premium": -2.45,
+        "net_contract": -245.0,
+        "max_profit": -245.0,
+        "max_loss": 1245.0,
+        "breakeven": 177.55,
+        "return_on_risk": -19.7,
+        "scenario_above_sell": -245.0,
+        "scenario_at_protect": -1245.0,
+        "halfway_price": 175.0
+      },
+      "scanned_at": "2026-10-13T01:32:02.980932Z"
     },
     {
       "ticker": "BSX",
@@ -7587,7 +8954,209 @@
         "scenario_at_protect": -242.0,
         "halfway_price": 47.0
       },
-      "scanned_at": "2026-10-13T01:05:56.232046Z"
+      "scanned_at": "2026-10-13T01:34:02.923578Z"
+    },
+    {
+      "ticker": "LYFT",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 16.11,
+      "iv_current": 57.8,
+      "iv_rank": 55.2,
+      "risk_reversal": 85.0,
+      "trend": "bullish",
+      "rsi": 67.0,
+      "adx": 25.8,
+      "ema9": 15.78,
+      "ema21": 15.68,
+      "ema50": 15.77,
+      "volume_spike": 1.16,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 15.62,
+        "high": 16.6
+      },
+      "range_1w": {
+        "low": 14.82,
+        "high": 17.4
+      },
+      "range_1m": {
+        "low": 13.44,
+        "high": 18.78
+      },
+      "suggest_strike": 14.5,
+      "suggest_premium": 0.46,
+      "suggest_premium_contract": 46.5,
+      "suggest_otm_pct": 10.0,
+      "suggest_strike_iv": 62.4,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.37,
+      "call_wall": 17.5,
+      "put_wall": 14.5,
+      "max_pain": 15.5,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 17.5,
+          "oi": 60,
+          "vol": 18
+        },
+        {
+          "strike": 18.5,
+          "oi": 24,
+          "vol": 1
+        },
+        {
+          "strike": 18.0,
+          "oi": 20,
+          "vol": 2
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 14.0,
+          "oi": 34,
+          "vol": 5
+        },
+        {
+          "strike": 14.5,
+          "oi": 5,
+          "vol": 2
+        },
+        {
+          "strike": 13.0,
+          "oi": 3,
+          "vol": 0
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 14.5,
+        "protect_premium": 0.46,
+        "protect_contract": 46.0,
+        "net_premium": 0.0,
+        "net_contract": 0.0,
+        "max_profit": 0.0,
+        "max_loss": 0.0,
+        "breakeven": 14.5,
+        "return_on_risk": 0,
+        "scenario_above_sell": 0.0,
+        "scenario_at_protect": -0.0,
+        "halfway_price": 14.5
+      },
+      "scanned_at": "2026-10-13T01:32:01.979646Z"
+    },
+    {
+      "ticker": "RBLX",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 49.58,
+      "iv_current": 80.2,
+      "iv_rank": 54.1,
+      "risk_reversal": 99,
+      "trend": "bullish",
+      "rsi": 69.5,
+      "adx": 28.4,
+      "ema9": 46.51,
+      "ema21": 45.71,
+      "ema50": 45.15,
+      "volume_spike": 0.62,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 47.5,
+        "high": 51.66
+      },
+      "range_1w": {
+        "low": 44.07,
+        "high": 55.09
+      },
+      "range_1m": {
+        "low": 38.18,
+        "high": 60.98
+      },
+      "suggest_strike": 45.0,
+      "suggest_premium": 2.52,
+      "suggest_premium_contract": 252.0,
+      "suggest_otm_pct": 9.2,
+      "suggest_strike_iv": 82.5,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 1.01,
+      "call_wall": 56.0,
+      "put_wall": 46.0,
+      "max_pain": 46.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 65.0,
+          "oi": 591,
+          "vol": 9
+        },
+        {
+          "strike": 56.0,
+          "oi": 204,
+          "vol": 1
+        },
+        {
+          "strike": 60.0,
+          "oi": 93,
+          "vol": 26
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 37.0,
+          "oi": 42,
+          "vol": 1
+        },
+        {
+          "strike": 38.0,
+          "oi": 25,
+          "vol": 1
+        },
+        {
+          "strike": 40.0,
+          "oi": 23,
+          "vol": 1
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 46.0,
+        "protect_premium": 2.85,
+        "protect_contract": 285.0,
+        "net_premium": -0.33,
+        "net_contract": -33.0,
+        "max_profit": -33.0,
+        "max_loss": 133.0,
+        "breakeven": 45.33,
+        "return_on_risk": -24.8,
+        "scenario_above_sell": -33.0,
+        "scenario_at_protect": -133.0,
+        "halfway_price": 45.5
+      },
+      "scanned_at": "2026-10-13T01:31:58.972861Z"
     },
     {
       "ticker": "AZO",
@@ -7688,7 +9257,7 @@
         "scenario_at_protect": -34530.0,
         "halfway_price": 2735.0
       },
-      "scanned_at": "2026-10-13T01:06:25.495701Z"
+      "scanned_at": "2026-10-13T01:34:37.697887Z"
     },
     {
       "ticker": "REGN",
@@ -7789,7 +9358,7 @@
         "scenario_at_protect": -11075.0,
         "halfway_price": 825.0
       },
-      "scanned_at": "2026-10-13T01:04:01.516445Z"
+      "scanned_at": "2026-10-13T01:31:49.888182Z"
     },
     {
       "ticker": "TXN",
@@ -7890,7 +9459,7 @@
         "scenario_at_protect": -2680.0,
         "halfway_price": 265.0
       },
-      "scanned_at": "2026-10-13T01:05:15.155247Z"
+      "scanned_at": "2026-10-13T01:33:19.150945Z"
     },
     {
       "ticker": "C",
@@ -8001,7 +9570,209 @@
         "scenario_at_protect": -1538.0,
         "halfway_price": 139.0
       },
-      "scanned_at": "2026-10-13T01:04:25.877889Z"
+      "scanned_at": "2026-10-13T01:32:19.209013Z"
+    },
+    {
+      "ticker": "NOW",
+      "category": "sp100_core",
+      "iv_source": "options",
+      "price": 140.32,
+      "iv_current": 59.1,
+      "iv_rank": 52.5,
+      "risk_reversal": 99,
+      "trend": "neutral",
+      "rsi": 60.4,
+      "adx": 19.9,
+      "ema9": 138.28,
+      "ema21": 136.79,
+      "ema50": 131.21,
+      "volume_spike": 0.92,
+      "quadrant_label": "Expensive Vol \u00b7 Bullish",
+      "quadrant_color": "#00d4aa",
+      "quadrant_bg": "#0a3d2e",
+      "strategies": [
+        "Bull Put Spread",
+        "Short Put"
+      ],
+      "win_rate": "~62%",
+      "range_1d": {
+        "low": 135.98,
+        "high": 144.66
+      },
+      "range_1w": {
+        "low": 128.83,
+        "high": 151.81
+      },
+      "range_1m": {
+        "low": 116.53,
+        "high": 164.11
+      },
+      "suggest_strike": 126.0,
+      "suggest_premium": 3.62,
+      "suggest_premium_contract": 362.5,
+      "suggest_otm_pct": 10.2,
+      "suggest_strike_iv": 59.7,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "bid",
+      "pc_ratio": 0.9,
+      "call_wall": 145.0,
+      "put_wall": 135.0,
+      "max_pain": 132.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 170.0,
+          "oi": 537,
+          "vol": 11
+        },
+        {
+          "strike": 145.0,
+          "oi": 81,
+          "vol": 17
+        },
+        {
+          "strike": 165.0,
+          "oi": 66,
+          "vol": 19
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 105.0,
+          "oi": 157,
+          "vol": 2
+        },
+        {
+          "strike": 115.0,
+          "oi": 154,
+          "vol": 38
+        },
+        {
+          "strike": 120.0,
+          "oi": 93,
+          "vol": 16
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 135.0,
+        "protect_premium": 6.83,
+        "protect_contract": 683.0,
+        "net_premium": -3.21,
+        "net_contract": -321.0,
+        "max_profit": -321.0,
+        "max_loss": 1221.0,
+        "breakeven": 129.21,
+        "return_on_risk": -26.3,
+        "scenario_above_sell": -321.0,
+        "scenario_at_protect": -1221.0,
+        "halfway_price": 130.5
+      },
+      "scanned_at": "2026-10-13T01:33:34.127768Z"
+    },
+    {
+      "ticker": "CARR",
+      "category": "sp100_core",
+      "iv_source": "options",
+      "price": 55.42,
+      "iv_current": 38.5,
+      "iv_rank": 52.3,
+      "risk_reversal": 8.4,
+      "trend": "neutral",
+      "rsi": 47.4,
+      "adx": 12.3,
+      "ema9": 55.5,
+      "ema21": 55.97,
+      "ema50": 58.29,
+      "volume_spike": 0.44,
+      "quadrant_label": "Expensive Vol \u00b7 Bearish",
+      "quadrant_color": "#ff8c42",
+      "quadrant_bg": "#3d1a0a",
+      "strategies": [
+        "Bear Call Spread",
+        "Iron Condor"
+      ],
+      "win_rate": "~63%",
+      "range_1d": {
+        "low": 54.3,
+        "high": 56.54
+      },
+      "range_1w": {
+        "low": 52.46,
+        "high": 58.38
+      },
+      "range_1m": {
+        "low": 49.3,
+        "high": 61.54
+      },
+      "suggest_strike": 50.0,
+      "suggest_premium": 0.68,
+      "suggest_premium_contract": 67.5,
+      "suggest_otm_pct": 9.8,
+      "suggest_strike_iv": 42.0,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 5.8,
+      "call_wall": 62.0,
+      "put_wall": 44.0,
+      "max_pain": 56.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 62.0,
+          "oi": 6,
+          "vol": 1
+        },
+        {
+          "strike": 66.0,
+          "oi": 4,
+          "vol": 0
+        },
+        {
+          "strike": 61.0,
+          "oi": 3,
+          "vol": 1
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 43.0,
+          "oi": 20,
+          "vol": 20
+        },
+        {
+          "strike": 44.0,
+          "oi": 20,
+          "vol": 2
+        },
+        {
+          "strike": 55.0,
+          "oi": 6,
+          "vol": 3
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 44.0,
+        "protect_premium": 0.15,
+        "protect_contract": 15.0,
+        "net_premium": 0.53,
+        "net_contract": 53.0,
+        "max_profit": 53.0,
+        "max_loss": 547.0,
+        "breakeven": 49.47,
+        "return_on_risk": 9.7,
+        "scenario_above_sell": 53.0,
+        "scenario_at_protect": -547.0,
+        "halfway_price": 47.0
+      },
+      "scanned_at": "2026-10-13T01:34:25.342231Z"
     },
     {
       "ticker": "AAL",
@@ -8121,7 +9892,7 @@
         "scenario_at_protect": -134.0,
         "halfway_price": 13.5
       },
-      "scanned_at": "2026-10-13T01:06:26.310089Z"
+      "scanned_at": "2026-10-13T01:34:38.694761Z"
     },
     {
       "ticker": "CMCSA",
@@ -8222,7 +9993,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 23.0
       },
-      "scanned_at": "2026-10-13T01:05:33.023749Z"
+      "scanned_at": "2026-10-13T01:33:40.573294Z"
     },
     {
       "ticker": "CB",
@@ -8323,7 +10094,7 @@
         "scenario_at_protect": -3558.0,
         "halfway_price": 325.0
       },
-      "scanned_at": "2026-10-13T01:05:42.754419Z"
+      "scanned_at": "2026-10-13T01:33:51.967493Z"
     },
     {
       "ticker": "KO",
@@ -8434,7 +10205,7 @@
         "scenario_at_protect": -673.0,
         "halfway_price": 84.0
       },
-      "scanned_at": "2026-10-13T01:05:09.923339Z"
+      "scanned_at": "2026-10-13T01:33:12.694007Z"
     },
     {
       "ticker": "SLB",
@@ -8535,7 +10306,7 @@
         "scenario_at_protect": -240.0,
         "halfway_price": 53.0
       },
-      "scanned_at": "2026-10-13T01:06:24.649094Z"
+      "scanned_at": "2026-10-13T01:34:36.673825Z"
     },
     {
       "ticker": "SMTC",
@@ -8636,7 +10407,7 @@
         "scenario_at_protect": -670.0,
         "halfway_price": 152.5
       },
-      "scanned_at": "2026-10-13T01:04:47.186230Z"
+      "scanned_at": "2026-10-13T01:32:44.628708Z"
     },
     {
       "ticker": "AMGN",
@@ -8737,7 +10508,7 @@
         "scenario_at_protect": -5110.0,
         "halfway_price": 395.0
       },
-      "scanned_at": "2026-10-13T01:03:59.710796Z"
+      "scanned_at": "2026-10-13T01:31:47.858006Z"
     },
     {
       "ticker": "DE",
@@ -8838,7 +10609,108 @@
         "scenario_at_protect": -2367.0,
         "halfway_price": 690.0
       },
-      "scanned_at": "2026-10-13T01:05:44.739227Z"
+      "scanned_at": "2026-10-13T01:33:53.954708Z"
+    },
+    {
+      "ticker": "TEM",
+      "category": "biotech",
+      "iv_source": "options",
+      "price": 67.99,
+      "iv_current": 78.8,
+      "iv_rank": 49.9,
+      "risk_reversal": 35.0,
+      "trend": "bearish",
+      "rsi": 35.7,
+      "adx": 28.0,
+      "ema9": 73.03,
+      "ema21": 73.26,
+      "ema50": 67.85,
+      "volume_spike": 0.48,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 65.19,
+        "high": 70.79
+      },
+      "range_1w": {
+        "low": 60.57,
+        "high": 75.41
+      },
+      "range_1m": {
+        "low": 52.63,
+        "high": 83.35
+      },
+      "suggest_strike": 75.0,
+      "suggest_premium": 3.8,
+      "suggest_premium_contract": 380.0,
+      "suggest_otm_pct": 10.3,
+      "suggest_strike_iv": 80.0,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.86,
+      "call_wall": 70.0,
+      "put_wall": 65.0,
+      "max_pain": 70.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 85.0,
+          "oi": 182,
+          "vol": 14
+        },
+        {
+          "strike": 70.0,
+          "oi": 95,
+          "vol": 48
+        },
+        {
+          "strike": 110.0,
+          "oi": 60,
+          "vol": 0
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 65.0,
+          "oi": 119,
+          "vol": 21
+        },
+        {
+          "strike": 60.0,
+          "oi": 89,
+          "vol": 17
+        },
+        {
+          "strike": 55.0,
+          "oi": 24,
+          "vol": 9
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 70.0,
+        "protect_premium": 5.6,
+        "protect_contract": 560.0,
+        "net_premium": -1.8,
+        "net_contract": -180.0,
+        "max_profit": -180.0,
+        "max_loss": 680.0,
+        "breakeven": 73.2,
+        "return_on_risk": -26.5,
+        "scenario_above_sell": -180.0,
+        "scenario_at_protect": -680.0,
+        "halfway_price": 72.5
+      },
+      "scanned_at": "2026-10-13T01:31:52.033354Z"
     },
     {
       "ticker": "MO",
@@ -8958,7 +10830,7 @@
         "scenario_at_protect": -769.0,
         "halfway_price": 67.0
       },
-      "scanned_at": "2026-10-13T01:05:47.344428Z"
+      "scanned_at": "2026-10-13T01:33:56.954880Z"
     },
     {
       "ticker": "KTOS",
@@ -9059,7 +10931,7 @@
         "scenario_at_protect": -435.0,
         "halfway_price": 44.5
       },
-      "scanned_at": "2026-10-13T01:04:54.031696Z"
+      "scanned_at": "2026-10-13T01:32:52.988200Z"
     },
     {
       "ticker": "ISRG",
@@ -9160,7 +11032,7 @@
         "scenario_at_protect": -212.0,
         "halfway_price": 382.5
       },
-      "scanned_at": "2026-10-13T01:05:25.532763Z"
+      "scanned_at": "2026-10-13T01:33:32.097033Z"
     },
     {
       "ticker": "TRV",
@@ -9261,7 +11133,7 @@
         "scenario_at_protect": -1092.0,
         "halfway_price": 335.0
       },
-      "scanned_at": "2026-10-13T01:06:22.926585Z"
+      "scanned_at": "2026-10-13T01:34:34.570970Z"
     },
     {
       "ticker": "AXP",
@@ -9362,7 +11234,7 @@
         "scenario_at_protect": -1891.0,
         "halfway_price": 332.5
       },
-      "scanned_at": "2026-10-13T01:04:30.138899Z"
+      "scanned_at": "2026-10-13T01:32:24.474104Z"
     },
     {
       "ticker": "V",
@@ -9473,7 +11345,136 @@
         "scenario_at_protect": -1678.0,
         "halfway_price": 357.5
       },
-      "scanned_at": "2026-10-13T01:04:28.427496Z"
+      "scanned_at": "2026-10-13T01:32:22.310372Z"
+    },
+    {
+      "ticker": "BABA",
+      "category": "china_tech",
+      "iv_source": "options",
+      "price": 110.78,
+      "iv_current": 39.6,
+      "iv_rank": 48.0,
+      "risk_reversal": 33.7,
+      "trend": "neutral",
+      "rsi": 55.2,
+      "adx": 17.3,
+      "ema9": 109.14,
+      "ema21": 110.12,
+      "ema50": 112.98,
+      "volume_spike": 0.77,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 108.48,
+        "high": 113.08
+      },
+      "range_1w": {
+        "low": 104.7,
+        "high": 116.86
+      },
+      "range_1m": {
+        "low": 98.2,
+        "high": 123.36
+      },
+      "suggest_strike": 100.0,
+      "suggest_premium": 0.99,
+      "suggest_premium_contract": 99.5,
+      "suggest_otm_pct": 9.7,
+      "suggest_strike_iv": 37.4,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 1.88,
+      "call_wall": 115.0,
+      "put_wall": 105.0,
+      "max_pain": 105.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 125.0,
+          "oi": 203,
+          "vol": 102
+        },
+        {
+          "strike": 135.0,
+          "oi": 102,
+          "vol": 112
+        },
+        {
+          "strike": 115.0,
+          "oi": 96,
+          "vol": 4
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 97.0,
+          "oi": 545,
+          "vol": 517
+        },
+        {
+          "strike": 105.0,
+          "oi": 358,
+          "vol": 5
+        },
+        {
+          "strike": 100.0,
+          "oi": 288,
+          "vol": 29
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 110.0,
+          "type": "put",
+          "volume": 223,
+          "oi": 17,
+          "vol_oi_ratio": 13.1,
+          "bid": 3.8,
+          "ask": 5.0
+        },
+        {
+          "strike": 98.0,
+          "type": "put",
+          "volume": 165,
+          "oi": 46,
+          "vol_oi_ratio": 3.6,
+          "bid": 0.6,
+          "ask": 1.11
+        },
+        {
+          "strike": 135.0,
+          "type": "call",
+          "volume": 112,
+          "oi": 102,
+          "vol_oi_ratio": 1.1,
+          "bid": 0.1,
+          "ask": 0.5
+        }
+      ],
+      "spread": {
+        "protect_strike": 105.0,
+        "protect_premium": 2.25,
+        "protect_contract": 225.0,
+        "net_premium": -1.26,
+        "net_contract": -126.0,
+        "max_profit": -126.0,
+        "max_loss": 626.0,
+        "breakeven": 101.26,
+        "return_on_risk": -20.1,
+        "scenario_above_sell": -126.0,
+        "scenario_at_protect": -626.0,
+        "halfway_price": 102.5
+      },
+      "scanned_at": "2026-10-13T01:33:00.910471Z"
     },
     {
       "ticker": "AMZN",
@@ -9611,7 +11612,7 @@
         "scenario_at_protect": -608.0,
         "halfway_price": 237.5
       },
-      "scanned_at": "2026-10-13T01:04:06.515834Z"
+      "scanned_at": "2026-10-13T01:31:55.912889Z"
     },
     {
       "ticker": "NRG",
@@ -9712,7 +11713,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 115.0
       },
-      "scanned_at": "2026-10-13T01:03:23.813584Z"
+      "scanned_at": "2026-10-13T01:31:03.213669Z"
     },
     {
       "ticker": "PLUG",
@@ -9818,7 +11819,7 @@
         "scenario_at_protect": -48.0,
         "halfway_price": 2.25
       },
-      "scanned_at": "2026-10-13T01:03:46.051090Z"
+      "scanned_at": "2026-10-13T01:31:30.742882Z"
     },
     {
       "ticker": "MDLZ",
@@ -9919,7 +11920,7 @@
         "scenario_at_protect": -165.0,
         "halfway_price": 65.0
       },
-      "scanned_at": "2026-10-13T01:05:45.587618Z"
+      "scanned_at": "2026-10-13T01:33:54.913489Z"
     },
     {
       "ticker": "ADI",
@@ -10020,7 +12021,7 @@
         "scenario_at_protect": -3837.0,
         "halfway_price": 380.0
       },
-      "scanned_at": "2026-10-13T01:05:41.920585Z"
+      "scanned_at": "2026-10-13T01:33:50.920058Z"
     },
     {
       "ticker": "COST",
@@ -10121,7 +12122,7 @@
         "scenario_at_protect": -10595.0,
         "halfway_price": 910.0
       },
-      "scanned_at": "2026-10-13T01:06:32.386210Z"
+      "scanned_at": "2026-10-13T01:34:45.860997Z"
     },
     {
       "ticker": "UVXY",
@@ -10222,7 +12223,7 @@
         "scenario_at_protect": -61.0,
         "halfway_price": 14.75
       },
-      "scanned_at": "2026-10-13T01:04:32.904361Z"
+      "scanned_at": "2026-10-13T01:32:27.485342Z"
     },
     {
       "ticker": "SNPS",
@@ -10323,7 +12324,7 @@
         "scenario_at_protect": -7153.0,
         "halfway_price": 472.5
       },
-      "scanned_at": "2026-10-13T01:06:03.101298Z"
+      "scanned_at": "2026-10-13T01:34:10.791878Z"
     },
     {
       "ticker": "PGR",
@@ -10414,7 +12415,118 @@
         "scenario_at_protect": -1638.0,
         "halfway_price": 202.5
       },
-      "scanned_at": "2026-10-13T01:06:14.337118Z"
+      "scanned_at": "2026-10-13T01:34:24.328491Z"
+    },
+    {
+      "ticker": "PYPL",
+      "category": "fintech",
+      "iv_source": "options",
+      "price": 56.05,
+      "iv_current": 44.0,
+      "iv_rank": 40.1,
+      "risk_reversal": 96.5,
+      "trend": "bullish",
+      "rsi": 70.2,
+      "adx": 34.9,
+      "ema9": 54.76,
+      "ema21": 54.44,
+      "ema50": 54.3,
+      "volume_spike": 0.73,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 54.76,
+        "high": 57.34
+      },
+      "range_1w": {
+        "low": 52.63,
+        "high": 59.47
+      },
+      "range_1m": {
+        "low": 48.98,
+        "high": 63.12
+      },
+      "suggest_strike": 50.0,
+      "suggest_premium": 0.68,
+      "suggest_premium_contract": 68.0,
+      "suggest_otm_pct": 10.8,
+      "suggest_strike_iv": 44.7,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "call_heavy",
+      "fill_side": "ask",
+      "pc_ratio": 1.18,
+      "call_wall": 60.0,
+      "put_wall": 55.0,
+      "max_pain": 55.0,
+      "signal_matrix": "STRONG_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 60.0,
+          "oi": 1003,
+          "vol": 15
+        },
+        {
+          "strike": 65.0,
+          "oi": 137,
+          "vol": 11
+        },
+        {
+          "strike": 62.0,
+          "oi": 69,
+          "vol": 1
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 55.0,
+          "oi": 676,
+          "vol": 322
+        },
+        {
+          "strike": 47.0,
+          "oi": 22,
+          "vol": 3
+        },
+        {
+          "strike": 54.0,
+          "oi": 12,
+          "vol": 1
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 56.0,
+          "type": "call",
+          "volume": 201,
+          "oi": 6,
+          "vol_oi_ratio": 33.5,
+          "bid": 2.05,
+          "ask": 4.25
+        }
+      ],
+      "spread": {
+        "protect_strike": 55.0,
+        "protect_premium": 2.25,
+        "protect_contract": 225.0,
+        "net_premium": -1.57,
+        "net_contract": -157.0,
+        "max_profit": -157.0,
+        "max_loss": 657.0,
+        "breakeven": 51.57,
+        "return_on_risk": -23.9,
+        "scenario_above_sell": -157.0,
+        "scenario_at_protect": -657.0,
+        "halfway_price": 52.5
+      },
+      "scanned_at": "2026-10-13T01:32:12.079758Z"
     },
     {
       "ticker": "GS",
@@ -10552,7 +12664,7 @@
         "scenario_at_protect": -9483.0,
         "halfway_price": 947.5
       },
-      "scanned_at": "2026-10-13T01:04:23.099540Z"
+      "scanned_at": "2026-10-13T01:32:16.171390Z"
     },
     {
       "ticker": "KLAC",
@@ -10653,7 +12765,7 @@
         "scenario_at_protect": -700.0,
         "halfway_price": 172.5
       },
-      "scanned_at": "2026-10-13T01:04:39.418882Z"
+      "scanned_at": "2026-10-13T01:32:35.433610Z"
     },
     {
       "ticker": "CCJ",
@@ -10754,7 +12866,145 @@
         "scenario_at_protect": -655.0,
         "halfway_price": 92.5
       },
-      "scanned_at": "2026-10-13T01:03:22.199604Z"
+      "scanned_at": "2026-10-13T01:31:01.156387Z"
+    },
+    {
+      "ticker": "HIMS",
+      "category": "biotech",
+      "iv_source": "options",
+      "price": 30.64,
+      "iv_current": 84.6,
+      "iv_rank": 38.3,
+      "risk_reversal": 82.9,
+      "trend": "bullish",
+      "rsi": 60.4,
+      "adx": 25.4,
+      "ema9": 29.67,
+      "ema21": 29.36,
+      "ema50": 29.48,
+      "volume_spike": 0.88,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 29.28,
+        "high": 32.0
+      },
+      "range_1w": {
+        "low": 27.05,
+        "high": 34.23
+      },
+      "range_1m": {
+        "low": 23.21,
+        "high": 38.07
+      },
+      "suggest_strike": 28.0,
+      "suggest_premium": 1.69,
+      "suggest_premium_contract": 168.5,
+      "suggest_otm_pct": 8.6,
+      "suggest_strike_iv": 84.2,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 0.8,
+      "call_wall": 35.0,
+      "put_wall": 25.0,
+      "max_pain": 27.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 40.0,
+          "oi": 252,
+          "vol": 417
+        },
+        {
+          "strike": 39.0,
+          "oi": 249,
+          "vol": 27
+        },
+        {
+          "strike": 35.0,
+          "oi": 225,
+          "vol": 131
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 25.0,
+          "oi": 233,
+          "vol": 94
+        },
+        {
+          "strike": 24.0,
+          "oi": 207,
+          "vol": 45
+        },
+        {
+          "strike": 22.0,
+          "oi": 137,
+          "vol": 4
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 29.0,
+          "type": "put",
+          "volume": 138,
+          "oi": 31,
+          "vol_oi_ratio": 4.5,
+          "bid": 1.82,
+          "ask": 2.32
+        },
+        {
+          "strike": 28.0,
+          "type": "put",
+          "volume": 128,
+          "oi": 34,
+          "vol_oi_ratio": 3.8,
+          "bid": 1.49,
+          "ask": 1.88
+        },
+        {
+          "strike": 26.0,
+          "type": "put",
+          "volume": 150,
+          "oi": 69,
+          "vol_oi_ratio": 2.2,
+          "bid": 0.9,
+          "ask": 1.03
+        },
+        {
+          "strike": 40.0,
+          "type": "call",
+          "volume": 417,
+          "oi": 252,
+          "vol_oi_ratio": 1.7,
+          "bid": 0.72,
+          "ask": 0.91
+        }
+      ],
+      "spread": {
+        "protect_strike": 25.0,
+        "protect_premium": 0.78,
+        "protect_contract": 78.0,
+        "net_premium": 0.91,
+        "net_contract": 91.0,
+        "max_profit": 91.0,
+        "max_loss": 209.0,
+        "breakeven": 27.09,
+        "return_on_risk": 43.5,
+        "scenario_above_sell": 91.0,
+        "scenario_at_protect": -209.0,
+        "halfway_price": 26.5
+      },
+      "scanned_at": "2026-10-13T01:31:52.970449Z"
     },
     {
       "ticker": "QCOM",
@@ -10855,7 +13105,108 @@
         "scenario_at_protect": -2063.0,
         "halfway_price": 182.5
       },
-      "scanned_at": "2026-10-13T01:04:37.661984Z"
+      "scanned_at": "2026-10-13T01:32:33.375387Z"
+    },
+    {
+      "ticker": "NTLA",
+      "category": "biotech",
+      "iv_source": "options",
+      "price": 12.58,
+      "iv_current": 75.7,
+      "iv_rank": 38.0,
+      "risk_reversal": 85.0,
+      "trend": "bullish",
+      "rsi": 54.0,
+      "adx": 26.3,
+      "ema9": 12.43,
+      "ema21": 12.31,
+      "ema50": 12.4,
+      "volume_spike": 0.75,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 12.08,
+        "high": 13.08
+      },
+      "range_1w": {
+        "low": 11.26,
+        "high": 13.9
+      },
+      "range_1m": {
+        "low": 9.85,
+        "high": 15.31
+      },
+      "suggest_strike": 11.0,
+      "suggest_premium": 0.6,
+      "suggest_premium_contract": 60.0,
+      "suggest_otm_pct": 12.6,
+      "suggest_strike_iv": 83.1,
+      "suggest_dte": 38,
+      "suggest_expiry": "2026-11-20",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "bid",
+      "pc_ratio": 0.91,
+      "call_wall": 13.0,
+      "put_wall": 12.0,
+      "max_pain": 13.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 15.0,
+          "oi": 382,
+          "vol": 10
+        },
+        {
+          "strike": 14.0,
+          "oi": 372,
+          "vol": 15
+        },
+        {
+          "strike": 13.0,
+          "oi": 326,
+          "vol": 36
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 10.0,
+          "oi": 338,
+          "vol": 4
+        },
+        {
+          "strike": 12.0,
+          "oi": 230,
+          "vol": 14
+        },
+        {
+          "strike": 11.0,
+          "oi": 217,
+          "vol": 9
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 12.0,
+        "protect_premium": 0.82,
+        "protect_contract": 82.0,
+        "net_premium": -0.22,
+        "net_contract": -22.0,
+        "max_profit": -22.0,
+        "max_loss": 122.0,
+        "breakeven": 11.22,
+        "return_on_risk": -18.0,
+        "scenario_above_sell": -22.0,
+        "scenario_at_protect": -122.0,
+        "halfway_price": 11.5
+      },
+      "scanned_at": "2026-10-13T01:31:44.882145Z"
     },
     {
       "ticker": "F",
@@ -10966,7 +13317,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 13.0
       },
-      "scanned_at": "2026-10-13T01:06:29.802760Z"
+      "scanned_at": "2026-10-13T01:34:42.807802Z"
     },
     {
       "ticker": "PEP",
@@ -11067,7 +13418,7 @@
         "scenario_at_protect": -1346.0,
         "halfway_price": 133.5
       },
-      "scanned_at": "2026-10-13T01:06:35.908183Z"
+      "scanned_at": "2026-10-13T01:34:50.203652Z"
     },
     {
       "ticker": "SQQQ",
@@ -11168,7 +13519,108 @@
         "scenario_at_protect": -317.0,
         "halfway_price": 31.75
       },
-      "scanned_at": "2026-10-13T01:04:31.963761Z"
+      "scanned_at": "2026-10-13T01:32:26.470667Z"
+    },
+    {
+      "ticker": "GEV",
+      "category": "defense_space",
+      "iv_source": "options",
+      "price": 996.8,
+      "iv_current": 51.3,
+      "iv_rank": 36.3,
+      "risk_reversal": 99,
+      "trend": "bullish",
+      "rsi": 57.8,
+      "adx": 35.0,
+      "ema9": 991.83,
+      "ema21": 975.34,
+      "ema50": 974.42,
+      "volume_spike": 0.44,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 970.04,
+        "high": 1023.56
+      },
+      "range_1w": {
+        "low": 925.99,
+        "high": 1067.61
+      },
+      "range_1m": {
+        "low": 850.22,
+        "high": 1143.38
+      },
+      "suggest_strike": 895.0,
+      "suggest_premium": 19.2,
+      "suggest_premium_contract": 1920.0,
+      "suggest_otm_pct": 10.2,
+      "suggest_strike_iv": 52.2,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 4.65,
+      "call_wall": 1000.0,
+      "put_wall": 945.0,
+      "max_pain": 1000.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 1080.0,
+          "oi": 121,
+          "vol": 0
+        },
+        {
+          "strike": 1100.0,
+          "oi": 25,
+          "vol": 10
+        },
+        {
+          "strike": 1150.0,
+          "oi": 23,
+          "vol": 12
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 875.0,
+          "oi": 304,
+          "vol": 3
+        },
+        {
+          "strike": 855.0,
+          "oi": 300,
+          "vol": 1
+        },
+        {
+          "strike": 840.0,
+          "oi": 108,
+          "vol": 67
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 945.0,
+        "protect_premium": 34.1,
+        "protect_contract": 3410.0,
+        "net_premium": -14.9,
+        "net_contract": -1490.0,
+        "max_profit": -1490.0,
+        "max_loss": 6490.0,
+        "breakeven": 909.9,
+        "return_on_risk": -23.0,
+        "scenario_above_sell": -1490.0,
+        "scenario_at_protect": -6490.0,
+        "halfway_price": 920.0
+      },
+      "scanned_at": "2026-10-13T01:32:58.892752Z"
     },
     {
       "ticker": "SPGI",
@@ -11269,7 +13721,7 @@
         "scenario_at_protect": -1318.0,
         "halfway_price": 435.0
       },
-      "scanned_at": "2026-10-13T01:05:21.200402Z"
+      "scanned_at": "2026-10-13T01:33:26.852244Z"
     },
     {
       "ticker": "MSFT",
@@ -11389,7 +13841,79 @@
         "scenario_at_protect": -5600.0,
         "halfway_price": 507.5
       },
-      "scanned_at": "2026-10-13T01:05:03.655653Z"
+      "scanned_at": "2026-10-13T01:33:04.991596Z"
+    },
+    {
+      "ticker": "DRNZ",
+      "category": "defense_space",
+      "iv_source": "options",
+      "price": 17.73,
+      "iv_current": 42.9,
+      "iv_rank": 34.5,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 13.1,
+      "adx": 61.9,
+      "ema9": 18.85,
+      "ema21": 19.67,
+      "ema50": 20.7,
+      "volume_spike": 1.35,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 17.33,
+        "high": 18.13
+      },
+      "range_1w": {
+        "low": 16.68,
+        "high": 18.78
+      },
+      "range_1m": {
+        "low": 15.55,
+        "high": 19.91
+      },
+      "suggest_strike": 20.0,
+      "suggest_premium": 0.47,
+      "suggest_premium_contract": 47.5,
+      "suggest_otm_pct": 12.8,
+      "suggest_strike_iv": 52.8,
+      "suggest_dte": 38,
+      "suggest_expiry": "2026-11-20",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.5,
+      "call_wall": 22.0,
+      "put_wall": null,
+      "max_pain": 21.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 22.0,
+          "oi": 15,
+          "vol": 5
+        },
+        {
+          "strike": 23.0,
+          "oi": 4,
+          "vol": 1
+        },
+        {
+          "strike": 24.0,
+          "oi": 2,
+          "vol": 1
+        }
+      ],
+      "oi_top_puts": [],
+      "vol_anomaly_strikes": [],
+      "spread": {},
+      "scanned_at": "2026-10-13T01:32:59.842777Z"
     },
     {
       "ticker": "TSLA",
@@ -11536,7 +14060,108 @@
         "scenario_at_protect": -2540.0,
         "halfway_price": 350.0
       },
-      "scanned_at": "2026-10-13T01:03:42.950128Z"
+      "scanned_at": "2026-10-13T01:31:26.750825Z"
+    },
+    {
+      "ticker": "ZTS",
+      "category": "sp100_core",
+      "iv_source": "options",
+      "price": 75.65,
+      "iv_current": 43.1,
+      "iv_rank": 33.4,
+      "risk_reversal": 81.8,
+      "trend": "bullish",
+      "rsi": 76.4,
+      "adx": 34.2,
+      "ema9": 72.8,
+      "ema21": 72.52,
+      "ema50": 74.05,
+      "volume_spike": 0.92,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 73.94,
+        "high": 77.36
+      },
+      "range_1w": {
+        "low": 71.14,
+        "high": 80.16
+      },
+      "range_1m": {
+        "low": 66.31,
+        "high": 84.99
+      },
+      "suggest_strike": 70.0,
+      "suggest_premium": 2.08,
+      "suggest_premium_contract": 207.5,
+      "suggest_otm_pct": 7.5,
+      "suggest_strike_iv": 47.7,
+      "suggest_dte": 38,
+      "suggest_expiry": "2026-11-20",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.66,
+      "call_wall": 80.0,
+      "put_wall": 65.0,
+      "max_pain": 70.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 80.0,
+          "oi": 1678,
+          "vol": 121
+        },
+        {
+          "strike": 85.0,
+          "oi": 1225,
+          "vol": 72
+        },
+        {
+          "strike": 90.0,
+          "oi": 178,
+          "vol": 40
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 65.0,
+          "oi": 2066,
+          "vol": 128
+        },
+        {
+          "strike": 50.0,
+          "oi": 1225,
+          "vol": 2
+        },
+        {
+          "strike": 60.0,
+          "oi": 995,
+          "vol": 14
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 65.0,
+        "protect_premium": 0.9,
+        "protect_contract": 90.0,
+        "net_premium": 1.18,
+        "net_contract": 118.0,
+        "max_profit": 118.0,
+        "max_loss": 382.0,
+        "breakeven": 68.82,
+        "return_on_risk": 30.9,
+        "scenario_above_sell": 118.0,
+        "scenario_at_protect": -382.0,
+        "halfway_price": 67.5
+      },
+      "scanned_at": "2026-10-13T01:34:01.973287Z"
     },
     {
       "ticker": "TQQQ",
@@ -11683,7 +14308,118 @@
         "scenario_at_protect": -385.0,
         "halfway_price": 73.5
       },
-      "scanned_at": "2026-10-13T01:04:31.090847Z"
+      "scanned_at": "2026-10-13T01:32:25.516563Z"
+    },
+    {
+      "ticker": "PDD",
+      "category": "china_tech",
+      "iv_source": "options",
+      "price": 80.92,
+      "iv_current": 31.7,
+      "iv_rank": 33.3,
+      "risk_reversal": 36.2,
+      "trend": "bearish",
+      "rsi": 64.2,
+      "adx": 25.8,
+      "ema9": 79.1,
+      "ema21": 79.27,
+      "ema50": 81.44,
+      "volume_spike": 0.73,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 79.58,
+        "high": 82.26
+      },
+      "range_1w": {
+        "low": 77.37,
+        "high": 84.47
+      },
+      "range_1m": {
+        "low": 73.56,
+        "high": 88.28
+      },
+      "suggest_strike": 90.0,
+      "suggest_premium": 0.47,
+      "suggest_premium_contract": 46.5,
+      "suggest_otm_pct": 11.2,
+      "suggest_strike_iv": 30.4,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "call_heavy",
+      "fill_side": "ask",
+      "pc_ratio": 0.44,
+      "call_wall": 85.0,
+      "put_wall": 77.0,
+      "max_pain": 75.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 85.0,
+          "oi": 567,
+          "vol": 3
+        },
+        {
+          "strike": 88.0,
+          "oi": 176,
+          "vol": 36
+        },
+        {
+          "strike": 90.0,
+          "oi": 142,
+          "vol": 1
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 70.0,
+          "oi": 163,
+          "vol": 1
+        },
+        {
+          "strike": 71.0,
+          "oi": 55,
+          "vol": 0
+        },
+        {
+          "strike": 77.0,
+          "oi": 24,
+          "vol": 1
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 75.0,
+          "type": "call",
+          "volume": 228,
+          "oi": 199,
+          "vol_oi_ratio": 1.1,
+          "bid": 6.45,
+          "ask": 7.45
+        }
+      ],
+      "spread": {
+        "protect_strike": 85.0,
+        "protect_premium": 1.45,
+        "protect_contract": 145.0,
+        "net_premium": -0.98,
+        "net_contract": -98.0,
+        "max_profit": -98.0,
+        "max_loss": 598.0,
+        "breakeven": 89.02,
+        "return_on_risk": -16.4,
+        "scenario_above_sell": -98.0,
+        "scenario_at_protect": -598.0,
+        "halfway_price": 87.5
+      },
+      "scanned_at": "2026-10-13T01:33:01.992285Z"
     },
     {
       "ticker": "VZ",
@@ -11803,7 +14539,7 @@
         "scenario_at_protect": -361.0,
         "halfway_price": 45.5
       },
-      "scanned_at": "2026-10-13T01:05:32.212483Z"
+      "scanned_at": "2026-10-13T01:33:39.501335Z"
     },
     {
       "ticker": "UNH",
@@ -11941,7 +14677,7 @@
         "scenario_at_protect": -4704.0,
         "halfway_price": 397.5
       },
-      "scanned_at": "2026-10-13T01:05:04.593046Z"
+      "scanned_at": "2026-10-13T01:33:06.176855Z"
     },
     {
       "ticker": "AMAT",
@@ -12042,7 +14778,7 @@
         "scenario_at_protect": -5464.0,
         "halfway_price": 470.0
       },
-      "scanned_at": "2026-10-13T01:04:38.578575Z"
+      "scanned_at": "2026-10-13T01:32:34.343328Z"
     },
     {
       "ticker": "DIS",
@@ -12176,7 +14912,108 @@
         }
       ],
       "spread": {},
-      "scanned_at": "2026-10-13T01:05:30.422267Z"
+      "scanned_at": "2026-10-13T01:33:37.307740Z"
+    },
+    {
+      "ticker": "VKTX",
+      "category": "biotech",
+      "iv_source": "options",
+      "price": 28.34,
+      "iv_current": 67.1,
+      "iv_rank": 32.4,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 35.8,
+      "adx": 22.3,
+      "ema9": 29.46,
+      "ema21": 31.01,
+      "ema50": 32.37,
+      "volume_spike": 0.31,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 27.34,
+        "high": 29.34
+      },
+      "range_1w": {
+        "low": 25.71,
+        "high": 30.97
+      },
+      "range_1m": {
+        "low": 22.89,
+        "high": 33.79
+      },
+      "suggest_strike": 31.0,
+      "suggest_premium": 1.18,
+      "suggest_premium_contract": 118.0,
+      "suggest_otm_pct": 9.4,
+      "suggest_strike_iv": 64.6,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 0.58,
+      "call_wall": 30.0,
+      "put_wall": 26.0,
+      "max_pain": 30.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 30.0,
+          "oi": 25,
+          "vol": 7
+        },
+        {
+          "strike": 45.0,
+          "oi": 12,
+          "vol": 12
+        },
+        {
+          "strike": 35.0,
+          "oi": 9,
+          "vol": 1
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 26.0,
+          "oi": 15,
+          "vol": 2
+        },
+        {
+          "strike": 25.0,
+          "oi": 10,
+          "vol": 5
+        },
+        {
+          "strike": 27.0,
+          "oi": 7,
+          "vol": 1
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 30.0,
+        "protect_premium": 1.54,
+        "protect_contract": 154.0,
+        "net_premium": -0.36,
+        "net_contract": -36.0,
+        "max_profit": -36.0,
+        "max_loss": 136.0,
+        "breakeven": 30.64,
+        "return_on_risk": -26.5,
+        "scenario_above_sell": -36.0,
+        "scenario_at_protect": -136.0,
+        "halfway_price": 30.5
+      },
+      "scanned_at": "2026-10-13T01:31:50.931946Z"
     },
     {
       "ticker": "SMCI",
@@ -12277,7 +15114,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 36.0
       },
-      "scanned_at": "2026-10-13T01:03:32.978802Z"
+      "scanned_at": "2026-10-13T01:31:14.710859Z"
     },
     {
       "ticker": "ACN",
@@ -12378,7 +15215,108 @@
         "scenario_at_protect": -208.0,
         "halfway_price": 191.25
       },
-      "scanned_at": "2026-10-13T01:05:28.418182Z"
+      "scanned_at": "2026-10-13T01:33:35.228963Z"
+    },
+    {
+      "ticker": "CRDO",
+      "category": "semiconductor",
+      "iv_source": "options",
+      "price": 200.84,
+      "iv_current": 77.2,
+      "iv_rank": 31.6,
+      "risk_reversal": 38.5,
+      "trend": "bullish",
+      "rsi": 45.6,
+      "adx": 37.8,
+      "ema9": 208.81,
+      "ema21": 202.85,
+      "ema50": 205.29,
+      "volume_spike": 0.97,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 192.72,
+        "high": 208.96
+      },
+      "range_1w": {
+        "low": 179.36,
+        "high": 222.32
+      },
+      "range_1m": {
+        "low": 156.37,
+        "high": 245.31
+      },
+      "suggest_strike": 180.0,
+      "suggest_premium": 7.85,
+      "suggest_premium_contract": 785.0,
+      "suggest_otm_pct": 10.4,
+      "suggest_strike_iv": 74.6,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 2.66,
+      "call_wall": 210.0,
+      "put_wall": 190.0,
+      "max_pain": 220.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 210.0,
+          "oi": 59,
+          "vol": 16
+        },
+        {
+          "strike": 230.0,
+          "oi": 54,
+          "vol": 7
+        },
+        {
+          "strike": 225.0,
+          "oi": 51,
+          "vol": 2
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 165.0,
+          "oi": 177,
+          "vol": 60
+        },
+        {
+          "strike": 185.0,
+          "oi": 160,
+          "vol": 14
+        },
+        {
+          "strike": 180.0,
+          "oi": 146,
+          "vol": 30
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 190.0,
+        "protect_premium": 11.6,
+        "protect_contract": 1160.0,
+        "net_premium": -3.75,
+        "net_contract": -375.0,
+        "max_profit": -375.0,
+        "max_loss": 1375.0,
+        "breakeven": 183.75,
+        "return_on_risk": -27.3,
+        "scenario_above_sell": -375.0,
+        "scenario_at_protect": -1375.0,
+        "halfway_price": 185.0
+      },
+      "scanned_at": "2026-10-13T01:32:43.624198Z"
     },
     {
       "ticker": "ORCL",
@@ -12498,7 +15436,7 @@
         "scenario_at_protect": -1513.0,
         "halfway_price": 129.5
       },
-      "scanned_at": "2026-10-13T01:05:16.059902Z"
+      "scanned_at": "2026-10-13T01:33:20.128158Z"
     },
     {
       "ticker": "INTU",
@@ -12599,7 +15537,7 @@
         "scenario_at_protect": -3255.0,
         "halfway_price": 322.5
       },
-      "scanned_at": "2026-10-13T01:05:26.483921Z"
+      "scanned_at": "2026-10-13T01:33:33.123689Z"
     },
     {
       "ticker": "CI",
@@ -12700,7 +15638,7 @@
         "scenario_at_protect": -3182.0,
         "halfway_price": 267.5
       },
-      "scanned_at": "2026-10-13T01:05:46.411843Z"
+      "scanned_at": "2026-10-13T01:33:55.946409Z"
     },
     {
       "ticker": "IBM",
@@ -12811,7 +15749,7 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 205.0
       },
-      "scanned_at": "2026-10-13T01:05:37.590136Z"
+      "scanned_at": "2026-10-13T01:33:45.774323Z"
     },
     {
       "ticker": "LRCX",
@@ -12912,7 +15850,7 @@
         "scenario_at_protect": -2777.0,
         "halfway_price": 290.0
       },
-      "scanned_at": "2026-10-13T01:04:40.217325Z"
+      "scanned_at": "2026-10-13T01:32:36.585882Z"
     },
     {
       "ticker": "NKE",
@@ -13013,7 +15951,7 @@
         "scenario_at_protect": -382.0,
         "halfway_price": 37.5
       },
-      "scanned_at": "2026-10-13T01:05:16.859260Z"
+      "scanned_at": "2026-10-13T01:33:21.156362Z"
     },
     {
       "ticker": "NEM",
@@ -13114,7 +16052,7 @@
         "scenario_at_protect": -1454.0,
         "halfway_price": 123.5
       },
-      "scanned_at": "2026-10-13T01:06:28.056394Z"
+      "scanned_at": "2026-10-13T01:34:40.723534Z"
     },
     {
       "ticker": "APH",
@@ -13215,7 +16153,7 @@
         "scenario_at_protect": -320.0,
         "halfway_price": 78.75
       },
-      "scanned_at": "2026-10-13T01:06:05.507519Z"
+      "scanned_at": "2026-10-13T01:34:13.984789Z"
     },
     {
       "ticker": "NVDA",
@@ -13353,7 +16291,7 @@
         "scenario_at_protect": -2534.0,
         "halfway_price": 215.0
       },
-      "scanned_at": "2026-10-13T01:03:26.533785Z"
+      "scanned_at": "2026-10-13T01:31:06.633521Z"
     },
     {
       "ticker": "AMD",
@@ -13482,7 +16420,7 @@
         "scenario_at_protect": -6827.0,
         "halfway_price": 560.0
       },
-      "scanned_at": "2026-10-13T01:03:27.376850Z"
+      "scanned_at": "2026-10-13T01:31:07.718331Z"
     },
     {
       "ticker": "INTC",
@@ -13629,7 +16567,7 @@
         "scenario_at_protect": -789.0,
         "halfway_price": 108.0
       },
-      "scanned_at": "2026-10-13T01:04:36.005011Z"
+      "scanned_at": "2026-10-13T01:32:31.339420Z"
     },
     {
       "ticker": "FCEL",
@@ -13730,7 +16668,7 @@
         "scenario_at_protect": -145.0,
         "halfway_price": 15.5
       },
-      "scanned_at": "2026-10-13T01:03:46.891557Z"
+      "scanned_at": "2026-10-13T01:31:31.720709Z"
     },
     {
       "ticker": "TSM",
@@ -13841,7 +16779,7 @@
         "scenario_at_protect": -5094.0,
         "halfway_price": 420.0
       },
-      "scanned_at": "2026-10-13T01:04:36.869764Z"
+      "scanned_at": "2026-10-13T01:32:32.410308Z"
     },
     {
       "ticker": "COHR",
@@ -13970,7 +16908,7 @@
         "scenario_at_protect": -2815.0,
         "halfway_price": 270.0
       },
-      "scanned_at": "2026-10-13T01:04:43.870174Z"
+      "scanned_at": "2026-10-13T01:32:40.629320Z"
     },
     {
       "ticker": "MRVL",
@@ -14081,7 +17019,237 @@
         "scenario_at_protect": -3450.0,
         "halfway_price": 252.5
       },
-      "scanned_at": "2026-10-13T01:04:42.092675Z"
+      "scanned_at": "2026-10-13T01:32:38.607446Z"
+    },
+    {
+      "ticker": "RKLB",
+      "category": "defense_space",
+      "iv_source": "options",
+      "price": 65.71,
+      "iv_current": 69.4,
+      "iv_rank": 22.0,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 34.1,
+      "adx": 22.6,
+      "ema9": 69.7,
+      "ema21": 69.71,
+      "ema50": 71.72,
+      "volume_spike": 0.67,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 63.32,
+        "high": 68.1
+      },
+      "range_1w": {
+        "low": 59.4,
+        "high": 72.02
+      },
+      "range_1m": {
+        "low": 52.64,
+        "high": 78.78
+      },
+      "suggest_strike": 72.0,
+      "suggest_premium": 2.59,
+      "suggest_premium_contract": 259.0,
+      "suggest_otm_pct": 9.6,
+      "suggest_strike_iv": 63.0,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "ask",
+      "pc_ratio": 0.82,
+      "call_wall": 68.0,
+      "put_wall": 65.0,
+      "max_pain": 70.0,
+      "signal_matrix": "STRONG_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 80.0,
+          "oi": 449,
+          "vol": 115
+        },
+        {
+          "strike": 90.0,
+          "oi": 426,
+          "vol": 244
+        },
+        {
+          "strike": 75.0,
+          "oi": 403,
+          "vol": 144
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 60.0,
+          "oi": 887,
+          "vol": 179
+        },
+        {
+          "strike": 59.0,
+          "oi": 294,
+          "vol": 103
+        },
+        {
+          "strike": 65.0,
+          "oi": 290,
+          "vol": 145
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 64.0,
+          "type": "put",
+          "volume": 142,
+          "oi": 47,
+          "vol_oi_ratio": 3.0,
+          "bid": 3.9,
+          "ask": 5.6
+        },
+        {
+          "strike": 63.0,
+          "type": "put",
+          "volume": 114,
+          "oi": 106,
+          "vol_oi_ratio": 1.1,
+          "bid": 3.6,
+          "ask": 4.3
+        },
+        {
+          "strike": 55.0,
+          "type": "put",
+          "volume": 284,
+          "oi": 271,
+          "vol_oi_ratio": 1.0,
+          "bid": 0.95,
+          "ask": 1.35
+        }
+      ],
+      "spread": {
+        "protect_strike": 68.0,
+        "protect_premium": 4.29,
+        "protect_contract": 429.0,
+        "net_premium": -1.7,
+        "net_contract": -170.0,
+        "max_profit": -170.0,
+        "max_loss": 570.0,
+        "breakeven": 70.3,
+        "return_on_risk": -29.8,
+        "scenario_above_sell": -170.0,
+        "scenario_at_protect": -570.0,
+        "halfway_price": 70.0
+      },
+      "scanned_at": "2026-10-13T01:32:55.021401Z"
+    },
+    {
+      "ticker": "LUNR",
+      "category": "defense_space",
+      "iv_source": "options",
+      "price": 12.86,
+      "iv_current": 86.6,
+      "iv_rank": 21.9,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 30.4,
+      "adx": 21.1,
+      "ema9": 13.95,
+      "ema21": 14.48,
+      "ema50": 15.58,
+      "volume_spike": 0.65,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 12.28,
+        "high": 13.44
+      },
+      "range_1w": {
+        "low": 11.32,
+        "high": 14.4
+      },
+      "range_1m": {
+        "low": 9.67,
+        "high": 16.05
+      },
+      "suggest_strike": 14.0,
+      "suggest_premium": 0.85,
+      "suggest_premium_contract": 85.0,
+      "suggest_otm_pct": 8.9,
+      "suggest_strike_iv": 85.0,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 0.29,
+      "call_wall": 13.5,
+      "put_wall": 12.5,
+      "max_pain": 13.5,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 15.0,
+          "oi": 319,
+          "vol": 124
+        },
+        {
+          "strike": 20.0,
+          "oi": 161,
+          "vol": 5
+        },
+        {
+          "strike": 13.5,
+          "oi": 83,
+          "vol": 14
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 11.5,
+          "oi": 57,
+          "vol": 1
+        },
+        {
+          "strike": 12.5,
+          "oi": 44,
+          "vol": 0
+        },
+        {
+          "strike": 12.0,
+          "oi": 21,
+          "vol": 8
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 13.5,
+        "protect_premium": 1.06,
+        "protect_contract": 106.0,
+        "net_premium": -0.21,
+        "net_contract": -21.0,
+        "max_profit": -21.0,
+        "max_loss": 71.0,
+        "breakeven": 13.79,
+        "return_on_risk": -29.6,
+        "scenario_above_sell": -21.0,
+        "scenario_at_protect": -71.0,
+        "halfway_price": 13.75
+      },
+      "scanned_at": "2026-10-13T01:32:56.978888Z"
     },
     {
       "ticker": "CRM",
@@ -14192,7 +17360,7 @@
         "scenario_at_protect": -1287.0,
         "halfway_price": 250.0
       },
-      "scanned_at": "2026-10-13T01:05:14.243496Z"
+      "scanned_at": "2026-10-13T01:33:18.081457Z"
     },
     {
       "ticker": "WDC",
@@ -14312,7 +17480,7 @@
         "scenario_at_protect": -4023.0,
         "halfway_price": 410.0
       },
-      "scanned_at": "2026-10-13T01:04:49.621406Z"
+      "scanned_at": "2026-10-13T01:32:47.718288Z"
     },
     {
       "ticker": "URA",
@@ -14413,7 +17581,108 @@
         "scenario_at_protect": -189.0,
         "halfway_price": 40.75
       },
-      "scanned_at": "2026-10-13T01:03:22.981017Z"
+      "scanned_at": "2026-10-13T01:31:02.171683Z"
+    },
+    {
+      "ticker": "ZS",
+      "category": "high_beta_tech",
+      "iv_source": "options",
+      "price": 225.78,
+      "iv_current": 51.1,
+      "iv_rank": 17.8,
+      "risk_reversal": 99,
+      "trend": "bullish",
+      "rsi": 68.8,
+      "adx": 33.4,
+      "ema9": 214.91,
+      "ema21": 204.5,
+      "ema50": 188.79,
+      "volume_spike": 0.85,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 219.74,
+        "high": 231.82
+      },
+      "range_1w": {
+        "low": 209.8,
+        "high": 241.76
+      },
+      "range_1m": {
+        "low": 192.7,
+        "high": 258.86
+      },
+      "suggest_strike": 205.0,
+      "suggest_premium": 4.35,
+      "suggest_premium_contract": 435.0,
+      "suggest_otm_pct": 9.2,
+      "suggest_strike_iv": 49.1,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.33,
+      "call_wall": 230.0,
+      "put_wall": 210.0,
+      "max_pain": 205.0,
+      "signal_matrix": "MILD_BULL",
+      "oi_top_calls": [
+        {
+          "strike": 235.0,
+          "oi": 218,
+          "vol": 18
+        },
+        {
+          "strike": 260.0,
+          "oi": 205,
+          "vol": 1
+        },
+        {
+          "strike": 230.0,
+          "oi": 20,
+          "vol": 2
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 160.0,
+          "oi": 17,
+          "vol": 1
+        },
+        {
+          "strike": 175.0,
+          "oi": 14,
+          "vol": 3
+        },
+        {
+          "strike": 180.0,
+          "oi": 11,
+          "vol": 14
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 210.0,
+        "protect_premium": 6.15,
+        "protect_contract": 615.0,
+        "net_premium": -1.8,
+        "net_contract": -180.0,
+        "max_profit": -180.0,
+        "max_loss": 680.0,
+        "breakeven": 206.8,
+        "return_on_risk": -26.5,
+        "scenario_above_sell": -180.0,
+        "scenario_at_protect": -680.0,
+        "halfway_price": 207.5
+      },
+      "scanned_at": "2026-10-13T01:32:06.978924Z"
     },
     {
       "ticker": "GLD",
@@ -14524,7 +17793,154 @@
         "scenario_at_protect": -4405.0,
         "halfway_price": 402.0
       },
-      "scanned_at": "2026-10-13T01:06:28.939165Z"
+      "scanned_at": "2026-10-13T01:34:41.761315Z"
+    },
+    {
+      "ticker": "ASTS",
+      "category": "defense_space",
+      "iv_source": "options",
+      "price": 51.46,
+      "iv_current": 85.9,
+      "iv_rank": 16.7,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 30.1,
+      "adx": 22.7,
+      "ema9": 56.54,
+      "ema21": 58.74,
+      "ema50": 62.34,
+      "volume_spike": 1.52,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 49.15,
+        "high": 53.77
+      },
+      "range_1w": {
+        "low": 45.34,
+        "high": 57.58
+      },
+      "range_1m": {
+        "low": 38.79,
+        "high": 64.13
+      },
+      "suggest_strike": 57.0,
+      "suggest_premium": 3.15,
+      "suggest_premium_contract": 315.0,
+      "suggest_otm_pct": 10.8,
+      "suggest_strike_iv": 86.0,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 1.33,
+      "call_wall": 57.0,
+      "put_wall": 45.0,
+      "max_pain": 57.0,
+      "signal_matrix": "BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 90.0,
+          "oi": 1783,
+          "vol": 15
+        },
+        {
+          "strike": 59.0,
+          "oi": 493,
+          "vol": 7
+        },
+        {
+          "strike": 60.0,
+          "oi": 315,
+          "vol": 388
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 45.0,
+          "oi": 940,
+          "vol": 206
+        },
+        {
+          "strike": 40.0,
+          "oi": 709,
+          "vol": 202
+        },
+        {
+          "strike": 50.0,
+          "oi": 335,
+          "vol": 209
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 49.0,
+          "type": "put",
+          "volume": 270,
+          "oi": 167,
+          "vol_oi_ratio": 1.6,
+          "bid": 2.82,
+          "ask": 4.6
+        },
+        {
+          "strike": 53.0,
+          "type": "put",
+          "volume": 274,
+          "oi": 182,
+          "vol_oi_ratio": 1.5,
+          "bid": 5.35,
+          "ask": 6.25
+        },
+        {
+          "strike": 60.0,
+          "type": "call",
+          "volume": 388,
+          "oi": 315,
+          "vol_oi_ratio": 1.2,
+          "bid": 2.01,
+          "ask": 2.74
+        },
+        {
+          "strike": 48.0,
+          "type": "put",
+          "volume": 201,
+          "oi": 181,
+          "vol_oi_ratio": 1.1,
+          "bid": 2.8,
+          "ask": 3.7
+        },
+        {
+          "strike": 52.0,
+          "type": "put",
+          "volume": 216,
+          "oi": 189,
+          "vol_oi_ratio": 1.1,
+          "bid": 4.95,
+          "ask": 5.55
+        }
+      ],
+      "spread": {
+        "protect_strike": 57.0,
+        "protect_premium": 3.15,
+        "protect_contract": 315.0,
+        "net_premium": 0.0,
+        "net_contract": 0.0,
+        "max_profit": 0.0,
+        "max_loss": 0.0,
+        "breakeven": 57.0,
+        "return_on_risk": 0,
+        "scenario_above_sell": 0.0,
+        "scenario_at_protect": -0.0,
+        "halfway_price": 57.0
+      },
+      "scanned_at": "2026-10-13T01:32:56.032809Z"
     },
     {
       "ticker": "WULF",
@@ -14635,7 +18051,7 @@
         "scenario_at_protect": -35.0,
         "halfway_price": 14.75
       },
-      "scanned_at": "2026-10-13T01:03:13.258738Z"
+      "scanned_at": "2026-10-13T01:30:50.036758Z"
     },
     {
       "ticker": "AVAV",
@@ -14736,7 +18152,232 @@
         "scenario_at_protect": -1705.0,
         "halfway_price": 155.0
       },
-      "scanned_at": "2026-10-13T01:04:54.770519Z"
+      "scanned_at": "2026-10-13T01:32:53.997699Z"
+    },
+    {
+      "ticker": "SPCE",
+      "category": "defense_space",
+      "iv_source": "options",
+      "price": 2.67,
+      "iv_current": 78.3,
+      "iv_rank": 15.4,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 19.9,
+      "adx": 20.9,
+      "ema9": 2.93,
+      "ema21": 3.0,
+      "ema50": 3.02,
+      "volume_spike": 1.23,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 2.56,
+        "high": 2.78
+      },
+      "range_1w": {
+        "low": 2.38,
+        "high": 2.96
+      },
+      "range_1m": {
+        "low": 2.07,
+        "high": 3.27
+      },
+      "suggest_strike": 3.0,
+      "suggest_premium": 0.14,
+      "suggest_premium_contract": 14.0,
+      "suggest_otm_pct": 12.4,
+      "suggest_strike_iv": 82.2,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "mid",
+      "pc_ratio": 0.21,
+      "call_wall": 3.5,
+      "put_wall": null,
+      "max_pain": 2.5,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 3.5,
+          "oi": 98,
+          "vol": 1
+        },
+        {
+          "strike": 4.5,
+          "oi": 76,
+          "vol": 51
+        },
+        {
+          "strike": 3.0,
+          "oi": 24,
+          "vol": 13
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 2.5,
+          "oi": 10,
+          "vol": 15
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {},
+      "scanned_at": "2026-10-13T01:32:57.921305Z"
+    },
+    {
+      "ticker": "AAOI",
+      "category": "semiconductor",
+      "iv_source": "options",
+      "price": 100.68,
+      "iv_current": 99.8,
+      "iv_rank": 14.3,
+      "risk_reversal": 38.0,
+      "trend": "bullish",
+      "rsi": 40.3,
+      "adx": 24.2,
+      "ema9": 109.9,
+      "ema21": 108.92,
+      "ema50": 112.6,
+      "volume_spike": 1.19,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 95.42,
+        "high": 105.94
+      },
+      "range_1w": {
+        "low": 86.77,
+        "high": 114.59
+      },
+      "range_1m": {
+        "low": 71.88,
+        "high": 129.48
+      },
+      "suggest_strike": 91.0,
+      "suggest_premium": 6.6,
+      "suggest_premium_contract": 660.0,
+      "suggest_otm_pct": 9.6,
+      "suggest_strike_iv": 98.5,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "balanced",
+      "fill_side": "mid",
+      "pc_ratio": 2.26,
+      "call_wall": 110.0,
+      "put_wall": 100.0,
+      "max_pain": 115.0,
+      "signal_matrix": "VOLATILE",
+      "oi_top_calls": [
+        {
+          "strike": 145.0,
+          "oi": 337,
+          "vol": 7
+        },
+        {
+          "strike": 140.0,
+          "oi": 95,
+          "vol": 108
+        },
+        {
+          "strike": 120.0,
+          "oi": 91,
+          "vol": 117
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 90.0,
+          "oi": 385,
+          "vol": 100
+        },
+        {
+          "strike": 100.0,
+          "oi": 82,
+          "vol": 47
+        },
+        {
+          "strike": 80.0,
+          "oi": 72,
+          "vol": 55
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 96.0,
+          "type": "put",
+          "volume": 140,
+          "oi": 21,
+          "vol_oi_ratio": 6.7,
+          "bid": 8.3,
+          "ask": 10.0
+        },
+        {
+          "strike": 85.0,
+          "type": "put",
+          "volume": 183,
+          "oi": 28,
+          "vol_oi_ratio": 6.5,
+          "bid": 3.9,
+          "ask": 4.8
+        },
+        {
+          "strike": 91.0,
+          "type": "put",
+          "volume": 127,
+          "oi": 25,
+          "vol_oi_ratio": 5.1,
+          "bid": 6.1,
+          "ask": 7.1
+        },
+        {
+          "strike": 150.0,
+          "type": "call",
+          "volume": 106,
+          "oi": 38,
+          "vol_oi_ratio": 2.8,
+          "bid": 1.8,
+          "ask": 2.45
+        },
+        {
+          "strike": 120.0,
+          "type": "call",
+          "volume": 117,
+          "oi": 91,
+          "vol_oi_ratio": 1.3,
+          "bid": 5.1,
+          "ask": 6.4
+        }
+      ],
+      "spread": {
+        "protect_strike": 100.0,
+        "protect_premium": 11.05,
+        "protect_contract": 1105.0,
+        "net_premium": -4.45,
+        "net_contract": -445.0,
+        "max_profit": -445.0,
+        "max_loss": 1345.0,
+        "breakeven": 95.45,
+        "return_on_risk": -33.1,
+        "scenario_above_sell": -445.0,
+        "scenario_at_protect": -1345.0,
+        "halfway_price": 95.5
+      },
+      "scanned_at": "2026-10-13T01:32:41.720476Z"
     },
     {
       "ticker": "MSTR",
@@ -14883,7 +18524,108 @@
         "scenario_at_protect": -2070.0,
         "halfway_price": 142.5
       },
-      "scanned_at": "2026-10-13T01:03:10.900039Z"
+      "scanned_at": "2026-10-13T01:30:47.067477Z"
+    },
+    {
+      "ticker": "FUTU",
+      "category": "china_tech",
+      "iv_source": "options",
+      "price": 112.26,
+      "iv_current": 44.6,
+      "iv_rank": 10.7,
+      "risk_reversal": 50.0,
+      "trend": "neutral",
+      "rsi": 53.5,
+      "adx": 15.9,
+      "ema9": 110.85,
+      "ema21": 111.32,
+      "ema50": 111.52,
+      "volume_spike": 0.77,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 109.64,
+        "high": 114.88
+      },
+      "range_1w": {
+        "low": 105.33,
+        "high": 119.19
+      },
+      "range_1m": {
+        "low": 97.91,
+        "high": 126.61
+      },
+      "suggest_strike": 101.0,
+      "suggest_premium": 2.63,
+      "suggest_premium_contract": 262.8,
+      "suggest_otm_pct": 10.0,
+      "suggest_strike_iv": 56.4,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "ask",
+      "pc_ratio": 12.64,
+      "call_wall": 120.0,
+      "put_wall": 110.0,
+      "max_pain": 110.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 120.0,
+          "oi": 24,
+          "vol": 3
+        },
+        {
+          "strike": 125.0,
+          "oi": 12,
+          "vol": 0
+        },
+        {
+          "strike": 130.0,
+          "oi": 10,
+          "vol": 0
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 110.0,
+          "oi": 208,
+          "vol": 1
+        },
+        {
+          "strike": 105.0,
+          "oi": 46,
+          "vol": 46
+        },
+        {
+          "strike": 85.0,
+          "oi": 13,
+          "vol": 3
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 110.0,
+        "protect_premium": 5.1,
+        "protect_contract": 510.0,
+        "net_premium": -2.47,
+        "net_contract": -247.0,
+        "max_profit": -247.0,
+        "max_loss": 1147.0,
+        "breakeven": 103.47,
+        "return_on_risk": -21.5,
+        "scenario_above_sell": -247.0,
+        "scenario_at_protect": -1147.0,
+        "halfway_price": 105.5
+      },
+      "scanned_at": "2026-10-13T01:33:02.980933Z"
     },
     {
       "ticker": "AVGO",
@@ -15030,7 +18772,118 @@
         "scenario_at_protect": -3882.0,
         "halfway_price": 335.0
       },
-      "scanned_at": "2026-10-13T01:03:34.778388Z"
+      "scanned_at": "2026-10-13T01:31:16.624074Z"
+    },
+    {
+      "ticker": "LITE",
+      "category": "semiconductor",
+      "iv_source": "options",
+      "price": 995.41,
+      "iv_current": 77.6,
+      "iv_rank": 6.1,
+      "risk_reversal": 85.0,
+      "trend": "bullish",
+      "rsi": 44.6,
+      "adx": 32.4,
+      "ema9": 1047.0,
+      "ema21": 1003.31,
+      "ema50": 940.32,
+      "volume_spike": 1.32,
+      "quadrant_label": "Cheap Vol \u00b7 Bullish",
+      "quadrant_color": "#3b9eff",
+      "quadrant_bg": "#0a1f3d",
+      "strategies": [
+        "Bull Call Debit Spread",
+        "Long Call"
+      ],
+      "win_rate": "~45%",
+      "range_1d": {
+        "low": 954.98,
+        "high": 1035.84
+      },
+      "range_1w": {
+        "low": 888.43,
+        "high": 1102.39
+      },
+      "range_1m": {
+        "low": 773.94,
+        "high": 1216.88
+      },
+      "suggest_strike": 895.0,
+      "suggest_premium": 43.05,
+      "suggest_premium_contract": 4305.0,
+      "suggest_otm_pct": 10.1,
+      "suggest_strike_iv": 77.9,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "put_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 2.48,
+      "call_wall": 1000.0,
+      "put_wall": 990.0,
+      "max_pain": 1070.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 1600.0,
+          "oi": 51,
+          "vol": 1
+        },
+        {
+          "strike": 1090.0,
+          "oi": 38,
+          "vol": 21
+        },
+        {
+          "strike": 1050.0,
+          "oi": 37,
+          "vol": 5
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 640.0,
+          "oi": 115,
+          "vol": 100
+        },
+        {
+          "strike": 850.0,
+          "oi": 61,
+          "vol": 15
+        },
+        {
+          "strike": 650.0,
+          "oi": 55,
+          "vol": 9
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 860.0,
+          "type": "put",
+          "volume": 192,
+          "oi": 11,
+          "vol_oi_ratio": 17.5,
+          "bid": 27.7,
+          "ask": 36.7
+        }
+      ],
+      "spread": {
+        "protect_strike": 990.0,
+        "protect_premium": 84.2,
+        "protect_contract": 8420.0,
+        "net_premium": -41.15,
+        "net_contract": -4115.0,
+        "max_profit": -4115.0,
+        "max_loss": 13615.0,
+        "breakeven": 936.15,
+        "return_on_risk": -30.2,
+        "scenario_above_sell": -4115.0,
+        "scenario_at_protect": -13615.0,
+        "halfway_price": 942.5
+      },
+      "scanned_at": "2026-10-13T01:32:39.665633Z"
     },
     {
       "ticker": "POET",
@@ -15159,7 +19012,136 @@
         "scenario_at_protect": -0.0,
         "halfway_price": 6.0
       },
-      "scanned_at": "2026-10-13T01:04:45.562609Z"
+      "scanned_at": "2026-10-13T01:32:42.659488Z"
+    },
+    {
+      "ticker": "IREN",
+      "category": "semiconductor",
+      "iv_source": "options",
+      "price": 34.8,
+      "iv_current": 80.8,
+      "iv_rank": 1.8,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 21.1,
+      "adx": 30.1,
+      "ema9": 38.33,
+      "ema21": 40.51,
+      "ema50": 41.85,
+      "volume_spike": 1.29,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 33.33,
+        "high": 36.27
+      },
+      "range_1w": {
+        "low": 30.91,
+        "high": 38.69
+      },
+      "range_1m": {
+        "low": 26.74,
+        "high": 42.86
+      },
+      "suggest_strike": 38.0,
+      "suggest_premium": 2.13,
+      "suggest_premium_contract": 213.5,
+      "suggest_otm_pct": 9.2,
+      "suggest_strike_iv": 81.8,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": true,
+      "anomaly_type": "call_heavy",
+      "fill_side": "mid",
+      "pc_ratio": 1.41,
+      "call_wall": 40.0,
+      "put_wall": 30.0,
+      "max_pain": 40.0,
+      "signal_matrix": "NEUTRAL",
+      "oi_top_calls": [
+        {
+          "strike": 40.0,
+          "oi": 522,
+          "vol": 191
+        },
+        {
+          "strike": 45.0,
+          "oi": 482,
+          "vol": 208
+        },
+        {
+          "strike": 50.0,
+          "oi": 362,
+          "vol": 153
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 30.0,
+          "oi": 2958,
+          "vol": 592
+        },
+        {
+          "strike": 25.0,
+          "oi": 1500,
+          "vol": 567
+        },
+        {
+          "strike": 20.0,
+          "oi": 1343,
+          "vol": 3
+        }
+      ],
+      "vol_anomaly_strikes": [
+        {
+          "strike": 65.0,
+          "type": "call",
+          "volume": 191,
+          "oi": 44,
+          "vol_oi_ratio": 4.3,
+          "bid": 0.01,
+          "ask": 0.26
+        },
+        {
+          "strike": 35.0,
+          "type": "call",
+          "volume": 156,
+          "oi": 78,
+          "vol_oi_ratio": 2.0,
+          "bid": 3.1,
+          "ask": 3.55
+        },
+        {
+          "strike": 36.0,
+          "type": "call",
+          "volume": 203,
+          "oi": 112,
+          "vol_oi_ratio": 1.8,
+          "bid": 2.73,
+          "ask": 3.05
+        }
+      ],
+      "spread": {
+        "protect_strike": 40.0,
+        "protect_premium": 1.64,
+        "protect_contract": 164.0,
+        "net_premium": 0.49,
+        "net_contract": 49.0,
+        "max_profit": 49.0,
+        "max_loss": 151.0,
+        "breakeven": 38.49,
+        "return_on_risk": 32.5,
+        "scenario_above_sell": 49.0,
+        "scenario_at_protect": -151.0,
+        "halfway_price": 39.0
+      },
+      "scanned_at": "2026-10-13T01:32:45.648140Z"
     },
     {
       "ticker": "MU",
@@ -15306,7 +19288,108 @@
         "scenario_at_protect": -12748.0,
         "halfway_price": 937.5
       },
-      "scanned_at": "2026-10-13T01:04:41.170347Z"
+      "scanned_at": "2026-10-13T01:32:37.610005Z"
+    },
+    {
+      "ticker": "APLD",
+      "category": "semiconductor",
+      "iv_source": "options",
+      "price": 23.25,
+      "iv_current": 69.1,
+      "iv_rank": 1,
+      "risk_reversal": 1,
+      "trend": "bearish",
+      "rsi": 34.1,
+      "adx": 22.0,
+      "ema9": 24.3,
+      "ema21": 25.18,
+      "ema50": 27.01,
+      "volume_spike": 0.71,
+      "quadrant_label": "Cheap Vol \u00b7 Bearish",
+      "quadrant_color": "#cc77ff",
+      "quadrant_bg": "#2a0a2a",
+      "strategies": [
+        "Bear Put Debit Spread",
+        "Long Put"
+      ],
+      "win_rate": "~44%",
+      "range_1d": {
+        "low": 22.41,
+        "high": 24.09
+      },
+      "range_1w": {
+        "low": 21.02,
+        "high": 25.48
+      },
+      "range_1m": {
+        "low": 18.64,
+        "high": 27.86
+      },
+      "suggest_strike": 26.0,
+      "suggest_premium": 0.96,
+      "suggest_premium_contract": 96.5,
+      "suggest_otm_pct": 11.8,
+      "suggest_strike_iv": 70.8,
+      "suggest_dte": 31,
+      "suggest_expiry": "2026-11-13",
+      "vol_oi_anomaly": false,
+      "anomaly_type": null,
+      "fill_side": "bid",
+      "pc_ratio": 0.79,
+      "call_wall": 24.0,
+      "put_wall": 22.0,
+      "max_pain": 24.0,
+      "signal_matrix": "MILD_BEAR",
+      "oi_top_calls": [
+        {
+          "strike": 25.0,
+          "oi": 336,
+          "vol": 167
+        },
+        {
+          "strike": 28.0,
+          "oi": 270,
+          "vol": 16
+        },
+        {
+          "strike": 27.0,
+          "oi": 180,
+          "vol": 38
+        }
+      ],
+      "oi_top_puts": [
+        {
+          "strike": 20.0,
+          "oi": 295,
+          "vol": 52
+        },
+        {
+          "strike": 22.0,
+          "oi": 160,
+          "vol": 41
+        },
+        {
+          "strike": 19.0,
+          "oi": 154,
+          "vol": 6
+        }
+      ],
+      "vol_anomaly_strikes": [],
+      "spread": {
+        "protect_strike": 24.0,
+        "protect_premium": 1.73,
+        "protect_contract": 173.0,
+        "net_premium": -0.77,
+        "net_contract": -77.0,
+        "max_profit": -77.0,
+        "max_loss": 277.0,
+        "breakeven": 25.23,
+        "return_on_risk": -27.8,
+        "scenario_above_sell": -77.0,
+        "scenario_at_protect": -277.0,
+        "halfway_price": 25.0
+      },
+      "scanned_at": "2026-10-13T01:32:46.672722Z"
     }
   ]
 }
