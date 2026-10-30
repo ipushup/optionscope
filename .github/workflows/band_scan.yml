@@ -5,6 +5,10 @@ on:
     # heavy scan: after US close (20:00 UTC). Radar 用 20:15，band 排 20:40 —
     # 錯開嚟避免兩個 workflow 同時打 Yahoo。
     - cron: '40 20 * * 1-5'
+    # 冬令（11 月第一個星期日起）美股 21:00 UTC 收市，20:40 UTC 仲未收，
+    # 所以多一個 21:40 UTC。夏令時呢個 run 只係重複掃一次，無害。
+    # drop_forming() 按交易所本地時間判斷，兩個 run 都唔會用到未收市嘅棒。
+    - cron: '40 21 * * 1-5'
     # heavy scan: after HK close (08:00 UTC)
     - cron: '40 8 * * 1-5'
     # US quotes — pre+regular+post. 分鐘位 5/20/35/50，同 radar 嘅 */15 錯開。
