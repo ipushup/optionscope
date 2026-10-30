@@ -23,6 +23,7 @@ import os
 import sys
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import yfinance as yf
@@ -136,7 +137,7 @@ def fetch_df(ticker, interval="1d", period="2y", retries=2):
     return _cache[key]
 
 
-def drop_forming(df, ticker):
+def drop_forming(df, ticker, now=None):
     """
     掉走未收市嘅棒。比 radar_scan 嘅 get_closed_df 精確少少 ——
     後者見到「最後一支棒日期 == 今日 UTC 日期」就掉，即係 20:15 UTC
@@ -146,12 +147,16 @@ def drop_forming(df, ticker):
     """
     if df is None or df.empty:
         return df
-    now = pd.Timestamp.now(tz="UTC")
+    # 用交易所本地時間判斷，唔再寫死 UTC 時刻 —— 美股收市係 20:00 UTC（夏令）
+    # 但 21:00 UTC（冬令，11 月第一個星期日起），寫死 20:05 UTC 嘅話冬令時
+    # 會將未收市嘅當日棒當成已收市。
+    tz = ZoneInfo("Asia/Hong_Kong") if ticker.endswith(".HK") else ZoneInfo("America/New_York")
+    now = (now or datetime.now(timezone.utc)).astimezone(tz)
     last = df.index[-1]
-    last = last.tz_localize("UTC") if last.tzinfo is None else last.tz_convert("UTC")
-    if last.date() != now.date():
+    last_date = (last.tz_convert(tz) if last.tzinfo is not None else last).date()
+    if last_date != now.date():
         return df
-    close_h, close_m = (8, 10) if ticker.endswith(".HK") else (20, 5)
+    close_h, close_m = (16, 10) if ticker.endswith(".HK") else (16, 5)
     if (now.hour, now.minute) >= (close_h, close_m):
         return df
     return df.iloc[:-1]
