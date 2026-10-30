@@ -12,8 +12,8 @@ longbridge_probe.py — 測試你個 Longbridge 帳戶夠唔夠做「即時訊�
   T4  同 yfinance 嘅日線 Close 對唔對得上？（backtest 用 yfinance，信號要同 parity）
   T5  WebSocket push（quote + 1分鐘K線）收唔收到、延遲幾多？（要開市期間先有意義）
 
-執行（要 Python 3.8+）：
-    pip install longbridge yfinance pandas
+執行（要 Python 3.9+，因為用 zoneinfo）：
+    python -m pip install longbridge yfinance pandas tzdata     # tzdata 係 Windows 要裝
     export LONGBRIDGE_APP_KEY=...
     export LONGBRIDGE_APP_SECRET=...
     export LONGBRIDGE_ACCESS_TOKEN=...
