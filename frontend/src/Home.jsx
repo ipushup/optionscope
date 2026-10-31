@@ -100,6 +100,7 @@ function IndexCard({ card, T }) {
           <div style={{ fontFamily: M, fontSize: 12, marginTop: 4, color: col }}>
             {main ? `${arrow(main)} ${isYield ? `${fmt(Math.abs(main.change) * 100, 1)} bp` : fmt(Math.abs(main.change))} · ${pctText(main.pct)}` : "no quote"}
           </div>
+          {main && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 2 }}>{stamp(main)}</div>}
         </div>
         <div style={{ flexShrink: 0 }}>
           <Spark data={main?.spark} color={col} T={T} />
