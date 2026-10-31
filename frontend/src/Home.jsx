@@ -32,6 +32,11 @@ const THEMES = {
   },
 };
 const F = "'Syne',system-ui,sans-serif";
+
+async function logout() {
+  try { await fetch("/api/logout", { method: "POST" }); } catch { /* 離線都照 reload */ }
+  window.location.reload();
+}
 const M = "'DM Mono',ui-monospace,monospace";
 
 const NAV = [
@@ -207,6 +212,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         <div style={{ marginTop: "auto", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ fontFamily: M, fontSize: 11, color: T.dim }}>Read only</div>
           <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>Market data {mk ? ageText(mk.updated_at) : "—"}</div>
+          <button type="button" onClick={logout} style={{ marginTop: 6, minHeight: 44, borderRadius: 8, border: `1px solid ${T.line}`, background: T.soft, color: T.sub, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Log out</button>
         </div>
       </aside>
 
@@ -214,6 +220,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Logo s={28} />
           <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: "-0.3px", flex: 1 }}>OptionScope</div>
+          <button type="button" onClick={logout} style={{ minHeight: 44, padding: "0 14px", borderRadius: 8, border: `1px solid ${T.line}`, background: T.soft, color: T.sub, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Log out</button>
         </div>
         <nav className="os-tabstrip" aria-label="Primary">{NAV.map((n) => <NavBtn key={n.id} n={n} strip />)}</nav>
       </div>

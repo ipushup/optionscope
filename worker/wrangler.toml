@@ -1,0 +1,22 @@
+name = "optionscope-gateway"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# 建置好嘅 React app（npm run build）。run_worker_first = true：
+# 每個 request 都先經 Worker 驗 cookie，未登入嘅人連 JS bundle 都攞唔到。
+[assets]
+directory = "../frontend/build"
+binding = "ASSETS"
+run_worker_first = true
+
+# 數據 JSON 存喺 KV。第一次部署前要建：
+#   npx wrangler kv namespace create DATA
+# 然後將個 id 貼落下面。
+[[kv_namespaces]]
+binding = "DATA"
+id = "5d2acd6f4af34cc9833badf423ba4ff1"
+
+# Secrets（唔好寫入呢個檔，用 wrangler secret put）：
+#   SITE_PASSWORD   登入密碼
+#   SESSION_SECRET  簽 cookie 用，隨機 32+ 字元
+#   INGEST_TOKEN    GitHub Actions 上傳數據用，隨機 32+ 字元
