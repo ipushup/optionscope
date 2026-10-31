@@ -56,22 +56,86 @@ def quote_yf(symbol):
         return None
 
 
+def _ts(x):
+    """SDK 嘅 timestamp 可能係 datetime（naive UTC）或 epoch 秒 → aware UTC datetime。"""
+    if x is None:
+        return None
+    if isinstance(x, datetime):
+        return x.replace(tzinfo=timezone.utc) if x.tzinfo is None else x.astimezone(timezone.utc)
+    if isinstance(x, (int, float)):
+        return datetime.fromtimestamp(x, timezone.utc)
+    return None
+
+
+def pick_latest(q):
+    """喺 常規 / 盤前 / 盤後 / 夜盤 之中揀 timestamp 最新嗰節，回 (last, ts, session)。"""
+    cands = []
+    for sess, obj in (("regular", q), ("pre", getattr(q, "pre_market_quote", None)),
+                      ("post", getattr(q, "post_market_quote", None)),
+                      ("overnight", getattr(q, "overnight_quote", None))):
+        if obj is None:
+            continue
+        last, ts = getattr(obj, "last_done", None), _ts(getattr(obj, "timestamp", None))
+        if last is None or ts is None or float(last) == 0:
+            continue
+        cands.append((ts, float(last), sess))
+    if not cands:
+        return None
+    ts, last, sess = max(cands)
+    return last, ts, sess
+
+
+def fetch_longbridge(symbols):
+    """Longbridge 即時報價（要 LONGBRIDGE_APP_KEY / _APP_SECRET / _ACCESS_TOKEN）。
+    回 {symbol: {last, prev_close, change, pct, asof, session}}。冇 credentials 或失敗 → {}。"""
+    if not (os.getenv("LONGBRIDGE_APP_KEY") and os.getenv("LONGBRIDGE_APP_SECRET")
+            and os.getenv("LONGBRIDGE_ACCESS_TOKEN")):
+        print("ℹ 冇 Longbridge credentials，全部用 Yahoo")
+        return {}
+    try:
+        from longbridge.openapi import Config, QuoteContext
+        ctx = QuoteContext(Config.from_apikey_env())
+        out = {}
+        for q in ctx.quote([s for s in symbols if s]):
+            got = pick_latest(q)
+            prev = float(q.prev_close) if getattr(q, "prev_close", None) else None
+            if not got or not prev:
+                continue
+            last, ts, sess = got
+            out[q.symbol] = {"last": last, "prev_close": prev, "change": last - prev,
+                             "pct": (last / prev - 1.0) * 100.0,
+                             "asof": ts.isoformat(), "session": sess, "source": "longbridge"}
+        print(f"✓ Longbridge: {len(out)}/{len(symbols)} symbols")
+        return out
+    except Exception as e:  # noqa: BLE001
+        print(f"⚠ Longbridge 失敗，用 Yahoo：{e}")
+        return {}
+
+
+def merge(lb, yf_q):
+    """Longbridge 報價優先；sparkline 用 Yahoo 嘅（Longbridge 呢度唔 call intraday，慳 quota）。"""
+    if lb is None:
+        return dict(yf_q, source="yahoo", session=None) if yf_q else None
+    return dict(lb, spark=(yf_q or {}).get("spark", []))
+
+
 def main():
+    lb = fetch_longbridge([c[3] for c in CARDS] + [c[4][1] for c in CARDS])
     cards = []
     for cid, name, idx_y, idx_lb, (etf_y, etf_lb) in CARDS:
         cards.append({
             "id": cid,
             "name": name,
             "index_symbol": idx_y,
-            "index": quote_yf(idx_y),
+            "index": merge(lb.get(idx_lb) if idx_lb else None, quote_yf(idx_y)),
             "etf_symbol": etf_lb,
-            "etf": quote_yf(etf_y),
+            "etf": merge(lb.get(etf_lb), quote_yf(etf_y)),
         })
         print(f"{cid}: index={'ok' if cards[-1]['index'] else 'N/A'} etf={'ok' if cards[-1]['etf'] else 'N/A'}")
 
     payload = {
         "updated_at": datetime.now(timezone.utc).isoformat(),
-        "source": "yahoo",
+        "source": "longbridge+yahoo" if lb else "yahoo",
         "cards": cards,
     }
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
