@@ -3,6 +3,7 @@ import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceL
 import RadarView from "./Radar";
 import BandView from "./Band";
 import Watchlist from "./Watchlist";
+import Home from "./Home";
 import { c, setLight, isLight } from "./theme";
 
 // 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
@@ -771,7 +772,7 @@ function DetailPage({ stock, onClose }) {
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [view, setView]               = useState("premium");
+  const [view, setView]               = useState("home");
   const [data, setData]               = useState(null);
   const [selected, setSelected]       = useState(null);
   const [detailStock, setDetailStock] = useState(null);
@@ -820,6 +821,10 @@ export default function App() {
   const topPicks = stocks.slice(0,3).map(s=>s.ticker).join(", ");
   const anomalies = stocks.filter(s => s.vol_oi_anomaly).length;
 
+  if (view === "home") {
+    return <Home light={light} onToggleLight={()=>setLightState(v=>!v)} onNavigate={setView} />;
+  }
+
   return (
     <div style={{ minHeight:"100vh", background:c("#040b14"), color:c("#ddeeff"), fontFamily:"'Syne',sans-serif", display:"flex", flexDirection:"column", overflow:"hidden", maxWidth:"100vw" }}>
       <style>{`
@@ -853,7 +858,7 @@ export default function App() {
         <div style={{ width:28, height:28, background:`linear-gradient(135deg,${c("#0d4080")},${c("#00b894")})`, borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>⚡</div>
         {!isMobile && <span style={{ fontSize:14, fontWeight:900, letterSpacing:"-0.5px", background:`linear-gradient(90deg,${c("#3b9eff")},${c("#00d4aa")})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>OptionScope</span>}
         <div style={{ display:"flex", gap:3, background:c("#080f1c"), borderRadius:8, padding:3 }}>
-          {[["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"],["band","🎯","🎯 Band"],["watchlist","🔭","🔭 Watchlist"]].map(([id,icon,label])=>(
+          {[["home","🏠","🏠 Home"],["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"],["band","🎯","🎯 Band"],["watchlist","🔭","🔭 Watchlist"]].map(([id,icon,label])=>(
             <button key={id} onClick={()=>setView(id)} style={{
               padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer",
               fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
