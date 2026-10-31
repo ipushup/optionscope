@@ -34,15 +34,3 @@ jobs:
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: bash scanner/push_private.sh frontend/public/market.json
-
-      - name: Push market.json to gh-pages
-        run: |
-          cp frontend/public/market.json /tmp/market.json
-          git fetch origin gh-pages
-          git checkout gh-pages
-          cp /tmp/market.json ./market.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add market.json
-          git diff --staged --quiet && echo "No changes" || git commit -m "market: $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push origin gh-pages
