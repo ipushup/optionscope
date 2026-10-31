@@ -176,6 +176,12 @@ jobs:
           git show origin/gh-pages:watchlist_merged.json > frontend/public/watchlist_merged.json 2>/dev/null \
             || echo "⚠ gh-pages 都未有 watchlist_merged.json（未跑過 full scan），跳過"
 
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/band.json frontend/public/band_quotes.json frontend/public/band_forming_log.json frontend/public/watchlist_quotes.json frontend/public/watchlist_merged.json frontend/public/earnings.json
+
       - name: Push to gh-pages
         run: |
           ls -la frontend/public/band.json frontend/public/band_quotes.json \

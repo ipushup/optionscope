@@ -25,6 +25,12 @@ jobs:
       - run: pip install yfinance pandas
       - name: Build market.json
         run: python scanner/market_snapshot.py
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/market.json
+
       - name: Push market.json to gh-pages
         run: |
           cp frontend/public/market.json /tmp/market.json

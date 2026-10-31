@@ -51,6 +51,12 @@ jobs:
           echo "=== Preview ==="
           head -30 frontend/public/results.json
 
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/results.json
+
       - name: Push results.json to gh-pages
         run: |
           cp frontend/public/results.json /tmp/results.json

@@ -113,6 +113,12 @@ jobs:
              || 'US,HK' }}
         run: python scanner/radar_quotes.py
 
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/radar.json frontend/public/radar_quotes.json frontend/public/radar_history.json
+
       - name: Push to gh-pages
         run: |
           ls -la frontend/public/radar.json frontend/public/radar_quotes.json
