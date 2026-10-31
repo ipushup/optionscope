@@ -1,0 +1,38 @@
+name: Market Snapshot
+
+on:
+  schedule:
+    # 每 15 分鐘，平日；覆蓋 HK 開市到 US 收市後（UTC 01:00–21:59）
+    - cron: '*/15 1-21 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: market-snapshot
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas
+      - name: Build market.json
+        run: python scanner/market_snapshot.py
+      - name: Push market.json to gh-pages
+        run: |
+          cp frontend/public/market.json /tmp/market.json
+          git fetch origin gh-pages
+          git checkout gh-pages
+          cp /tmp/market.json ./market.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add market.json
+          git diff --staged --quiet && echo "No changes" || git commit -m "market: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push origin gh-pages
