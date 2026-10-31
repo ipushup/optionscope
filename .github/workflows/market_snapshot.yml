@@ -2,8 +2,8 @@ name: Market Snapshot
 
 on:
   schedule:
-    # 每 15 分鐘，平日；覆蓋 HK 開市到 US 收市後（UTC 01:00–21:59）
-    - cron: '*/15 1-21 * * 1-5'
+    # 每 5 分鐘（GitHub 排程最密），平日；覆蓋 HK 開市到 US 收市後（UTC 01:00–21:59）
+    - cron: '*/5 1-21 * * 1-5'
   workflow_dispatch:
 
 concurrency:
