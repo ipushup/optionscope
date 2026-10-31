@@ -62,6 +62,13 @@ function ageText(iso) {
   return `${Math.round(m / 1440)} d ago`;
 }
 
+const SESSION = { regular: "", pre: "pre · ", post: "post · ", overnight: "night · " };
+function stamp(q) {
+  if (!q?.asof) return "";
+  const t = new Date(q.asof).toLocaleString("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  return `${SESSION[q.session] || ""}${t} HKT`;
+}
+
 function Spark({ data, color, T }) {
   if (!data || data.length < 2) {
     return <svg width="84" height="30" aria-hidden="true"><path d="M2 15h80" stroke={T.mute} strokeWidth="1.5" strokeDasharray="3 4" fill="none" /></svg>;
@@ -83,7 +90,7 @@ function IndexCard({ card, T }) {
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>{card.name}</span>
-        <span style={{ fontFamily: M, fontSize: 10, color: T.mute }}>{card.index_symbol}</span>
+        <span style={{ fontFamily: M, fontSize: 10, color: T.acc }}>{card.index_symbol}</span>
       </div>
       <div className="os-px" style={{ display: "flex", justifyContent: "space-between", gap: 6, marginTop: 10 }}>
         <div style={{ minWidth: 0 }}>
@@ -96,13 +103,14 @@ function IndexCard({ card, T }) {
         </div>
         <div style={{ flexShrink: 0 }}>
           <Spark data={main?.spark} color={col} T={T} />
-          <div style={{ fontFamily: M, fontSize: 10, color: T.mute }}>{main ? "Intraday" : "—"}</div>
+          
         </div>
       </div>
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.08em", color: T.mute }}>ETF · {card.etf_symbol}</div>
+          <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.08em", color: T.mute }}>ETF · <span style={{ color: T.acc }}>{card.etf_symbol}</span></div>
           <div style={{ fontFamily: M, fontSize: 15, fontWeight: 500, color: T.txt, marginTop: 2 }}>{etf ? fmt(etf.last) : "N/A"}</div>
+          {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 2 }}>{stamp(etf)}</div>}
         </div>
         <div style={{ fontFamily: M, fontSize: 12, color: etfCol, textAlign: "right" }}>
           {etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}
