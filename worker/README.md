@@ -34,3 +34,9 @@ npx wrangler secret put INGEST_TOKEN          # 隨機 32+ 字元：openssl rand
 - GitHub Pages 上面舊嘅 `*.json` 同舊站仍然公開；而且 gh-pages 歷史 commit 入面嘅舊數據永遠喺度。
 - scan workflow 仍以 gh-pages 做狀態存儲（`band.json` 等）。所以要做到「真・全私」，下一步係將狀態搬去 KV／私有位置，再停 gh-pages 發佈。
 - repo 本身係 public，掃描 code、watchlist 名單都睇得到。
+
+## 即時報價（/api/quotes）
+登入後，Home 頁每 5 秒向 `/api/quotes?symbols=…` 查一次；Worker 用 Longbridge 嘅 App Key/Secret/Token（Worker secrets：`LB_APP_KEY`、`LB_APP_SECRET`、`LB_ACCESS_TOKEN`）簽名後 POST `https://openapi.longbridge.com/quote/quotes`，揀 常規／盤前／盤後／夜盤 最新一節，同一批 symbols 快取 5 秒。
+冇設 key 或 Longbridge 出錯 → 前端靜靜退返 market.json 快照（標示 "snapshot"）。
+排錯：登入後開 `/api/quotes?symbols=SPY.US&debug=1`，會回 Longbridge 原始回應。
+更新：`bash worker/update.sh`。離線測試：`node worker/test/quotes.test.mjs`。
