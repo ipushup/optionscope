@@ -16,6 +16,10 @@ import { useEffect, useState } from "react";
 
 const BASE = process.env.PUBLIC_URL || "";
 const MARKET_URL = `${BASE}/market.json`;
+// 即時報價（Worker 代 Longbridge 查）。card id → Longbridge 指數代號；ETF 代號喺 market.json 入面。
+const LIVE_URL = "/api/quotes";
+const INDEX_LB = { spx: ".SPX.US", ndx: ".IXIC.US", dji: ".DJI.US", vix: ".VIX.US", hsi: "HSI.HK" };
+const LIVE_EVERY_MS = 5000;
 
 const THEMES = {
   dark: {
@@ -124,6 +128,7 @@ function IndexCard({ card, T }) {
 export default function Home({ onNavigate, light, onToggleLight }) {
   const T = light ? THEMES.light : THEMES.dark;
   const [mk, setMk] = useState(null);
+  const [live, setLive] = useState(null);   // { fetched_at, bySymbol }
   const [err, setErr] = useState(null);
 
   useEffect(() => {
@@ -141,7 +146,36 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     return () => { dead = true; clearInterval(t); };
   }, []);
 
-  const cards = mk?.cards || [];
+  // 即時層：每 5 秒向 Worker 要一次；分頁隱藏就唔 call；失敗就靜靜地退返 market.json
+  useEffect(() => {
+    if (!mk) return undefined;
+    const syms = mk.cards.flatMap((cd) => [INDEX_LB[cd.id], cd.etf_symbol]).filter(Boolean);
+    if (!syms.length) return undefined;
+    let dead = false;
+    const tick = async () => {
+      if (document.hidden) return;
+      try {
+        const r = await fetch(`${LIVE_URL}?symbols=${encodeURIComponent(syms.join(","))}`, { cache: "no-store" });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        const bySymbol = {};
+        for (const q of j.quotes || []) bySymbol[q.symbol] = q;
+        if (!dead) setLive(Object.keys(bySymbol).length ? { fetched_at: j.fetched_at, bySymbol } : null);
+      } catch { if (!dead) setLive(null); }
+    };
+    tick();
+    const t = setInterval(tick, LIVE_EVERY_MS);
+    const onVis = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { dead = true; clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
+  }, [mk]);
+
+  const overlay = (base, q) => (q && base ? { ...base, ...q, spark: base.spark, source: "longbridge-live" } : base);
+  const cards = (mk?.cards || []).map((cd) => (live ? {
+    ...cd,
+    index: overlay(cd.index, live.bySymbol[INDEX_LB[cd.id]]),
+    etf: overlay(cd.etf, live.bySymbol[cd.etf_symbol]),
+  } : cd));
   const complete = cards.filter((c) => c.index && c.etf).length;
   const ageMin = mk ? (Date.now() - new Date(mk.updated_at).getTime()) / 60000 : null;
   const stale = ageMin != null && ageMin > 60;
@@ -263,7 +297,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
               <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>01 / MARKET SNAPSHOT</div>
               <h2 id="s1" style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700 }}>Indices and macro</h2>
             </div>
-            <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>index + tracking ETF · source: {mk?.source || "—"}</div>
+            <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>index + tracking ETF · {live ? <span style={{ color: T.up }}>● live · Longbridge</span> : <>snapshot · source: {mk?.source || "—"}</>}</div>
           </div>
           {mk ? (
             <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} />)}</div>

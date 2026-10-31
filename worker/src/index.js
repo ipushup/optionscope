@@ -115,6 +115,101 @@ async function handleIngest(req, env, name) {
   return json({ ok: true, name, bytes: text.length });
 }
 
+// ───────────── Longbridge 即時報價（server-side，key 唔落瀏覽器）─────────────
+// 簽名演算法抄自官方 SDK：longbridge/openapi rust/crates/httpclient/src/signature.rs
+// 端點：POST https://openapi.longbridge.com/quote/quotes  body {"symbol":[...]}
+const LB_BASE = "https://openapi.longbridge.com";
+const SYMBOL_RE = /^\.?[A-Za-z0-9]{1,12}(?:\.[A-Za-z]{1,4})?$/;
+const MAX_SYMBOLS = 30;
+
+async function sha1hex(data) {
+  const buf = await crypto.subtle.digest("SHA-1", typeof data === "string" ? enc.encode(data) : data);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function hmacHex(secret, msg) {
+  return [...(await hmac(secret, msg))].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function lbSign(method, path, query, body, appKey, appSecret, accessToken, ts) {
+  const signedHeaders = "authorization;x-api-key;x-timestamp";
+  const signedValues = `authorization:${accessToken}\nx-api-key:${appKey}\nx-timestamp:${ts}\n`;
+  let str = `${method}|${path}|${query}|${signedValues}|${signedHeaders}|`;
+  if (body) str += await sha1hex(body);
+  const toSign = `HMAC-SHA256|${await sha1hex(str)}`;
+  return `HMAC-SHA256 SignedHeaders=${signedHeaders}, Signature=${await hmacHex(appSecret, toSign)}`;
+}
+
+/** 揀 常規／盤前／盤後／夜盤 之中 timestamp 最新嗰節 */
+function pickLatest(q) {
+  const get = (o, ...keys) => { for (const k of keys) if (o && o[k] != null) return o[k]; return null; };
+  const cands = [];
+  const add = (sess, o) => {
+    if (!o) return;
+    const last = parseFloat(get(o, "last_done", "lastDone"));
+    const ts = parseInt(get(o, "timestamp"), 10);
+    if (last > 0 && ts > 0) cands.push({ ts, last, sess });
+  };
+  add("regular", q);
+  add("pre", get(q, "pre_market_quote", "preMarketQuote"));
+  add("post", get(q, "post_market_quote", "postMarketQuote"));
+  add("overnight", get(q, "over_night_quote", "overNightQuote"));
+  if (!cands.length) return null;
+  return cands.sort((a, b) => b.ts - a.ts)[0];
+}
+
+async function handleQuotes(req, env, url) {
+  if (!env.LB_APP_KEY || !env.LB_APP_SECRET || !env.LB_ACCESS_TOKEN) return json({ error: "Longbridge not configured" }, 503);
+  const symbols = (url.searchParams.get("symbols") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (!symbols.length || symbols.length > MAX_SYMBOLS || !symbols.every((x) => SYMBOL_RE.test(x))) return json({ error: "Bad symbols" }, 400);
+  const debug = url.searchParams.get("debug") === "1";
+
+  // 同一批 symbols 5 秒內共用結果，唔使每個重新整理都撞 Longbridge 限流（10 次/秒）
+  const cache = caches.default;
+  const cacheKey = new Request(`https://cache.invalid/quotes?s=${symbols.slice().sort().join(",")}`);
+  if (!debug) {
+    const hit = await cache.match(cacheKey);
+    if (hit) return withSec(new Response(hit.body, hit));
+  }
+
+  const body = JSON.stringify({ symbol: symbols });
+  const ts = Math.floor(Date.now() / 1000);
+  const path = "/quote/quotes";
+  const sig = await lbSign("POST", path, "", body, env.LB_APP_KEY, env.LB_APP_SECRET, env.LB_ACCESS_TOKEN, ts);
+  const region = env.LB_APP_KEY.startsWith("us_") || env.LB_ACCESS_TOKEN.startsWith("us_") ? "us" : "ap";
+  let up, text;
+  try {
+    up = await fetch(LB_BASE + path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "X-Api-Key": env.LB_APP_KEY, Authorization: env.LB_ACCESS_TOKEN,
+        "X-Timestamp": String(ts), "X-Api-Signature": sig, "x-dc-region": region,
+      },
+      body,
+    });
+    text = await up.text();
+  } catch (e) { return json({ error: "Upstream unreachable", detail: String(e) }, 502); }
+
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch { /* 下面處理 */ }
+  if (!up.ok || !parsed || (parsed.code != null && parsed.code !== 0)) {
+    return json({ error: "Longbridge error", status: up.status, ...(debug ? { upstream: text.slice(0, 500) } : { code: parsed?.code, message: parsed?.message }) }, 502);
+  }
+  const data = parsed.data ?? parsed;
+  const list = data.secu_quote ?? data.secuQuote ?? [];
+  const out = [];
+  for (const q of list) {
+    const got = pickLatest(q);
+    const prev = parseFloat(q.prev_close ?? q.prevClose);
+    if (!got || !(prev > 0)) continue;
+    out.push({ symbol: q.symbol, last: got.last, prev_close: prev, change: got.last - prev,
+               pct: (got.last / prev - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess });
+  }
+  const res = json({ fetched_at: new Date().toISOString(), quotes: out, ...(debug ? { raw_sample: list.slice(0, 1) } : {}) }, 200, { "Cache-Control": "public, max-age=5" });
+  if (!debug) await cache.put(cacheKey, res.clone());
+  return res;
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -136,6 +231,8 @@ export default {
     }
 
     if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "Read only" }, 405);
+
+    if (path === "/api/quotes") return handleQuotes(req, env, url);
 
     const m = path.match(/^\/([A-Za-z0-9_-]{1,64}\.json)$/);
     if (m) {
