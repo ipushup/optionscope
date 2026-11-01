@@ -1,0 +1,22 @@
+name: Publish Summary
+
+# 手動版：摘要文字寫入 summaries/summary.json 之後，推上私人 gateway。
+# （之後自動化會改成 job 直接上傳，唔再經 repo。）
+on:
+  push:
+    branches: [main]
+    paths: ['summaries/summary.json']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh summaries/summary.json
