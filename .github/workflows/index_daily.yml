@@ -1,0 +1,30 @@
+name: Index Daily
+
+on:
+  schedule:
+    # HK 收市後（UTC 08:30）同 US 收市後（UTC 21:30），平日
+    - cron: '30 8,21 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: index-daily
+  cancel-in-progress: true
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas numpy
+      - name: Build daily.json
+        run: python scanner/index_daily.py
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/daily.json
