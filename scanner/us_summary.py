@@ -193,12 +193,20 @@ def main():
     facts, news = gather()
     if not facts["indices"].get("spx") or not facts["indices"].get("ndx"):
         raise SystemExit("index quotes missing")
+    force = os.environ.get("SUMMARY_FORCE") == "1"
+    dry = os.environ.get("SUMMARY_DRY_RUN") == "1"
     age_h = (datetime.now(timezone.utc) - datetime.fromisoformat(facts["asof"])).total_seconds() / 3600
-    if age_h > 30:
+    print(f"::notice::facts date={facts['date']} age_h={age_h:.0f} indices={list(facts['indices'])} "
+          f"movers={len(facts['movers'])} news={len(news)} temp={facts['temperature']}")
+    if age_h > 30 and not force:
         print(f"ℹ 最新常規節收市已係 {age_h:.0f} 小時前（假期／未開市），唔更新摘要")
         return
     if len(news) < 3:
         raise SystemExit(f"only {len(news)} news items — not enough to summarise")
+    if dry:
+        titles = " | ".join(n["title"][:40] for n in news[:6])
+        print(f"::notice::DRY RUN — Claude not called. latest news: {titles}")
+        return
     example = json.load(open(os.path.join(HERE, "summary_example.json"), encoding="utf-8"))
     example = {k: example[k] for k in ("headline", "bullets", "ahead")}
     out = None
