@@ -289,7 +289,7 @@ function SummarySection({ sm, T }) {
           </div>
           {sm.ahead && <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}`, fontSize: 12, lineHeight: 1.6, color: T.dim }}>{sm.ahead}</div>}
           <div style={{ marginTop: 10, fontFamily: M, fontSize: 10, lineHeight: 1.7, color: T.mute }}>
-            Source: {(sm.sources || []).map((x) => x.name).join(" · ")}. Summarised in our own words; not investment advice.
+            Source: {(sm.sources || []).map((x) => x.name).join(" · ")}
           </div>
         </div>
       )}
