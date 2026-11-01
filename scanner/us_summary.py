@@ -27,7 +27,6 @@ BELLWETHERS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AVGO", 
                "SNDK", "PLTR", "BA", "WMT", "UNH", "LLY", "CRM", "QCOM"]
 TAGS = ["大市", "導火線", "AI 鏈", "科技股", "跨資產", "加密", "財報季", "個股", "後市", "宏觀", "能源", "板塊"]
 MAX_NEWS = 24
-NEWS_WINDOW_H = 30
 
 
 # ---------- 取數 ----------
@@ -88,7 +87,9 @@ def gather():
     # 新聞：指數 + 變動最大嘅幾隻
     top = sorted((m for m in movers), key=lambda m: -abs(m["pct"]))[:5]
     news_syms = [s for _, s, n in INDICES if n != "VIX"] + [f"{m['symbol']}.US" for m in top]
-    since = datetime.now(timezone.utc) - timedelta(hours=NEWS_WINDOW_H)
+    # 新聞窗口以「該交易日收市時間」做基準（強制測試舊日子時都攞到啱嘅新聞）
+    since = (asof or datetime.now(timezone.utc)) - timedelta(hours=20)
+    until = (asof or datetime.now(timezone.utc)) + timedelta(hours=12)
     cc = ContentContext(cfg)
     seen, news = set(), []
     for s in news_syms:
@@ -99,7 +100,7 @@ def gather():
             continue
         for it in items:
             t = _ts(it.published_at)
-            if it.id in seen or not (it.title or "").strip() or not t or t < since:
+            if it.id in seen or not (it.title or "").strip() or not t or t < since or t > until:
                 continue
             seen.add(it.id)
             news.append({"time": t.isoformat(), "title": it.title.strip(), "text": (it.description or "").strip()[:600]})
