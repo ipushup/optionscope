@@ -6,6 +6,15 @@ on:
     # 星期二至六 UTC = 美國星期一至五晚（香港 09:15）
     - cron: '15 1 * * 2-6'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (fetch data only, do not call Claude or publish)'
+        type: boolean
+        default: true
+      force:
+        description: 'Ignore the market-closed / holiday check'
+        type: boolean
+        default: false
 
 concurrency:
   group: us-summary
@@ -29,9 +38,12 @@ jobs:
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           LONGBRIDGE_LANGUAGE: zh-HK
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUMMARY_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+          SUMMARY_FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '0' }}
         run: python scanner/us_summary.py
       - name: Publish to private gateway
         env:
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         run: bash scanner/push_private.sh summaries_out/summary.json
