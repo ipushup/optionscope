@@ -16,6 +16,8 @@ import { useEffect, useState } from "react";
 
 const BASE = process.env.PUBLIC_URL || "";
 const MARKET_URL = `${BASE}/market.json`;
+const BAND_URL = `${BASE}/band.json`;
+const BQ_URL = `${BASE}/band_quotes.json`;
 // 即時報價（Worker 代 Longbridge 查）。card id → Longbridge 指數代號；ETF 代號喺 market.json 入面。
 const LIVE_URL = "/api/quotes";
 const INDEX_LB = { spx: ".SPX.US", ndx: ".IXIC.US", dji: ".DJI.US", vix: ".VIX.US", hsi: "HSI.HK" };
@@ -74,12 +76,13 @@ function stamp(q) {
 }
 
 function Spark({ data, color, T }) {
+  const box = { width: "100%", height: "100%", display: "block" };
   if (!data || data.length < 2) {
-    return <svg width="84" height="30" aria-hidden="true"><path d="M2 15h80" stroke={T.mute} strokeWidth="1.5" strokeDasharray="3 4" fill="none" /></svg>;
+    return <svg style={box} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M2 20h96" stroke={T.mute} strokeWidth="1.5" strokeDasharray="3 4" fill="none" vectorEffect="non-scaling-stroke" /></svg>;
   }
   const lo = Math.min(...data), hi = Math.max(...data), span = hi - lo || 1;
-  const pts = data.map((v, i) => `${(2 + (i / (data.length - 1)) * 80).toFixed(1)},${(27 - ((v - lo) / span) * 24).toFixed(1)}`).join(" ");
-  return <svg width="84" height="30" viewBox="0 0 84 30" aria-hidden="true"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" /></svg>;
+  const pts = data.map((v, i) => `${((i / (data.length - 1)) * 100).toFixed(1)},${(36 - ((v - lo) / span) * 32).toFixed(1)}`).join(" ");
+  return <svg style={box} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" vectorEffect="non-scaling-stroke" /></svg>;
 }
 
 function IndexCard({ card, T }) {
@@ -93,27 +96,25 @@ function IndexCard({ card, T }) {
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>{card.name}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>{card.id === "ndx" ? "NASDAQ" : card.name}</span>
         <span style={{ fontFamily: M, fontSize: 10, color: T.acc }}>{card.index_symbol}</span>
       </div>
-      <div className="os-px" style={{ display: "flex", justifyContent: "space-between", gap: 6, marginTop: 10 }}>
-        <div style={{ minWidth: 0 }}>
+      <div className="os-px" style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <div style={{ minWidth: 0, flex: "0 0 auto" }}>
           <div className="os-price" style={{ fontFamily: M, fontWeight: 500, color: T.txt }}>
             {main ? (isYield ? `${fmt(main.last)}%` : fmt(main.last)) : "N/A"}
           </div>
           <div style={{ fontFamily: M, fontSize: 12, marginTop: 4, color: col }}>
             {main ? `${arrow(main)} ${isYield ? `${fmt(Math.abs(main.change) * 100, 1)} bp` : fmt(Math.abs(main.change))} · ${pctText(main.pct)}` : "no quote"}
           </div>
-          {main && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 2 }}>{stamp(main)}</div>}
         </div>
-        <div style={{ flexShrink: 0 }}>
+        <div className="os-spark">
           <Spark data={main?.spark} color={col} T={T} />
-          
         </div>
       </div>
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.08em", color: T.mute }}>ETF · <span style={{ color: T.acc }}>{card.etf_symbol}</span></div>
+          <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.08em", color: T.mute }}><span style={{ color: T.acc }}>{card.etf_symbol}</span></div>
           <div style={{ fontFamily: M, fontSize: 15, fontWeight: 500, color: T.txt, marginTop: 2 }}>{etf ? fmt(etf.last) : "N/A"}</div>
           {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 2 }}>{stamp(etf)}</div>}
         </div>
@@ -125,11 +126,102 @@ function IndexCard({ card, T }) {
   );
 }
 
+
+function Tile({ label, value, sub, color, T }) {
+  return (
+    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
+      <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.12em", color: T.mute }}>{label}</div>
+      <div style={{ fontFamily: M, fontSize: 28, fontWeight: 500, color: color || T.txt, marginTop: 6 }}>{value ?? "—"}</div>
+      <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>{sub}</div>
+    </div>
+  );
+}
+
+function BandSection({ band, bq, T }) {
+  const c = band?.counts || {};
+  const quotes = bq?.quotes || {};
+  const rows = (band?.forming || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map((r) => {
+    const q = quotes[r.symbol] || {};
+    const px = q.price ?? null, low = q.day_low ?? null;
+    let st = "—";
+    if (px != null && low != null) st = low <= r.kill_low ? "BROKE" : px > r.kill_close ? "TIER" : "HOLD";
+    return { ...r, px, low, st };
+  });
+  const pill = { HOLD: T.up, BROKE: T.dn, TIER: T.acc, "—": T.mute };
+  const th = { textAlign: "left", fontFamily: M, fontSize: 10, letterSpacing: "0.1em", color: T.mute, fontWeight: 400, padding: "8px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
+  const td = { fontFamily: M, fontSize: 12, padding: "9px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
+  return (
+    <section aria-labelledby="s2">
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>02 / TRIPLE BAND</div>
+          <h2 id="s2" style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700 }}>Signals</h2>
+        </div>
+        <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>bar {band?.bar_date || "—"} · prices {bq?.quoted_at ? ageText(bq.quoted_at) : "—"}</div>
+      </div>
+      {!band ? (
+        <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>band.json not available.</div>
+      ) : (
+        <>
+          <div className="os-grid">
+            <Tile label="CONFIRMED" value={c.confirmed} sub="entries confirmed" color={T.up} T={T} />
+            <Tile label="FORMING" value={c.forming} sub={`${rows.length} still alive`} color={T.acc} T={T} />
+            <Tile label="EXITS" value={c.exits} sub="exit signals" color={T.dn} T={T} />
+            <Tile label="CANDIDATES" value={c.candidates} sub={`of ${c.universe ?? "—"} scanned`} T={T} />
+          </div>
+          <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700 }}>Forming signals <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>· live kill check</span></div>
+            {rows.length === 0 ? (
+              <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>No forming signals.</div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
+                  <thead><tr>{["SYMBOL", "PRICE", "KILL LOW", "DAY LOW", "STATUS"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.symbol}>
+                        <td style={{ ...td, color: T.acc, fontWeight: 700 }}>{r.symbol}</td>
+                        <td style={td}>{r.px != null ? fmt(r.px) : "N/A"}</td>
+                        <td style={td}>{fmt(r.kill_low)}</td>
+                        <td style={td}>{r.low != null ? fmt(r.low) : "N/A"}</td>
+                        <td style={td}><span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "2px 9px", fontSize: 11 }}>{r.st}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
+            HOLD: day low above kill low. BROKE: day low touched kill low. TIER: price above kill close. Prices refresh about every 15 min.
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Home({ onNavigate, light, onToggleLight }) {
   const T = light ? THEMES.light : THEMES.dark;
   const [mk, setMk] = useState(null);
   const [live, setLive] = useState(null);   // { fetched_at, bySymbol }
   const [err, setErr] = useState(null);
+  const [band, setBand] = useState(null);
+  const [bq, setBq] = useState(null);
+
+  useEffect(() => {
+    let dead = false;
+    const get = async (u, set) => {
+      try {
+        const r = await fetch(`${u}?t=${Date.now()}`);
+        if (r.ok && !dead) set(await r.json());
+      } catch (e) { /* section shows unavailable */ }
+    };
+    get(BAND_URL, setBand);
+    get(BQ_URL, setBq);
+    const t = setInterval(() => get(BQ_URL, setBq), 120 * 1000);
+    return () => { dead = true; clearInterval(t); };
+  }, []);
 
   useEffect(() => {
     let dead = false;
@@ -191,7 +283,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-hero{display:flex;flex-direction:row;align-items:stretch;gap:16px}
     .os-herocard{flex:0 0 300px}
     .os-price{font-size:22px}
-    .os-px{flex-direction:row;align-items:flex-end}
+    .os-px{flex-direction:row;align-items:stretch}
+    .os-spark{flex:1 1 0;min-width:0;min-height:44px}
     .os-tabs{display:none}
     .os-h1{font-size:34px}
     @media (max-width:1199px){
@@ -208,7 +301,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       .os-main{padding:16px 14px 40px}
       .os-hero{flex-direction:column}
       .os-herocard{flex-basis:auto}
-      .os-px{flex-direction:column;align-items:flex-start}
+      .os-px{flex-direction:column;align-items:stretch}
+      .os-spark{flex:0 0 auto;height:40px;min-height:40px;width:100%}
       .os-price{font-size:20px}
       .os-h1{font-size:26px}
     }
@@ -297,7 +391,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
               <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>01 / MARKET SNAPSHOT</div>
               <h2 id="s1" style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700 }}>Indices and macro</h2>
             </div>
-            <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>index + tracking ETF · {live ? <span style={{ color: T.up }}>● live · Longbridge</span> : <>snapshot · source: {mk?.source || "—"}</>}</div>
+            <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{live ? <span style={{ color: T.up }}>● live · Longbridge</span> : <>snapshot · source: {mk?.source || "—"}</>}</div>
           </div>
           {mk ? (
             <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} />)}</div>
@@ -310,6 +404,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
             TQQQ (3x) and UVIX (2x) are leveraged and decay over time; their % moves are not the index's move. IEF is a price, not a yield.
           </div>
         </section>
+
+        <BandSection band={band} bq={bq} T={T} />
 
         <div style={{ fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>Read-only. No orders can be placed here. Quotes may be delayed. Not investment advice.</div>
       </main>

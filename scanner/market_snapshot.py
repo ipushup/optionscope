@@ -16,7 +16,7 @@ OUT_PATH = os.environ.get("MARKET_OUT", "frontend/public/market.json")
 # id, 顯示名, 指數 Yahoo symbol, 指數 Longbridge 碼, ETF 碼（Yahoo, Longbridge）
 CARDS = [
     ("spx", "S&P 500",         "^GSPC",   ".SPX.US", ("SPY",  "SPY.US")),
-    ("ndx", "Nasdaq Composite", "^IXIC",  ".IXIC.US", ("TQQQ", "TQQQ.US")),
+    ("ndx", "NASDAQ",           "^IXIC",  ".IXIC.US", ("TQQQ", "TQQQ.US")),
     ("dji", "Dow Jones",       "^DJI",    ".DJI.US", ("DIA",  "DIA.US")),
     ("vix", "Volatility Index", "^VIX",   ".VIX.US", ("UVIX", "UVIX.US")),
     ("hsi", "Hang Seng Index", "^HSI",    "HSI.HK",  ("2800.HK", "2800.HK")),
