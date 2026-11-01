@@ -39,6 +39,7 @@ const THEMES = {
   },
 };
 const F = "'Syne',system-ui,sans-serif";
+const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
 
 async function logout() {
   try { await fetch("/api/logout", { method: "POST" }); } catch { /* 離線都照 reload */ }
@@ -69,11 +70,11 @@ function ageText(iso) {
   return `${Math.round(m / 1440)} d ago`;
 }
 
-const SESSION = { regular: "", pre: "pre · ", post: "post · ", overnight: "night · " };
 function stamp(q) {
   if (!q?.asof) return "";
-  const t = new Date(q.asof).toLocaleString("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
-  return `${SESSION[q.session] || ""}${t} HKT`;
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(q.asof));
+  const g = (t) => parts.find((x) => x.type === t)?.value || "";
+  return `${g("day")} ${g("month")} ${g("hour")}:${g("minute")} HKT`;
 }
 
 function Spark({ data, color, T }) {
@@ -87,10 +88,15 @@ function Spark({ data, color, T }) {
 }
 
 // Daily brief 樣式：蠟燭 + EMA10/20/50 + SuperTrend + UT Bot 上下箭嘴
-function Candles({ d, T, light }) {
-  const n = d?.c?.length || 0;
-  if (n < 5) return null;
-  const W = 300, H = 140;
+const ZOOM_BARS = 45;
+function Candles({ d: full, T, light }) {
+  const total = full?.c?.length || 0;
+  if (total < 5) return null;
+  const from = Math.max(0, total - ZOOM_BARS);
+  const d = {};
+  Object.keys(full).forEach((k) => { d[k] = Array.isArray(full[k]) ? full[k].slice(from) : full[k]; });
+  const n = d.c.length;
+  const W = 300, H = 150;
   let lo = Infinity, hi = -Infinity;
   for (let i = 0; i < n; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
   const pad = (hi - lo) * 0.07 || 1; lo -= pad; hi += pad;
@@ -142,7 +148,7 @@ function IndexCard({ card, T, mode, daily, light }) {
   const showDaily = mode === "daily" && daily && daily.c && daily.c.length > 4;
   const priceBlock = (
     <div style={{ minWidth: 0, flex: "0 0 auto" }}>
-      <div className="os-price" style={{ fontFamily: M, fontWeight: 500, color: T.txt }}>
+      <div className="os-price" style={{ fontFamily: SANS, fontWeight: 700, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em", color: T.txt }}>
         {main ? (isYield ? `${fmt(main.last)}%` : fmt(main.last)) : "N/A"}
       </div>
       <div style={{ fontFamily: M, fontSize: 12, marginTop: 4, color: col }}>
@@ -153,7 +159,7 @@ function IndexCard({ card, T, mode, daily, light }) {
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>{card.id === "ndx" ? "NASDAQ" : card.name}</span>
+        <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: T.sub }}>{card.id === "ndx" ? "NASDAQ" : card.name}</span>
         <span style={{ fontFamily: M, fontSize: 10, color: T.acc }}>{card.index_symbol}</span>
       </div>
       {showDaily ? (
@@ -334,6 +340,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const feedColor = !mk ? T.dn : stale ? T.warn : T.up;
 
   const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
     .os-home{min-height:100vh;display:flex;flex-direction:row;background:${T.bg};color:${T.txt};font-family:${F}}
     .os-home *{box-sizing:border-box}
     .os-side{flex:0 0 220px;width:220px;background:${T.side};border-right:1px solid ${T.line};padding:20px 16px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
@@ -342,7 +349,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
     .os-hero{display:flex;flex-direction:row;align-items:stretch;gap:16px}
     .os-herocard{flex:0 0 300px}
-    .os-price{font-size:22px}
+    .os-price{font-size:24px}
     .os-px{flex-direction:row;align-items:stretch}
     .os-etf{font-size:13px}
     .os-spark{flex:1 1 0;min-width:0;min-height:44px}
@@ -353,7 +360,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       .os-main{padding:22px 24px 40px}
       .os-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .os-herocard{flex-basis:230px}
-      .os-price{font-size:24px}
+      .os-price{font-size:26px}
     }
     @media (max-width:759px){
       .os-home{flex-direction:column}
@@ -364,7 +371,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       .os-herocard{flex-basis:auto}
       .os-px{flex-direction:column;align-items:stretch}
       .os-spark{flex:0 0 auto;height:40px;min-height:40px;width:100%}
-      .os-price{font-size:20px}
+      .os-price{font-size:22px}
       .os-h1{font-size:26px}
       .os-etf{font-size:11px}
     }
