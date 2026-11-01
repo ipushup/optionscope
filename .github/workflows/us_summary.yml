@@ -1,0 +1,37 @@
+name: US After-market Summary
+
+on:
+  schedule:
+    # 美股後市（20:00 ET）完咗約 15 分鐘：冬令 UTC 01:00、夏令 UTC 00:00 後市完，01:15 兩季都夠遲
+    # 星期二至六 UTC = 美國星期一至五晚（香港 09:15）
+    - cron: '15 1 * * 2-6'
+  workflow_dispatch:
+
+concurrency:
+  group: us-summary
+  cancel-in-progress: false
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install longbridge anthropic
+      - name: Build summary.json
+        env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          LONGBRIDGE_LANGUAGE: zh-HK
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scanner/us_summary.py
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh summaries_out/summary.json
