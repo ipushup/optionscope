@@ -30,6 +30,19 @@ MAX_NEWS = 24
 
 
 # ---------- 取數 ----------
+GOOD = re.compile(r"收盤|收市|收盘|美股|納指|纳指|標普|标普|道指|道瓊|財報|财报|業績|业绩|拋售|抛售|暴跌|大跌|反彈|AI|聯儲|美聯儲|加息|降息|非農|黃金|油價|比特幣|幣安")
+NOISE = re.compile(r"期權大單|期权大单|減持|增持|持倉|持仓|13F|股價預測|股价预测|預測：|预测：|值得買入|買入嗎|是買入")
+
+
+def score_news(n):
+    sc = 3 if n.get("_idx") else 0
+    if GOOD.search(n["title"]):
+        sc += 3
+    if NOISE.search(n["title"]):
+        sc -= 4
+    return sc
+
+
 def _ts(x):
     if x is None:
         return None
@@ -103,8 +116,14 @@ def gather():
             if it.id in seen or not (it.title or "").strip() or not t or t < since or t > until:
                 continue
             seen.add(it.id)
-            news.append({"time": t.isoformat(), "title": it.title.strip(), "text": (it.description or "").strip()[:600]})
-    news.sort(key=lambda n: n["time"], reverse=True)
+            news.append({"time": t.isoformat(), "title": it.title.strip(), "text": (it.description or "").strip()[:600],
+                         "_idx": s.startswith(".")})
+    for n in news:
+        n["_score"] = score_news(n)
+    news.sort(key=lambda n: (n["_score"], n["time"]), reverse=True)
+    for n in news:
+        n.pop("_idx", None)
+        n.pop("_score", None)
     return facts, news[:MAX_NEWS]
 
 
