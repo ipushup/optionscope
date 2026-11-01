@@ -39,6 +39,7 @@ const THEMES = {
   },
 };
 const F = "'Syne',system-ui,sans-serif";
+const NAMES = { ndx: "NASDAQ", vix: "VIX", hsi: "HSI" };
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
 
 async function logout() {
@@ -159,8 +160,8 @@ function IndexCard({ card, T, mode, daily, light }) {
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: T.sub }}>{card.id === "ndx" ? "NASDAQ" : card.name}</span>
-        <span style={{ fontFamily: M, fontSize: 10, color: T.acc }}>{card.index_symbol}</span>
+        <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: T.sub }}>{NAMES[card.id] || card.name}</span>
+        <span style={{ fontFamily: M, fontSize: 10, color: T.sub }}>{card.index_symbol}</span>
       </div>
       {showDaily ? (
         <>
@@ -177,7 +178,7 @@ function IndexCard({ card, T, mode, daily, light }) {
       )}
       <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}` }}>
         <div className="os-etf" style={{ fontFamily: M, display: "flex", justifyContent: "space-between", gap: 6, whiteSpace: "nowrap" }}>
-          <span style={{ color: T.acc }}>{card.etf_symbol}</span>
+          <span style={{ color: T.txt }}>{card.etf_symbol}</span>
           <span style={{ color: T.txt }}>{etf ? fmt(etf.last) : "N/A"}</span>
           <span style={{ color: etfCol }}>{etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}</span>
         </div>
@@ -455,17 +456,14 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         </div>
 
         <section aria-labelledby="s1">
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
-            <div>
-              <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>01 / MARKET SNAPSHOT</div>
-              <h2 id="s1" style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700 }}>Indices and macro</h2>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{live ? <span style={{ color: T.up }}>● live · Longbridge</span> : <>snapshot · source: {mk?.source || "—"}</>}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
+            <div id="s1" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>01 / MARKET SNAPSHOT</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{live ? <span style={{ color: T.up }}>● live</span> : "snapshot"}</div>
               <div role="group" aria-label="Chart mode" style={{ display: "inline-flex", border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden" }}>
                 {[["daily", "Daily"], ["intraday", "Intraday"]].map(([k, label]) => (
                   <button key={k} type="button" onClick={() => pickMode(k)} aria-pressed={mode === k}
-                    style={{ fontFamily: M, fontSize: 11, padding: "6px 12px", minHeight: 32, border: "none", cursor: "pointer", background: mode === k ? T.card : "transparent", color: mode === k ? T.acc : T.mute }}>{label}</button>
+                    style={{ fontFamily: M, fontSize: 11, padding: "6px 9px", minHeight: 32, border: "none", cursor: "pointer", background: mode === k ? T.card : "transparent", color: mode === k ? T.acc : T.mute }}>{label}</button>
                 ))}
               </div>
             </div>
@@ -477,9 +475,6 @@ export default function Home({ onNavigate, light, onToggleLight }) {
               {err ? `Could not load market.json (${err}).` : "Loading market data…"}
             </div>
           )}
-          <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            TQQQ (3x) and UVIX (2x) are leveraged and decay over time; their % moves are not the index's move. IEF is a price, not a yield.
-          </div>
         </section>
 
         <BandSection band={band} bq={bq} T={T} />
