@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 
 const BASE = process.env.PUBLIC_URL || "";
 const MARKET_URL = `${BASE}/market.json`;
+const DAILY_URL = `${BASE}/daily.json`;
 const BAND_URL = `${BASE}/band.json`;
 const BQ_URL = `${BASE}/band_quotes.json`;
 // 即時報價（Worker 代 Longbridge 查）。card id → Longbridge 指數代號；ETF 代號喺 market.json 入面。
@@ -85,7 +86,52 @@ function Spark({ data, color, T }) {
   return <svg style={box} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" vectorEffect="non-scaling-stroke" /></svg>;
 }
 
-function IndexCard({ card, T }) {
+// Daily brief 樣式：蠟燭 + EMA10/20/50 + SuperTrend + UT Bot 上下箭嘴
+function Candles({ d, T, light }) {
+  const n = d?.c?.length || 0;
+  if (n < 5) return null;
+  const W = 300, H = 140;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < n; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
+  const pad = (hi - lo) * 0.07 || 1; lo -= pad; hi += pad;
+  const X = (i) => ((i + 0.5) / n) * W;
+  const Y = (p) => H - ((p - lo) / (hi - lo)) * H;
+  const cw = (W / n) * 0.62;
+  const path = (arr, mask) => {
+    let out = "", pen = false;
+    for (let i = 0; i < n; i++) {
+      const v = arr[i];
+      if (v == null || (mask && !mask(i))) { pen = false; continue; }
+      out += `${pen ? "L" : "M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`;
+      pen = true;
+    }
+    return out;
+  };
+  const arrowC = light ? T.txt : "#ffffff";
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="Daily candles with EMA, SuperTrend and UT Bot signals">
+      {d.c.map((c, i) => {
+        const col = c >= d.o[i] ? T.up : T.dn;
+        const top = Y(Math.max(d.o[i], c)), bot = Y(Math.min(d.o[i], c));
+        return (
+          <g key={i}>
+            <line x1={X(i)} x2={X(i)} y1={Y(d.h[i])} y2={Y(d.l[i])} stroke={col} strokeWidth="0.8" />
+            <rect x={X(i) - cw / 2} y={top} width={cw} height={Math.max(bot - top, 0.6)} fill={col} />
+          </g>
+        );
+      })}
+      <path d={path(d.ema10)} fill="none" stroke={light ? "#555a63" : "#f5f5f5"} strokeWidth="1" strokeLinejoin="round" />
+      <path d={path(d.ema20)} fill="none" stroke="#e8c34a" strokeWidth="1" strokeLinejoin="round" />
+      <path d={path(d.ema50)} fill="none" stroke="#e05563" strokeWidth="1" strokeLinejoin="round" />
+      <path d={path(d.st, (i) => d.st_dir[i] === 1)} fill="none" stroke="#00b894" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d={path(d.st, (i) => d.st_dir[i] === -1)} fill="none" stroke="#ff5d73" strokeWidth="1.4" strokeLinejoin="round" />
+      {d.buy.map((on, i) => on && <path key={`b${i}`} d={`M${X(i)} ${Y(d.l[i]) + 5} l-3.2 5.5 h6.4z`} fill={arrowC} />)}
+      {d.sell.map((on, i) => on && <path key={`s${i}`} d={`M${X(i)} ${Y(d.h[i]) - 5} l-3.2 -5.5 h6.4z`} fill={arrowC} />)}
+    </svg>
+  );
+}
+
+function IndexCard({ card, T, mode, daily, light }) {
   const ix = card.index, etf = card.etf;
   const isYield = card.id === "us10y";
   const main = ix || null;
@@ -93,39 +139,47 @@ function IndexCard({ card, T }) {
   const col = main ? (up ? T.up : T.dn) : T.mute;
   const etfCol = etf ? (etf.change >= 0 ? T.up : T.dn) : T.mute;
   const arrow = (x) => (x.change >= 0 ? "▲" : "▼");
+  const showDaily = mode === "daily" && daily && daily.c && daily.c.length > 4;
+  const priceBlock = (
+    <div style={{ minWidth: 0, flex: "0 0 auto" }}>
+      <div className="os-price" style={{ fontFamily: M, fontWeight: 500, color: T.txt }}>
+        {main ? (isYield ? `${fmt(main.last)}%` : fmt(main.last)) : "N/A"}
+      </div>
+      <div style={{ fontFamily: M, fontSize: 12, marginTop: 4, color: col }}>
+        {main ? `${arrow(main)} ${isYield ? `${fmt(Math.abs(main.change) * 100, 1)} bp` : fmt(Math.abs(main.change))} · ${pctText(main.pct)}` : "no quote"}
+      </div>
+    </div>
+  );
   return (
     <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>{card.id === "ndx" ? "NASDAQ" : card.name}</span>
         <span style={{ fontFamily: M, fontSize: 10, color: T.acc }}>{card.index_symbol}</span>
       </div>
-      <div className="os-px" style={{ display: "flex", gap: 10, marginTop: 10 }}>
-        <div style={{ minWidth: 0, flex: "0 0 auto" }}>
-          <div className="os-price" style={{ fontFamily: M, fontWeight: 500, color: T.txt }}>
-            {main ? (isYield ? `${fmt(main.last)}%` : fmt(main.last)) : "N/A"}
+      {showDaily ? (
+        <>
+          <div style={{ marginTop: 10 }}>{priceBlock}</div>
+          <div style={{ marginTop: 10 }}><Candles d={daily} T={T} light={light} /></div>
+        </>
+      ) : (
+        <div className="os-px" style={{ display: "flex", gap: 10, marginTop: 10 }}>
+          {priceBlock}
+          <div className="os-spark">
+            <Spark data={main?.spark} color={col} T={T} />
           </div>
-          <div style={{ fontFamily: M, fontSize: 12, marginTop: 4, color: col }}>
-            {main ? `${arrow(main)} ${isYield ? `${fmt(Math.abs(main.change) * 100, 1)} bp` : fmt(Math.abs(main.change))} · ${pctText(main.pct)}` : "no quote"}
-          </div>
         </div>
-        <div className="os-spark">
-          <Spark data={main?.spark} color={col} T={T} />
+      )}
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}` }}>
+        <div className="os-etf" style={{ fontFamily: M, display: "flex", justifyContent: "space-between", gap: 6, whiteSpace: "nowrap" }}>
+          <span style={{ color: T.acc }}>{card.etf_symbol}</span>
+          <span style={{ color: T.txt }}>{etf ? fmt(etf.last) : "N/A"}</span>
+          <span style={{ color: etfCol }}>{etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}</span>
         </div>
-      </div>
-      <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.08em", color: T.mute }}><span style={{ color: T.acc }}>{card.etf_symbol}</span></div>
-          <div style={{ fontFamily: M, fontSize: 15, fontWeight: 500, color: T.txt, marginTop: 2 }}>{etf ? fmt(etf.last) : "N/A"}</div>
-          {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 2 }}>{stamp(etf)}</div>}
-        </div>
-        <div style={{ fontFamily: M, fontSize: 12, color: etfCol, textAlign: "right" }}>
-          {etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}
-        </div>
+        {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5 }}>{stamp(etf)}</div>}
       </div>
     </div>
   );
 }
-
 
 function Tile({ label, value, sub, color, T }) {
   return (
@@ -208,6 +262,11 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const [err, setErr] = useState(null);
   const [band, setBand] = useState(null);
   const [bq, setBq] = useState(null);
+  const [daily, setDaily] = useState(null);
+  const [mode, setMode] = useState(() => {
+    try { return localStorage.getItem("os_snap_mode") === "intraday" ? "intraday" : "daily"; } catch (e) { return "daily"; }
+  });
+  const pickMode = (m) => { setMode(m); try { localStorage.setItem("os_snap_mode", m); } catch (e) { /* ignore */ } };
 
   useEffect(() => {
     let dead = false;
@@ -217,6 +276,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         if (r.ok && !dead) set(await r.json());
       } catch (e) { /* section shows unavailable */ }
     };
+    get(DAILY_URL, setDaily);
     get(BAND_URL, setBand);
     get(BQ_URL, setBq);
     const t = setInterval(() => get(BQ_URL, setBq), 120 * 1000);
@@ -284,6 +344,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-herocard{flex:0 0 300px}
     .os-price{font-size:22px}
     .os-px{flex-direction:row;align-items:stretch}
+    .os-etf{font-size:13px}
     .os-spark{flex:1 1 0;min-width:0;min-height:44px}
     .os-tabs{display:none}
     .os-h1{font-size:34px}
@@ -305,6 +366,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       .os-spark{flex:0 0 auto;height:40px;min-height:40px;width:100%}
       .os-price{font-size:20px}
       .os-h1{font-size:26px}
+      .os-etf{font-size:11px}
     }
     .os-navbtn{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:44px;border-radius:9px;border:1px solid transparent;background:transparent;color:${T.sub};font-family:${F};font-size:13px;font-weight:700;cursor:pointer;text-align:left;width:100%}
     .os-navbtn:focus-visible{outline:2px solid ${T.acc};outline-offset:2px}
@@ -391,10 +453,18 @@ export default function Home({ onNavigate, light, onToggleLight }) {
               <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>01 / MARKET SNAPSHOT</div>
               <h2 id="s1" style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700 }}>Indices and macro</h2>
             </div>
-            <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{live ? <span style={{ color: T.up }}>● live · Longbridge</span> : <>snapshot · source: {mk?.source || "—"}</>}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{live ? <span style={{ color: T.up }}>● live · Longbridge</span> : <>snapshot · source: {mk?.source || "—"}</>}</div>
+              <div role="group" aria-label="Chart mode" style={{ display: "inline-flex", border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden" }}>
+                {[["daily", "Daily"], ["intraday", "Intraday"]].map(([k, label]) => (
+                  <button key={k} type="button" onClick={() => pickMode(k)} aria-pressed={mode === k}
+                    style={{ fontFamily: M, fontSize: 11, padding: "6px 12px", minHeight: 32, border: "none", cursor: "pointer", background: mode === k ? T.card : "transparent", color: mode === k ? T.acc : T.mute }}>{label}</button>
+                ))}
+              </div>
+            </div>
           </div>
           {mk ? (
-            <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} />)}</div>
+            <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={daily?.cards?.[cd.id]} light={light} />)}</div>
           ) : (
             <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: err ? T.dn : T.dim }}>
               {err ? `Could not load market.json (${err}).` : "Loading market data…"}
