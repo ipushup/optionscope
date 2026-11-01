@@ -231,7 +231,12 @@ def main():
     example = {k: example[k] for k in ("headline", "bullets", "ahead")}
     out = None
     for attempt in (1, 2):
-        txt = call_claude(SYSTEM, build_user(facts, news, example))
+        try:
+            txt = call_claude(SYSTEM, build_user(facts, news, example))
+        except Exception as e:  # noqa: BLE001 — 顯示原因（唔含 key）
+            msg = str(getattr(e, "message", "") or e)[:300]
+            print(f"::error::Claude API call failed: {type(e).__name__} status={getattr(e, 'status_code', None)} {msg}")
+            raise SystemExit(1)
         try:
             out = parse_json(txt)
             errs = validate(out, facts)
