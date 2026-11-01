@@ -127,8 +127,8 @@ function Candles({ d: full, T, light }) {
           </g>
         );
       })}
-      <path d={path(d.ema10)} fill="none" stroke={light ? "#555a63" : "#f5f5f5"} strokeWidth="1" strokeLinejoin="round" />
-      <path d={path(d.ema20)} fill="none" stroke="#e8c34a" strokeWidth="1" strokeLinejoin="round" />
+      <path d={path(d.ema10)} fill="none" stroke="#e8c34a" strokeWidth="1" strokeLinejoin="round" />
+      <path d={path(d.ema20)} fill="none" stroke="#8fdc5a" strokeWidth="1" strokeLinejoin="round" />
       <path d={path(d.ema50)} fill="none" stroke="#e05563" strokeWidth="1" strokeLinejoin="round" />
       <path d={path(d.st, (i) => d.st_dir[i] === 1)} fill="none" stroke="#00b894" strokeWidth="1.4" strokeLinejoin="round" />
       <path d={path(d.st, (i) => d.st_dir[i] === -1)} fill="none" stroke="#ff5d73" strokeWidth="1.4" strokeLinejoin="round" />
