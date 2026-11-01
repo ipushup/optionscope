@@ -15,4 +15,5 @@ assert any("advice" in e for e in u.validate(adv, facts))
 short = json.loads(json.dumps(good)); short["bullets"] = short["bullets"][:2]
 assert u.validate(short, facts)
 assert u.parse_json("```json\n" + json.dumps(good, ensure_ascii=False) + "\n```")["headline"] == good["headline"]
+assert u.score_news({"title": "美股收盘大幅走低", "_idx": True}) > u.score_news({"title": "英特爾期權大單透視", "_idx": False})
 print("us_summary offline tests OK")
