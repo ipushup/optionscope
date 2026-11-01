@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 const BASE = process.env.PUBLIC_URL || "";
 const MARKET_URL = `${BASE}/market.json`;
 const DAILY_URL = `${BASE}/daily.json`;
+const SUMMARY_URL = `${BASE}/summary.json`;
 const BAND_URL = `${BASE}/band.json`;
 const BQ_URL = `${BASE}/band_quotes.json`;
 // 即時報價（Worker 代 Longbridge 查）。card id → Longbridge 指數代號；ETF 代號喺 market.json 入面。
@@ -262,6 +263,40 @@ function BandSection({ band, bq, T }) {
   );
 }
 
+function SummarySection({ sm, T }) {
+  const fmtDate = (d) => {
+    const dt = new Date(`${d}T00:00:00Z`);
+    return Number.isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-GB", { timeZone: "UTC", day: "2-digit", month: "short" });
+  };
+  return (
+    <section aria-labelledby="s3">
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
+        <div id="s3" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>03 / US AFTER-MARKET</div>
+        {sm && <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{fmtDate(sm.date)} close{sm.temperature ? ` · temp ${sm.temperature.value}` : ""}</div>}
+      </div>
+      {!sm ? (
+        <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>No summary yet.</div>
+      ) : (
+        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "16px 16px 14px" }}>
+          <div style={{ fontFamily: SANS, fontSize: 17, fontWeight: 700, lineHeight: 1.45, color: T.txt }}>{sm.headline}</div>
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+            {(sm.bullets || []).map((b, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+                <span style={{ flex: "0 0 52px", fontFamily: M, fontSize: 11, color: T.acc }}>{b.tag}</span>
+                <span style={{ fontSize: 13, lineHeight: 1.65, color: T.sub }}>{b.text}</span>
+              </div>
+            ))}
+          </div>
+          {sm.ahead && <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}`, fontSize: 12, lineHeight: 1.6, color: T.dim }}>{sm.ahead}</div>}
+          <div style={{ marginTop: 10, fontFamily: M, fontSize: 10, lineHeight: 1.7, color: T.mute }}>
+            Source: {(sm.sources || []).map((x) => x.name).join(" · ")}. Summarised in our own words; not investment advice.
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Home({ onNavigate, light, onToggleLight }) {
   const T = light ? THEMES.light : THEMES.dark;
   const [mk, setMk] = useState(null);
@@ -270,6 +305,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const [band, setBand] = useState(null);
   const [bq, setBq] = useState(null);
   const [daily, setDaily] = useState(null);
+  const [sm, setSm] = useState(null);
   const [mode, setMode] = useState(() => {
     try { return localStorage.getItem("os_snap_mode") === "intraday" ? "intraday" : "daily"; } catch (e) { return "daily"; }
   });
@@ -284,6 +320,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       } catch (e) { /* section shows unavailable */ }
     };
     get(DAILY_URL, setDaily);
+    get(SUMMARY_URL, setSm);
     get(BAND_URL, setBand);
     get(BQ_URL, setBq);
     const t = setInterval(() => get(BQ_URL, setBq), 120 * 1000);
@@ -478,6 +515,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         </section>
 
         <BandSection band={band} bq={bq} T={T} />
+
+        <SummarySection sm={sm} T={T} />
 
         <div style={{ fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>Read-only. No orders can be placed here. Quotes may be delayed. Not investment advice.</div>
       </main>
