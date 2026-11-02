@@ -55,7 +55,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       .then(r => { if (!r.ok) throw new Error(`signals.json ${r.status}`); return r.json(); })
       .then(j => { if (alive) { setData(j); setErr(null); } })
       .catch(e => alive && setErr(String(e.message || e)));
-    pull(); const id = setInterval(pull, 30000);
+    pull(); const id = setInterval(pull, 15000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
@@ -92,6 +92,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   }, [rows, sound]);
 
   const near = data?.near ?? 6;
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 10000); return () => clearInterval(id); }, []);
+  const age = data ? (now - new Date(data.updated).getTime()) / 1000 : 0;
   const chip = (on, extra) => ({
     background: on ? T.soft : "transparent", color: on ? T.txt : T.dim,
     border: `1px solid ${on ? T.line : "transparent"}`, borderRadius: 7, padding: "5px 10px",
@@ -126,7 +129,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         <div style={{ fontFamily: M, fontSize: 11, color: T.mute, letterSpacing: 1 }}>SIGNAL BOARD</div>
         <div style={{ flex: 1 }} />
         <div style={{ fontFamily: M, fontSize: 11, color: err ? T.dn : T.mute }}>
-          {err ? `⚠ ${err}` : data ? `● ${stamp(data.updated)} · ${data.n} 隻` : "loading…"}
+          {err ? `⚠ ${err}` : data ? <><span style={{ color: age > 180 ? T.dn : T.up }}>●</span> {stamp(data.updated)} · {data.n} 隻{age > 180 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</> : "loading…"}
         </div>
       </div>
 

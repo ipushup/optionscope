@@ -124,9 +124,39 @@ def session_of(ts):
     return "夜盤"
 
 
+def push(path):
+    """PUT 去私人 gateway（等同 push_private.sh，但循環入面直接做）"""
+    import urllib.request
+    gw, tok = os.getenv("GATEWAY_URL", "").rstrip("/"), os.getenv("INGEST_TOKEN", "")
+    if not gw or not tok:
+        return
+    req = urllib.request.Request(f"{gw}/_ingest/signals.json", data=Path(path).read_bytes(), method="PUT",
+                                 headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        if r.status != 200:
+            print(f"::warning::push status {r.status}")
+
+
 def main():
-    uni = universe()
     ctx = QuoteContext(Config.from_apikey_env())
+    loop_s = float(os.getenv("SB_LOOP_SECS", "0") or 0)       # 0 = 跑一次
+    every = float(os.getenv("SB_INTERVAL", "30") or 30)
+    end = time.time() + loop_s
+    while True:
+        t0 = time.time()
+        try:
+            run_once(ctx)
+            if loop_s:
+                push(OUT)
+        except Exception as e:                                 # 一輪錯唔好搞死成個循環
+            print(f"::warning::round failed: {e}")
+        if time.time() + every >= end:
+            break
+        time.sleep(max(1.0, every - (time.time() - t0)))
+
+
+def run_once(ctx):
+    uni = universe()
     syms = [u["sym"] for u in uni]
     quotes = {}
     for i in range(0, len(syms), 400):
