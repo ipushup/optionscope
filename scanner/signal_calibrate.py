@@ -21,3 +21,16 @@ for e in S.signals_for(df)[-80:]:
     print(f"SIG {e['t']} {e['kind']} {e.get('tier','')} {e.get('ext','')}")
 bi, bv, si, sv = S.heavy_now(df)
 print(f"HEAVY buy {df.index[bi] if bi is not None else None} {bv:.0f} | sell {df.index[si] if si is not None else None} {sv:.0f}")
+
+# ── Heavy 細節：最新 30 棒嘅 suffix 累計 ──
+import numpy as np
+d = df.iloc[-101:]
+h, l, c, v = (d[k].values for k in ("High", "Low", "Close", "Volume"))
+rng = h - l
+vb = np.where(rng > 0, v * (c - l) / np.where(rng > 0, rng, 1), v * .5)
+vs = np.where(rng > 0, v * (h - c) / np.where(rng > 0, rng, 1), v * .5)
+delta = vb - vs
+run = np.cumsum(delta[::-1])[::-1]
+print(f"HEAVYDBG n={len(d)} max={run.max():.0f}@{d.index[run.argmax()]} min={run.min():.0f}@{d.index[run.argmin()]}")
+for k in range(len(d) - 24, len(d)):
+    print(f"HEAVYDBG {d.index[k]} vol={v[k]:.0f} delta={delta[k]:.0f} suffix={run[k]:.0f}")
