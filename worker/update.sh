@@ -19,7 +19,8 @@ npx wrangler deploy 2>&1 | grep -v -i "warning\|out-of-date\|update to the lates
 
 echo
 echo "要啟用即時報價，請輸入 Longbridge 嘅三個值（唔想改就直接按 Enter 跳過）："
-for NAME in LB_APP_KEY LB_APP_SECRET LB_ACCESS_TOKEN; do
+echo "（另外 GH_DISPATCH_TOKEN：GitHub fine-grained token，只限呢個 repo、Actions 讀寫，用嚟自動叫醒信號板/行情循環。）"
+for NAME in LB_APP_KEY LB_APP_SECRET LB_ACCESS_TOKEN GH_DISPATCH_TOKEN; do
   read -rsp "$NAME: " V; echo
   if [ -n "$V" ]; then printf %s "$V" | npx wrangler secret put "$NAME" >/dev/null 2>&1 && echo "  ✓ $NAME 已設定"; fi
 done

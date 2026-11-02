@@ -20,3 +20,9 @@ id = "5d2acd6f4af34cc9833badf423ba4ff1"
 #   SITE_PASSWORD   登入密碼
 #   SESSION_SECRET  簽 cookie 用，隨機 32+ 字元
 #   INGEST_TOKEN    GitHub Actions 上傳數據用，隨機 32+ 字元
+
+# 每 5 分鐘（平日 UTC；覆蓋美股夜盤 Sun 20:00 ET = Mon 01:00 UTC 至 Fri 20:00 ET）
+# 睇循環 job 仲喺唔喺度跑，唔喺就 dispatch。需要 secret：GH_DISPATCH_TOKEN
+[triggers]
+crons = ["*/5 * * * 1-5"]
+#   GH_DISPATCH_TOKEN   GitHub fine-grained token：只限 ipushup/optionscope，權限 Actions: Read and write

@@ -210,7 +210,36 @@ async function handleQuotes(req, env, url) {
   return res;
 }
 
+// ── 排程：GitHub Actions 自己嘅 cron 唔準時（成日幾個鐘唔跑），
+//    所以由 Cloudflare Cron Trigger 每 5 分鐘睇一次：冇循環 job 喺度跑就 dispatch 一個。
+//    循環 job 每個跑 ~55 分鐘；快完（>40 分鐘）而又未有人排緊隊，就預先排一個接力（concurrency 唔取消，會排隊）。
+const GH_REPO = "ipushup/optionscope";
+const LOOP_WORKFLOWS = ["signal_board.yml", "market_loop.yml"];
+
+async function keepLoopsAlive(env) {
+  if (!env.GH_DISPATCH_TOKEN) { console.log("GH_DISPATCH_TOKEN 未設，跳過"); return; }
+  const H = { Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json",
+              "User-Agent": "optionscope-gateway", "X-GitHub-Api-Version": "2022-11-28" };
+  for (const wf of LOOP_WORKFLOWS) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/${wf}/runs?per_page=5`, { headers: H });
+      if (!r.ok) { console.log(wf, "list failed", r.status); continue; }
+      const runs = (await r.json()).workflow_runs || [];
+      const active = runs.filter(x => x.status === "in_progress" || x.status === "queued" || x.status === "waiting" || x.status === "pending");
+      const queued = active.filter(x => x.status !== "in_progress");
+      const running = active.filter(x => x.status === "in_progress");
+      const oldest = running.length ? Math.max(...running.map(x => (Date.now() - new Date(x.run_started_at || x.created_at).getTime()) / 60000)) : null;
+      const need = queued.length === 0 && (running.length === 0 || oldest > 40);
+      if (!need) continue;
+      const d = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/${wf}/dispatches`, {
+        method: "POST", headers: { ...H, "Content-Type": "application/json" }, body: JSON.stringify({ ref: "main" }) });
+      console.log(wf, "dispatch", d.status, running.length ? `(handover, oldest ${Math.round(oldest)}m)` : "(none running)");
+    } catch (e) { console.log(wf, "error", String(e)); }
+  }
+}
+
 export default {
+  async scheduled(event, env, ctx) { ctx.waitUntil(keepLoopsAlive(env)); },
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname;
