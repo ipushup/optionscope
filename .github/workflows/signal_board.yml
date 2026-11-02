@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       limit: {default: "0"}
+      loop: {default: "3300"}
       syms: {default: "INTC,BABA,FUTU,SKHY,NVDA,AMD,MRNA,SPCX,CRWV,NOK"}
 concurrency:
   group: signal-board
@@ -26,7 +27,7 @@ jobs:
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           LONGBRIDGE_ENABLE_OVERNIGHT: "true"
           SB_LIMIT: ${{ inputs.limit }}
-          SB_LOOP_SECS: "3300"
+          SB_LOOP_SECS: ${{ inputs.loop || '3300' }}
           SB_INTERVAL: "30"
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
