@@ -1,0 +1,22 @@
+name: Signal Backtest Daily
+on:
+  workflow_dispatch:
+    inputs:
+      years: {default: "4"}
+      max: {default: "0"}
+jobs:
+  bt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy yfinance longbridge
+      - env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          BT_YEARS: ${{ inputs.years }}
+          BT_MAX: ${{ inputs.max }}
+        run: python scanner/signal_backtest_daily.py
