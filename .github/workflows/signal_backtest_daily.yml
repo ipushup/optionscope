@@ -4,6 +4,8 @@ on:
     inputs:
       years: {default: "4"}
       max: {default: "0"}
+      period: {default: "day"}
+      only_heavy: {default: ""}
 jobs:
   bt:
     runs-on: ubuntu-latest
@@ -19,4 +21,6 @@ jobs:
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           BT_YEARS: ${{ inputs.years }}
           BT_MAX: ${{ inputs.max }}
+          BT_PERIOD: ${{ inputs.period }}
+          BT_ONLY_HEAVY: ${{ inputs.only_heavy }}
         run: python scanner/signal_backtest_daily.py
