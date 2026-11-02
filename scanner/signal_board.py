@@ -131,10 +131,14 @@ def push(path):
     if not gw or not tok:
         return
     req = urllib.request.Request(f"{gw}/_ingest/signals.json", data=Path(path).read_bytes(), method="PUT",
-                                 headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=20) as r:
-        if r.status != 200:
-            print(f"::warning::push status {r.status}")
+                                 headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json",
+                                          "User-Agent": "curl/8.5.0", "Accept": "*/*"})   # Cloudflare 會擋 Python-urllib UA
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            print(f"push {r.status} {time.strftime('%H:%M:%S')}", flush=True)
+    except Exception as e:
+        body = getattr(e, "read", lambda: b"")()[:200]
+        print(f"::warning::push failed: {e} {body}", flush=True)
 
 
 def main():
