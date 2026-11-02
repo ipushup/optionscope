@@ -43,7 +43,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const [err, setErr] = useState(null);
   const [tf, setTf] = useState(() => { try { return localStorage.getItem("os_sb_tf") || "15m"; } catch { return "15m"; } });
   const [side, setSide] = useState("all");      // all | bull | bear
-  const [minScore, setMinScore] = useState(1);
+  const [minScore, setMinScore] = useState(0);
   const [q, setQ] = useState("");
   const [sound, setSound] = useState(false);
   const seen = useRef({});                       // sym → 上次分數
@@ -141,7 +141,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           {[["all", "全部"], ["bull", "偏多"], ["bear", "偏空"]].map(([k, l]) => <button key={k} onClick={() => setSide(k)} style={chip(side === k)}>{l}</button>)}
         </div>
         <div style={{ display: "flex", gap: 2 }}>
-          {[1, 2, 3].map(n => <button key={n} onClick={() => setMinScore(n)} style={chip(minScore === n)}>{n}+</button>)}
+          {[0, 1, 2, 3].map(n => <button key={n} onClick={() => setMinScore(n)} style={chip(minScore === n)}>{n}+</button>)}
         </div>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="搜尋 symbol"
           style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: "6px 10px", fontFamily: M, fontSize: 12, width: 130 }} />
