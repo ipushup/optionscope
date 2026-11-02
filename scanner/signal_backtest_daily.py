@@ -15,7 +15,11 @@ from indicator_scan import parse_watchlist
 import intraday_signals as S
 
 YEARS = int(os.getenv("BT_YEARS", "4")); MAXN = int(os.getenv("BT_MAX", "0") or 0)
-HZ = [1, 3, 5, 10, 20]
+WEEK = os.getenv("BT_PERIOD", "day") == "week"
+ONLY_HEAVY = os.getenv("BT_ONLY_HEAVY", "") == "1"
+HZ = [1, 2, 4, 8, 13] if WEEK else [1, 3, 5, 10, 20]
+UNIT = "週" if WEEK else "日"
+MINBARS = 150 if WEEK else 300
 COST = 0.0006
 ETF_RE = re.compile(r"ETF|Daily|2X|3X|1X|Leverage|Bull|Bear|Yield|Trust|Shares|Fund|Option Income|Income|Index|Ultra|Short", re.I)
 
@@ -26,7 +30,7 @@ def fetch(ctx, sym):
         nxt = min(cur + timedelta(days=730), end)
         for k in range(3):
             try:
-                rows += ctx.history_candlesticks_by_date(f"{sym}.US", Period.Day, AdjustType.ForwardAdjust, cur, nxt, TradeSessions.Intraday); break
+                rows += ctx.history_candlesticks_by_date(f"{sym}.US", (Period.Week if WEEK else Period.Day), AdjustType.ForwardAdjust, cur, nxt, TradeSessions.Intraday); break
             except Exception as e:
                 time.sleep(1.5 * (k + 1)); err = e
         else:
@@ -48,7 +52,7 @@ def is_etf(ctx, sym):
         return False, "?"
 
 
-def prep(df):
+def prep(df, bench=None):
     n = len(df); c = df["Close"].values; o = df["Open"].values
     fwd = {}
     for h in HZ:
@@ -56,12 +60,21 @@ def prep(df):
         for i in range(n - h - 1):
             r[i] = c[i + h] / o[i + 1] - 1 - 0.0   # 次日開市入，第 i+h 日收市出
         fwd[h] = r
+    bfwd = None
+    if bench is not None:
+        b = bench.reindex(df.index, method="ffill")
+        bo, bc = b["Open"].values, b["Close"].values
+        bfwd = {}
+        for h in HZ:
+            r = np.full(n, np.nan)
+            for i in range(n - h - 1): r[i] = bc[i + h] / bo[i + 1] - 1
+            bfwd[h] = r
     ru = np.full(n, np.nan)
     for i in range(60, n): ru[i] = (c[i] / c[i - 60] - 1) * 100
     tb = [e for e in S.triple_band(df)]
     ut = S.ut_events(df)
     hv = S.heavy_events(df)
-    # Heavy 強度：|累計 delta| / 近 100 棒總量
+    # Heavy 強度
     vol = df["Volume"].values; cs = np.cumsum(vol)
     hevs = []
     for e in hv:
@@ -72,7 +85,7 @@ def prep(df):
         with np.errstate(divide="ignore", invalid="ignore"):
             dl = np.where(rng > 0, vv * ((cc - ll) - (hh - cc)) / rng, 0.0)
         hevs.append({**e, "lag": j - e["i"], "mag": abs(dl.sum()) / tot if tot else np.nan})
-    return dict(n=n, o=o, c=c, fwd=fwd, ru=ru, tb=tb, ut=ut, hv=hevs, idx=df.index)
+    return dict(n=n, o=o, c=c, fwd=fwd, bfwd=bfwd, ru=ru, tb=tb, ut=ut, hv=hevs, idx=df.index)
 
 
 def stat(v):
@@ -115,16 +128,17 @@ def main():
     print(f"股票 {len(keep)} 隻；排除 ETF {len(dropped)}：{', '.join(dropped)}", flush=True)
     res = {}
     from concurrent.futures import ThreadPoolExecutor
+    qdf = fetch(ctx, "QQQ")
     def job(s):
         df = fetch(ctx, s)
-        if df is None or len(df) < 300: return s, None
-        return s, prep(df)
+        if df is None or len(df) < MINBARS: return s, (None if df is None else len(df))
+        return s, prep(df, qdf)
     with ThreadPoolExecutor(6) as ex:
         for k, (s, P) in enumerate(ex.map(job, keep)):
-            if P is None: print("skip", s)
+            if P is None or isinstance(P, int): print("skip", s, "bars=", P)
             else: res[s] = P
             if k % 20 == 0: print(f"  進度 {k}/{len(keep)}", flush=True)
-    print(f"\n=== {len(res)} 隻股，約 {YEARS} 年日線 ===")
+    print(f"\n=== {len(res)} 隻股，約 {YEARS} 年{'週線' if WEEK else '日線'} ===")
     base = {h: [x for P in res.values() for x in P["fwd"][h]] for h in HZ}
 
     def block(title, picks, sign=1):
@@ -132,7 +146,9 @@ def main():
         for h in HZ:
             v = [sign * P["fwd"][h][i] for P, idxs in picks for i in idxs]
             b = sign * np.nanmean(base[h])
-            print(f"  持有{h:2d}日  {stat(v)}   基準{b*100:+.2f}%")
+            ex = [sign * (P["fwd"][h][i] - P["bfwd"][h][i]) for P, idxs in picks for i in idxs if P["bfwd"] is not None]
+            exs = f"   對QQQ超額 mean={np.nanmean(ex)*100:+.2f}% win={np.mean(np.array(ex)>0)*100:4.1f}%" if len(ex) > 8 else ""
+            print(f"  持有{h:2d}{UNIT}  {stat(v)}   基準{b*100:+.2f}%{exs}")
 
     print("\n基準（所有日，做多）：" + " | ".join(f"{h}日 {np.nanmean(base[h])*100:+.2f}%" for h in HZ))
     # ── Heavy ──
@@ -153,6 +169,7 @@ def main():
         # 前後半段穩定性
         for lab, sel in (("前半段時間", lambda P, i: i < P["n"] // 2), ("後半段時間", lambda P, i: i >= P["n"] // 2)):
             block(f"{name} {lab}", [(P, [e["seen"] for e in P["hv"] if e["kind"] == kind and sel(P, e["seen"])]) for P in res.values()], sign)
+    if ONLY_HEAVY: return
     # ── TB ──
     print("\n################ Triple Band 日線 ################")
     for kind, sign, name in (("TB", 1, "TB taken（做多）"), ("TBskip", 1, "TBskip（被 rU60 濾走，做多）"), ("TS", -1, "TS（做空，方向性）")):
