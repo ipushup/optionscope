@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       limit: {default: "0"}
+      syms: {default: "INTC,BABA,FUTU,SKHY,NVDA,AMD,MRNA,SPCX,CRWV,NOK"}
 concurrency:
   group: signal-board
   cancel-in-progress: true
@@ -25,6 +26,8 @@ jobs:
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           LONGBRIDGE_ENABLE_OVERNIGHT: "true"
           SB_LIMIT: ${{ inputs.limit }}
+          # 測試階段：排程預設只跑呢 10 隻；清空（改成 ""）就跑成個 watchlist
+          SB_SYMS: ${{ github.event_name == 'workflow_dispatch' && inputs.syms || 'INTC,BABA,FUTU,SKHY,NVDA,AMD,MRNA,SPCX,CRWV,NOK' }}
         run: python scanner/signal_board.py
       - name: Publish to private gateway
         env:

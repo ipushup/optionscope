@@ -165,13 +165,13 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                   <td style={{ ...td, fontWeight: 700, fontFamily: SANS }}>
                     {r.sym}
                     <span style={{ marginLeft: 6, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
-                    {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
+                    {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""} <span style={{ color: T.mute }}>{r.sess}</span></div>}
                   </td>
                   <td style={{ ...td, color: col, fontWeight: 700 }}>{r.score ? `${r.dir === "bear" ? "▼" : r.dir === "bull" ? "▲" : "◆"} ${r.score}` : "·"}</td>
                   <td style={td}><Cell r={r} grp="TB" /></td>
                   <td style={td}><Cell r={r} grp="UT" /></td>
                   <td style={td}><Cell r={r} grp="HEAVY" /></td>
-                  {!isMobile && <td style={{ ...td, textAlign: "right", color: r.chg >= 0 ? T.up : T.dn }}>{r.px?.toFixed(2)} <span style={{ fontSize: 11 }}>{r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</span></td>}
+                  {!isMobile && <td style={{ ...td, textAlign: "right", color: r.chg >= 0 ? T.up : T.dn }}>{r.px?.toFixed(2)} <span style={{ fontSize: 11 }}>{r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</span> <span style={{ fontSize: 10, color: T.mute }}>{r.sess}</span></td>}
                 </tr>
               );
             })}
