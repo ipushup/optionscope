@@ -17,7 +17,7 @@ df = pd.DataFrame({"Open": [float(b.open) for b in bars], "High": [float(b.high)
                    "Volume": [float(b.volume) for b in bars]},
                   index=pd.to_datetime([b.timestamp for b in bars]))
 print(f"{sym} {tf} bars={len(df)} {df.index[0]} → {df.index[-1]} (timestamps as returned)")
-for e in S.signals_for(df)[-40:]:
-    print(f"::notice title={e['kind']}::{e['t']} {e.get('tier','')} {e.get('ext','')}")
+for e in S.signals_for(df)[-80:]:
+    print(f"SIG {e['t']} {e['kind']} {e.get('tier','')} {e.get('ext','')}")
 bi, bv, si, sv = S.heavy_now(df)
-print(f"::notice title=HEAVY::buy {df.index[bi] if bi is not None else None} {bv:.0f} | sell {df.index[si] if si is not None else None} {sv:.0f}")
+print(f"HEAVY buy {df.index[bi] if bi is not None else None} {bv:.0f} | sell {df.index[si] if si is not None else None} {sv:.0f}")
