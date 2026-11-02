@@ -46,6 +46,9 @@ def _throttle():
 
 
 def universe():
+    only = [x.strip().upper() for x in os.getenv("SB_SYMS", "").split(",") if x.strip()]
+    if only:
+        return [{"sym": t, "section": "TEST"} for t in only]
     seen, out = set(), []
     for r in parse_watchlist(Path(__file__).with_name("Watchlists.txt")):
         t = r["ticker"]
@@ -110,6 +113,17 @@ def analyse(df):
     }
 
 
+def session_of(ts):
+    """bar 時間（UTC naive）→ 美東時段"""
+    from zoneinfo import ZoneInfo
+    t = pd.Timestamp(ts).tz_localize("UTC").tz_convert(ZoneInfo("America/New_York"))
+    m = t.hour * 60 + t.minute
+    if 570 <= m < 960: return "盤中"
+    if 240 <= m < 570: return "盤前"
+    if 960 <= m < 1200: return "盤後"
+    return "夜盤"
+
+
 def main():
     uni = universe()
     ctx = QuoteContext(Config.from_apikey_env())
@@ -118,8 +132,7 @@ def main():
     for i in range(0, len(syms), 400):
         try:
             for q in ctx.quote([f"{s}.US" for s in syms[i:i + 400]]):
-                px = float(q.last_done); pc = float(q.prev_close)
-                quotes[q.symbol.rsplit(".", 1)[0]] = (px, round((px / pc - 1) * 100, 2) if pc else None)
+                quotes[q.symbol.rsplit(".", 1)[0]] = (float(q.last_done), float(q.prev_close))
         except Exception as e:
             print(f"::warning::quote batch failed: {e}")
     jobs = [(u, tf) for u in uni for tf in TFS]
@@ -138,8 +151,14 @@ def main():
     for u in uni:
         s = u["sym"]
         if s in res:
-            px, chg = quotes.get(s, (None, None))
-            rows.append({"sym": s, "section": u["section"], "px": px, "chg": chg, **res[s]})
+            ld, pc = quotes.get(s, (None, None))
+            d = res[s].get("15m") or res[s].get(TFS[0])
+            px, sess = d["px"], session_of(d["t"])
+            # 盤中：對上日收市；盤前/盤後/夜盤：對最近一個正式收市（last_done）
+            ref = pc if sess == "盤中" else ld
+            chg = round((px / ref - 1) * 100, 2) if ref else None
+            rows.append({"sym": s, "section": u["section"], "px": px, "chg": chg,
+                         "sess": sess, "reg": ld, **res[s]})
     out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "near": NEAR, "fresh": FRESH, "tfs": TFS, "n": len(rows), "rows": rows}
     OUT.parent.mkdir(parents=True, exist_ok=True)
