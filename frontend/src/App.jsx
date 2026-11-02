@@ -3,12 +3,13 @@ import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceL
 import RadarView from "./Radar";
 import BandView from "./Band";
 import Watchlist from "./Watchlist";
+import SignalBoard from "./SignalBoard";
 import Home from "./Home";
 import { c, setLight, isLight } from "./theme";
 
 // 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
 // filter、summary bar、loading spinner 都唔應該喺呢啲頁出現。
-const STANDALONE_VIEWS = ["radar", "band"];
+const STANDALONE_VIEWS = ["radar", "band", "signals"];
 
 /**
  * 一個 view 掛咗唔應該拖冧成個 app —— 之前 Compass 崩嗰陣，整棵 React tree
@@ -858,7 +859,7 @@ export default function App() {
         <div style={{ width:28, height:28, background:`linear-gradient(135deg,${c("#0d4080")},${c("#00b894")})`, borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>⚡</div>
         {!isMobile && <span style={{ fontSize:14, fontWeight:900, letterSpacing:"-0.5px", background:`linear-gradient(90deg,${c("#3b9eff")},${c("#00d4aa")})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>OptionScope</span>}
         <div style={{ display:"flex", gap:3, background:c("#080f1c"), borderRadius:8, padding:3 }}>
-          {[["home","🏠","🏠 Home"],["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"],["band","🎯","🎯 Band"],["watchlist","🔭","🔭 Watchlist"]].map(([id,icon,label])=>(
+          {[["home","🏠","🏠 Home"],["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"],["band","🎯","🎯 Band"],["watchlist","🔭","🔭 Watchlist"],["signals","📶","📶 Signals"]].map(([id,icon,label])=>(
             <button key={id} onClick={()=>setView(id)} style={{
               padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer",
               fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
@@ -1020,6 +1021,7 @@ export default function App() {
 
         {/* WATCHLIST VIEW — self-contained too (watchlist_merged.json + watchlist_quotes.json) */}
         {view==="watchlist" && <Watchlist isMobile={isMobile} light={light} />}
+        {view==="signals" && <SignalBoard isMobile={isMobile} light={light} />}
 
         </ViewBoundary>
 
