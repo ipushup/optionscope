@@ -1,7 +1,7 @@
 name: Signal Board
 on:
   schedule:
-    - cron: '*/5 * * * 1-5'     # 平日全日（夜盤 Sun 20:00 ET = Mon 01:00 UTC 起）
+    - cron: '*/30 * * * 1-5'    # GitHub cron 唔準時，所以每次開 55 分鐘循環、互相重疊；新一輪會取代舊一輪
   workflow_dispatch:
     inputs:
       limit: {default: "0"}
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   board:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 58
     steps:
       - uses: actions/checkout@v4
         with: {ref: main}
@@ -26,11 +26,10 @@ jobs:
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           LONGBRIDGE_ENABLE_OVERNIGHT: "true"
           SB_LIMIT: ${{ inputs.limit }}
+          SB_LOOP_SECS: "3300"
+          SB_INTERVAL: "30"
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
           # 測試階段：排程預設只跑呢 10 隻；清空（改成 ""）就跑成個 watchlist
           SB_SYMS: ${{ github.event_name == 'workflow_dispatch' && inputs.syms || 'INTC,BABA,FUTU,SKHY,NVDA,AMD,MRNA,SPCX,CRWV,NOK' }}
         run: python scanner/signal_board.py
-      - name: Publish to private gateway
-        env:
-          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
-          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
-        run: bash scanner/push_private.sh frontend/public/signals.json
