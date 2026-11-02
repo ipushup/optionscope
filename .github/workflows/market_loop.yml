@@ -1,0 +1,34 @@
+name: Market Loop
+# Home「Market Snapshot」每分鐘更新。由 Cloudflare Worker 排程叫醒（GitHub cron 唔準時）。
+on:
+  workflow_dispatch:
+concurrency:
+  group: market-loop
+  cancel-in-progress: false
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install yfinance pandas longbridge
+      - name: Loop (every 60s for ~55 min)
+        env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: |
+          end=$(( $(date +%s) + 3300 ))
+          while [ $(date +%s) -lt $end ]; do
+            t0=$(date +%s)
+            python scanner/market_snapshot.py || echo "::warning::snapshot failed"
+            bash scanner/push_private.sh frontend/public/market.json || true
+            sleep $(( 60 - ($(date +%s) - t0) > 5 ? 60 - ($(date +%s) - t0) : 5 ))
+          done

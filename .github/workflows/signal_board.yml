@@ -9,7 +9,7 @@ on:
       syms: {default: "INTC,BABA,FUTU,SKHY,NVDA,AMD,MRNA,SPCX,CRWV,NOK"}
 concurrency:
   group: signal-board
-  cancel-in-progress: true
+  cancel-in-progress: false   # 新一輪排隊等舊一輪完（Worker 提早 dispatch 做接力），唔取消
 jobs:
   board:
     runs-on: ubuntu-latest
