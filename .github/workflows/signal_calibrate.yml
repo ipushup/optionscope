@@ -1,0 +1,21 @@
+name: Signal Calibrate
+on:
+  workflow_dispatch:
+    inputs:
+      symbol: {default: "BABA.US"}
+      tf: {default: "15m"}
+      sess: {default: "intraday"}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy longbridge
+      - env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          SESS: ${{ inputs.sess }}
+        run: python scanner/signal_calibrate.py "${{ inputs.symbol }}" "${{ inputs.tf }}"
