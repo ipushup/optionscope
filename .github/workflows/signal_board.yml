@@ -1,0 +1,33 @@
+name: Signal Board
+on:
+  schedule:
+    - cron: '*/5 * * * 1-5'     # 平日全日（夜盤 Sun 20:00 ET = Mon 01:00 UTC 起）
+  workflow_dispatch:
+    inputs:
+      limit: {default: "0"}
+concurrency:
+  group: signal-board
+  cancel-in-progress: true
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy longbridge
+      - name: Build signals.json
+        env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          LONGBRIDGE_ENABLE_OVERNIGHT: "true"
+          SB_LIMIT: ${{ inputs.limit }}
+        run: python scanner/signal_board.py
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/signals.json
