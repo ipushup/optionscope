@@ -18,4 +18,5 @@ jobs:
           LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           SESS: ${{ inputs.sess }}
+          LONGBRIDGE_ENABLE_OVERNIGHT: "true"
         run: python scanner/signal_calibrate.py "${{ inputs.symbol }}" "${{ inputs.tf }}"
