@@ -23,7 +23,7 @@ ETF_RE = re.compile(r"ETF|Daily|2X|3X|1X|Leverage|Bull|Bear|Yield|Trust|Shares|F
 def fetch(ctx, sym):
     end = date.today(); cur = end - timedelta(days=365 * YEARS); rows = []
     while cur < end:
-        nxt = min(cur + timedelta(days=365), end)
+        nxt = min(cur + timedelta(days=730), end)
         for k in range(3):
             try:
                 rows += ctx.history_candlesticks_by_date(f"{sym}.US", Period.Day, AdjustType.ForwardAdjust, cur, nxt, TradeSessions.Intraday); break
@@ -31,7 +31,7 @@ def fetch(ctx, sym):
                 time.sleep(1.5 * (k + 1)); err = e
         else:
             print(f"::warning::{sym} {cur}: {err}")
-        cur = nxt + timedelta(days=1); time.sleep(0.12)
+        cur = nxt + timedelta(days=1)
     if not rows: return None
     df = pd.DataFrame({"Open": [float(b.open) for b in rows], "High": [float(b.high) for b in rows],
                        "Low": [float(b.low) for b in rows], "Close": [float(b.close) for b in rows],
@@ -102,16 +102,28 @@ def main():
         if t and t.isalpha() and t.isupper() and len(t) <= 5 and t not in syms and not t.endswith("HK"): syms.append(t)
     if MAXN: syms = syms[:MAXN]
     keep, dropped = [], []
+    names = {}
+    for i in range(0, len(syms), 100):
+        try:
+            for inf in ctx.static_info([f"{x}.US" for x in syms[i:i + 100]]):
+                names[inf.symbol.rsplit(".", 1)[0]] = f"{inf.name_en} {inf.name_cn}"
+        except Exception as e:
+            print(f"::warning::static_info {e}")
     for s in syms:
-        e, nm = is_etf(ctx, s)
-        (dropped if e else keep).append(s if not e else f"{s}({nm[:22]})")
-    keep = [s for s in syms if not any(d.startswith(s + "(") for d in dropped)]
+        nm = names.get(s, "")
+        (dropped if ETF_RE.search(nm) else keep).append(s if not ETF_RE.search(nm) else f"{s}({nm[:22]})")
     print(f"股票 {len(keep)} 隻；排除 ETF {len(dropped)}：{', '.join(dropped)}", flush=True)
     res = {}
-    for s in keep:
+    from concurrent.futures import ThreadPoolExecutor
+    def job(s):
         df = fetch(ctx, s)
-        if df is None or len(df) < 300: print("skip", s); continue
-        res[s] = prep(df); print(f"{s}: {len(df)} 日", flush=True)
+        if df is None or len(df) < 300: return s, None
+        return s, prep(df)
+    with ThreadPoolExecutor(6) as ex:
+        for k, (s, P) in enumerate(ex.map(job, keep)):
+            if P is None: print("skip", s)
+            else: res[s] = P
+            if k % 20 == 0: print(f"  進度 {k}/{len(keep)}", flush=True)
     print(f"\n=== {len(res)} 隻股，約 {YEARS} 年日線 ===")
     base = {h: [x for P in res.values() for x in P["fwd"][h]] for h in HZ}
 
