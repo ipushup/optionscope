@@ -34,6 +34,8 @@ DIRTY = set()
 RES = {}        # sym → analyse 結果
 QUOTES = {}     # sym → (last_done, prev_close)
 STAT = {"events": 0, "last": time.time()}
+PERF = {"cycles": 0, "an_s": 0.0, "max_cycle": 0.0, "n_an": 0, "pushes": 0}
+_prev = {"ev": 0, "t": time.time()}
 
 
 def sym_of(s):
@@ -182,12 +184,15 @@ def main():
         time.sleep(STEP)
         with lock:
             dirty = list(DIRTY); DIRTY.clear()
+        tc = time.time()
         n = recompute(dirty) if dirty else 0
+        dt = time.time() - tc
+        PERF["cycles"] += 1; PERF["an_s"] += dt; PERF["n_an"] += n; PERF["max_cycle"] = max(PERF["max_cycle"], dt)
         now = time.time()
         if now - last_q > 30:
             refresh_quotes(ctx, syms); last_q = now; n = n or 1
         if n and now - last_push >= MIN_PUSH:
-            write(uni); sb.push(sb.OUT); last_push = now
+            write(uni); sb.push(sb.OUT); last_push = now; PERF["pushes"] += 1
         if now - STAT["last"] > SILENT_RESUB:
             print("::warning::no push events — resubscribing", flush=True)
             STAT["last"] = now
@@ -199,7 +204,11 @@ def main():
         if now - last_heal > HEAL_EVERY:
             threading.Thread(target=heal, args=(ctx, syms), daemon=True).start(); last_heal = now
         if now - last_stat > 60:
-            print(f"stat events={STAT['events']} dirty={len(dirty)} analysed={n} lag_last_event={now-STAT['last']:.0f}s", flush=True)
+            evs = STAT["events"]; rate = (evs - _prev["ev"]) / max(now - _prev["t"], 1); _prev.update(ev=evs, t=now)
+            per = PERF["an_s"] / PERF["n_an"] * 1000 if PERF["n_an"] else 0
+            print(f"stat ev/s={rate:.0f} dirty={len(dirty)} analysed={n} an_ms/sym={per:.0f} max_cycle_s={PERF['max_cycle']:.1f} "
+                  f"pushes={PERF['pushes']} silent={now-STAT['last']:.0f}s", flush=True)
+            PERF.update(an_s=0.0, n_an=0, max_cycle=0.0)
             last_stat = now
     write(uni); sb.push(sb.OUT)
 
