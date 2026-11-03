@@ -226,7 +226,7 @@ def run_once(ctx, on_write=None):
             ref = pc if sess == "盤中" else ld
             chg = round((px / ref - 1) * 100, 2) if ref else None
             rows.append({"sym": s, "section": u["section"], "px": px, "chg": chg,
-                         "sess": sess, "reg": ld, **r})
+                         "sess": sess, "reg": ld, "pc": pc, **r})
         out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                "near": NEAR, "fresh": FRESH, "tfs": TFS, "n": len(rows), "rows": rows}
         OUT.parent.mkdir(parents=True, exist_ok=True)
