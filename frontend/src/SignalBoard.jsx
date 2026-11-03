@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * 嘅 TB/TS、UT、Heavy 最新事件 + 「接近區間」重疊分數。
  * 點股票 → 開 TradingView。
  */
-const URL_ = "/signals.json";
+const URL_ = (typeof window !== "undefined" && /[?&]src=2/.test(window.location.search)) ? "/signals2.json" : "/signals.json";   // ?src=2 = 推送版試跑
 const THEMES = {
   dark: { bg: "#16181b", card: "#202327", line: "#33383f", soft: "#2b2f35", txt: "#e6e9ec", sub: "#b4bcc4", dim: "#9aa4ad", mute: "#7d868f", up: "#00d4aa", dn: "#ff5c5c", warn: "#f5a623", acc: "#3b9eff", yel: "#e8c34a" },
   light: { bg: "#f3f4f6", card: "#ffffff", line: "#d9dde2", soft: "#e8ebef", txt: "#1b1f24", sub: "#3c444d", dim: "#56606b", mute: "#6b7580", up: "#00875a", dn: "#c81e3f", warn: "#a55a00", acc: "#0b6bcb", yel: "#9a7400" },
@@ -41,14 +41,16 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const T = light ? THEMES.light : THEMES.dark;
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [tf, setTf] = useState(() => { try { return localStorage.getItem("os_sb_tf") || "15m"; } catch { return "15m"; } });
+  const [tfPref, setTf] = useState(() => { try { return localStorage.getItem("os_sb_tf") || "15m"; } catch { return "15m"; } });
+  const tfs = data?.tfs?.length ? data.tfs : ["5m", "15m"];      // 推送版只有 5m
+  const tf = tfs.includes(tfPref) ? tfPref : tfs[0];
   const [side, setSide] = useState("all");      // all | bull | bear
   const [q, setQ] = useState("");
   const [sound, setSound] = useState(false);
   const [sec, setSec] = useState("all");         // section 篩選
   const [hideSkip, setHideSkip] = useState(true); // 隱藏被 rU60 濾走嘅 skip
   const seen = useRef({});                       // sym → 最新信號 key（用嚟判斷有冇新信號）
-  useEffect(() => { try { localStorage.setItem("os_sb_tf", tf); } catch { /* */ } }, [tf]);
+  useEffect(() => { try { localStorage.setItem("os_sb_tf", tfPref); } catch { /* */ } }, [tfPref]);
 
   useEffect(() => {
     let alive = true;
@@ -169,9 +171,11 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ display: "flex", gap: isMobile ? 4 : 8, alignItems: "center", marginBottom: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
-        <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-          {["5m", "15m"].map(x => <button key={x} onClick={() => setTf(x)} style={chip(tf === x)}>{x}</button>)}
-        </div>
+        {tfs.length > 1
+          ? <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+              {tfs.map(x => <button key={x} onClick={() => setTf(x)} style={chip(tf === x)}>{x}</button>)}
+            </div>
+          : <span style={{ fontFamily: M, fontSize: 12, color: T.dim, flexShrink: 0, padding: "0 4px" }}>{tf}</span>}
         <input value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "搜尋" : "搜尋 symbol"}
           style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: isMobile ? "6px 8px" : "6px 10px", fontFamily: M, fontSize: 12, width: isMobile ? "auto" : 130, flex: isMobile ? 1 : "0 0 auto", minWidth: 0 }} />
         <SideAndSound />
