@@ -101,6 +101,25 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     fontFamily: M, fontSize: 12, cursor: "pointer", ...extra,
   });
 
+  // 三條長短不一嘅垂直線（音量 / 提示音）；開 = 亮色，靜音 = 灰淡
+  const SoundIcon = ({ on }) => (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style={{ display: "block" }}>
+      <g stroke={on ? T.acc : T.mute} strokeWidth="2" strokeLinecap="round" opacity={on ? 1 : 0.7}>
+        <line x1="3" y1="6" x2="3" y2="10" /><line x1="8" y1="2.5" x2="8" y2="13.5" /><line x1="13" y1="5" x2="13" y2="11" />
+      </g>
+      {!on && <line x1="2" y1="14" x2="14" y2="2" stroke={T.mute} strokeWidth="1.6" strokeLinecap="round" />}
+    </svg>
+  );
+  const SideAndSound = () => (
+    <>
+      <div style={{ display: "flex", gap: 2 }}>
+        {[["all", "全部"], ["bull", "偏多"], ["bear", "偏空"]].map(([k, l]) => <button key={k} onClick={() => setSide(k)} style={chip(side === k)}>{l}</button>)}
+      </div>
+      <button onClick={() => setSound(v => !v)} title={sound ? "提示音：開" : "提示音：靜音"} aria-label={sound ? "提示音開" : "提示音靜音"}
+        style={chip(sound, { padding: "6px 9px", display: "flex", alignItems: "center", marginLeft: isMobile ? "auto" : 0 })}><SoundIcon on={sound} /></button>
+    </>
+  );
+
   const SessBadge = ({ s }) => {
     const t = { 夜盤: "24h", 盤前: "pre", 盤後: "post" }[s];
     if (!t) return null;
@@ -140,17 +159,16 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ display: "flex", gap: 2 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
+        <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
           {["5m", "15m"].map(x => <button key={x} onClick={() => setTf(x)} style={chip(tf === x)}>{x}</button>)}
         </div>
-        <div style={{ display: "flex", gap: 2 }}>
-          {[["all", "全部"], ["bull", "偏多"], ["bear", "偏空"]].map(([k, l]) => <button key={k} onClick={() => setSide(k)} style={chip(side === k)}>{l}</button>)}
-        </div>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="搜尋 symbol"
-          style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: "6px 10px", fontFamily: M, fontSize: 12, width: 130 }} />
-        <button onClick={() => setSound(s => !s)} style={chip(sound)}>{sound ? "🔔 開" : "🔕 靜音"}</button>
+          style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: "6px 10px", fontFamily: M, fontSize: 12, width: isMobile ? "auto" : 130, flex: isMobile ? 1 : "0 0 auto", minWidth: 0 }} />
+        {!isMobile && <SideAndSound />}
       </div>
+      {isMobile && <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}><SideAndSound /></div>}
+      {!isMobile && <div style={{ height: 4 }} />}
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
         TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)}
