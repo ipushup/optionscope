@@ -60,18 +60,40 @@ def universe():
     return out[:LIMIT] if LIMIT else out
 
 
+DFC = {}            # (sym, tf) → (DataFrame, 上次全量拎嘅時間)；之後只拎最新幾十棒再合併，大幅減少每個 call 嘅數據量
+INC = int(os.getenv("SB_INC", "40"))
+FULL_EVERY = 3600
+
+
+def _df(bars):
+    return pd.DataFrame(
+        {"Open": [float(b.open) for b in bars], "High": [float(b.high) for b in bars],
+         "Low": [float(b.low) for b in bars], "Close": [float(b.close) for b in bars],
+         "Volume": [float(b.volume) for b in bars]},
+        index=pd.to_datetime([b.timestamp for b in bars]))
+
+
 def fetch(ctx, sym, tf):
+    key = (sym, tf)
+    old = DFC.get(key)
     for k in range(3):
         try:
             _throttle()
-            bars = ctx.candlesticks(f"{sym}.US", PERIOD[tf], BARS, AdjustType.NoAdjust, TradeSessions.All)
+            inc = bool(old) and time.time() - old[1] < FULL_EVERY
+            bars = ctx.candlesticks(f"{sym}.US", PERIOD[tf], INC if inc else BARS, AdjustType.NoAdjust, TradeSessions.All)
             if not bars:
                 return None
-            return pd.DataFrame(
-                {"Open": [float(b.open) for b in bars], "High": [float(b.high) for b in bars],
-                 "Low": [float(b.low) for b in bars], "Close": [float(b.close) for b in bars],
-                 "Volume": [float(b.volume) for b in bars]},
-                index=pd.to_datetime([b.timestamp for b in bars]))
+            new = _df(bars)
+            if inc:
+                if new.index[0] > old[0].index[-1]:      # 有缺口（斷咗太耐）→ 重新全量
+                    old = None
+                    continue
+                df = pd.concat([old[0], new])
+                df = df[~df.index.duplicated(keep="last")].sort_index().tail(BARS)
+                DFC[key] = (df, old[1])
+                return df
+            DFC[key] = (new, time.time())
+            return new
         except Exception as e:           # 限流 / 暫時錯 → 退避重試
             time.sleep(1.5 * (k + 1))
             err = e
