@@ -388,7 +388,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-main{flex:1 1 auto;min-width:0;width:100%;max-width:1280px;margin:0 auto;padding:24px 32px 48px;display:flex;flex-direction:column;gap:28px}
     .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
     .os-hero{display:flex;flex-direction:row;align-items:stretch;gap:16px}
-    .os-herocard{flex:0 0 300px}
+    .os-herocard{flex:1 1 auto}
     .os-price{font-size:24px}
     .os-px{flex-direction:row;align-items:stretch}
     .os-etf{font-size:13px}
@@ -449,18 +449,13 @@ export default function Home({ onNavigate, light, onToggleLight }) {
 
       <main className="os-main">
         <div className="os-hero">
-          <header style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.14em", color: T.acc }}>HOME · DAILY DESK</div>
-            <h1 className="os-h1" style={{ margin: 0, lineHeight: 1.15, fontWeight: 800, letterSpacing: "-0.5px" }}>Today at a glance</h1>
-            <p style={{ margin: 0, maxWidth: 640, fontSize: 14, lineHeight: 1.6, color: T.dim }}>市場、Triple Band 訊號同數據新鮮度，一頁睇晒。Read-only: no orders can be placed from here.</p>
-          </header>
           <div className="os-herocard" style={{ background: T.okBg, border: `1px solid ${T.okLine}`, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 6 }}>
             <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.1em", color: feedColor }}>● MARKET FEED</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: feedColor }}>
               {!mk ? (err ? "Unavailable" : "Loading…") : `${complete} of ${cards.length} cards complete`}
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.5, color: T.dim }}>
-              {mk ? `Updated ${ageText(mk.updated_at)}${stale ? " · stale" : ""}. A missing quote shows N/A, never an estimate.` : "market.json could not be read."}
+              {mk ? `Updated ${ageText(mk.updated_at)}${stale ? " · stale" : ""}.` : "market.json could not be read."}
             </div>
           </div>
         </div>
