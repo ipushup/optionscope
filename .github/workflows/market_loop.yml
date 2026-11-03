@@ -26,9 +26,14 @@ jobs:
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: |
           end=$(( $(date +%s) + 3300 ))
+          fast=0; n=0
           while [ $(date +%s) -lt $end ]; do
-            t0=$(date +%s)
+            t0=$(date +%s); n=$((n+1))
             python scanner/market_snapshot.py || echo "::warning::snapshot failed"
-            bash scanner/push_private.sh frontend/public/market.json || true
+            # Worker 回 store:"do" 先每分鐘推；仲係 KV（免費版每日 1,000 寫）就每 5 分鐘推一次
+            if [ "$fast" = "1" ] || [ $((n % 5)) -eq 1 ]; then
+              bash scanner/push_private.sh frontend/public/market.json || true
+              if grep -q '"store":"do"' /tmp/ingest_out 2>/dev/null; then fast=1; else fast=0; fi
+            fi
             sleep $(( 60 - ($(date +%s) - t0) > 5 ? 60 - ($(date +%s) - t0) : 5 ))
           done

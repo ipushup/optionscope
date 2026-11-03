@@ -26,3 +26,12 @@ id = "5d2acd6f4af34cc9833badf423ba4ff1"
 [triggers]
 crons = ["*/5 * * * 1-5"]
 #   GH_DISPATCH_TOKEN   GitHub fine-grained token：只限 ipushup/optionscope，權限 Actions: Read and write
+
+# 高頻數據（signals.json / market.json）用 Durable Object（SQLite，免費版可用），避開 KV 每日 1,000 次寫入上限
+[[durable_objects.bindings]]
+name = "LIVE"
+class_name = "LiveStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LiveStore"]

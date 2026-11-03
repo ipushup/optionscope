@@ -101,6 +101,22 @@ async function handleLogin(req, env) {
   return json({ ok: true }, 200, { "Set-Cookie": `${COOKIE}=${token}; ${attrs}` });
 }
 
+// ── 高頻檔（signals.json / market.json）改放 Durable Object，唔用 KV ──
+// Cloudflare 免費版 KV 每日只可寫 1,000 次；循環 job 每 30–60 秒寫一次會用爆，
+// 之後連每日掃描嘅上傳都 500（error 1101）。DO（SQLite）免費版每日 10 萬次寫入，夠晒。
+const LIVE_NAMES = new Set(["signals.json", "market.json"]);
+const liveStub = (env) => env.LIVE.get(env.LIVE.idFromName("live"));
+
+export class LiveStore {
+  constructor(state) { this.state = state; }
+  async fetch(req) {
+    const name = new URL(req.url).pathname.slice(1);
+    if (req.method === "PUT") { await this.state.storage.put(name, await req.text()); return new Response("ok"); }
+    const v = await this.state.storage.get(name);
+    return v == null ? new Response(null, { status: 404 }) : new Response(v);
+  }
+}
+
 async function handleIngest(req, env, name) {
   const auth = req.headers.get("Authorization") || "";
   if (!env.INGEST_TOKEN || !(await safeEqual(auth, `Bearer ${env.INGEST_TOKEN}`, env.SESSION_SECRET))) return json({ error: "Unauthorized" }, 401);
@@ -110,9 +126,17 @@ async function handleIngest(req, env, name) {
   const text = await req.text();
   if (text.length > MAX_BODY) return json({ error: "Too large" }, 413);
   try { JSON.parse(text); } catch { return json({ error: "Body is not valid JSON" }, 400); }
-  await env.DATA.put(`data/${name}`, text);
-  await env.DATA.put(`meta/${name}`, new Date().toISOString());
-  return json({ ok: true, name, bytes: text.length });
+  try {
+    if (env.LIVE && LIVE_NAMES.has(name)) {
+      await liveStub(env).fetch(`https://live/${name}`, { method: "PUT", body: text });
+      return json({ ok: true, name, bytes: text.length, store: "do" });
+    }
+    await env.DATA.put(`data/${name}`, text);
+    await env.DATA.put(`meta/${name}`, new Date().toISOString());
+  } catch (e) {                                  // 例如 KV 額度爆：回 503 而唔係 1101 崩潰
+    return json({ error: "storage write failed", detail: String(e).slice(0, 160) }, 503);
+  }
+  return json({ ok: true, name, bytes: text.length, store: "kv" });
 }
 
 // ───────────── Longbridge 即時報價（server-side，key 唔落瀏覽器）─────────────
@@ -265,7 +289,12 @@ export default {
 
     const m = path.match(/^\/([A-Za-z0-9_-]{1,64}\.json)$/);
     if (m) {
-      const body = await env.DATA.get(`data/${m[1]}`);
+      let body = null;
+      if (env.LIVE && LIVE_NAMES.has(m[1])) {
+        const r = await liveStub(env).fetch(`https://live/${m[1]}`);
+        if (r.ok) body = await r.text();
+      }
+      if (body == null) body = await env.DATA.get(`data/${m[1]}`);
       if (body == null) return json({ error: "Not found" }, 404);
       return withSec(new Response(body, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } }));
     }
