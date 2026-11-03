@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AppHeader from "./AppHeader";
 
 /**
  * Home.jsx — OptionScope 主頁（只讀）
@@ -380,11 +381,11 @@ export default function Home({ onNavigate, light, onToggleLight }) {
 
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
-    .os-home{min-height:100vh;display:flex;flex-direction:row;background:${T.bg};color:${T.txt};font-family:${F}}
+    .os-home{min-height:100vh;display:flex;flex-direction:column;background:${T.bg};color:${T.txt};font-family:${F}}
     .os-home *{box-sizing:border-box}
     .os-side{flex:0 0 220px;width:220px;background:${T.side};border-right:1px solid ${T.line};padding:20px 16px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
     .os-nav{display:flex;flex-direction:column;gap:6px}
-    .os-main{flex:1 1 auto;min-width:0;padding:24px 32px 48px;display:flex;flex-direction:column;gap:28px}
+    .os-main{flex:1 1 auto;min-width:0;width:100%;max-width:1280px;margin:0 auto;padding:24px 32px 48px;display:flex;flex-direction:column;gap:28px}
     .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
     .os-hero{display:flex;flex-direction:row;align-items:stretch;gap:16px}
     .os-herocard{flex:0 0 300px}
@@ -444,38 +445,9 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     <div className="os-home">
       <style>{css}</style>
 
-      <aside className="os-side">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Logo />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: "-0.3px" }}>OptionScope</div>
-            <div style={{ fontFamily: M, fontSize: 10, color: T.mute, letterSpacing: "0.1em" }}>PERSONAL DESK</div>
-          </div>
-        </div>
-        <div style={{ fontFamily: M, fontSize: 10, color: T.mute, letterSpacing: "0.14em" }}>WORKSPACE</div>
-        <nav className="os-nav" aria-label="Primary">{NAV.map((n) => <NavBtn key={n.id} n={n} />)}</nav>
-        <div style={{ marginTop: "auto", background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ fontFamily: M, fontSize: 11, color: T.dim }}>Read only</div>
-          <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>Market data {mk ? ageText(mk.updated_at) : "—"}</div>
-          <button type="button" onClick={logout} style={{ marginTop: 6, minHeight: 44, borderRadius: 8, border: `1px solid ${T.line}`, background: T.soft, color: T.sub, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Log out</button>
-        </div>
-      </aside>
-
-      <div className="os-tabs">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Logo s={28} />
-          <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: "-0.3px", flex: 1 }}>OptionScope</div>
-          <button type="button" onClick={logout} style={{ minHeight: 44, padding: "0 14px", borderRadius: 8, border: `1px solid ${T.line}`, background: T.soft, color: T.sub, fontFamily: F, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Log out</button>
-        </div>
-        <nav className="os-tabstrip" aria-label="Primary">{NAV.map((n) => <NavBtn key={n.id} n={n} strip />)}</nav>
-      </div>
+      <AppHeader view="home" onNavigate={onNavigate} light={light} onToggleLight={onToggleLight} />
 
       <main className="os-main">
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>OPTIONSCOPE / <span style={{ color: T.txt }}>HOME</span></div>
-          <button type="button" onClick={onToggleLight} aria-label="Switch dark or light theme" style={{ width: 44, height: 44, borderRadius: 8, border: `1px solid ${T.line}`, background: T.card, color: T.dim, cursor: "pointer", fontSize: 16 }}>{light ? "🌙" : "☀"}</button>
-        </div>
-
         <div className="os-hero">
           <header style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.14em", color: T.acc }}>HOME · DAILY DESK</div>
