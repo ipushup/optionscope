@@ -5,6 +5,7 @@ import BandView from "./Band";
 import Watchlist from "./Watchlist";
 import SignalBoard from "./SignalBoard";
 import Home from "./Home";
+import AppHeader from "./AppHeader";
 import { c, setLight, isLight } from "./theme";
 
 // 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
@@ -847,45 +848,21 @@ export default function App() {
       {/* Detail page overlay */}
       {detailStock && <DetailPage stock={detailStock} onClose={() => setDetailStock(null)} />}
 
-      {/* TOPBAR */}
-      <div style={{
-        background:c("#050c18"),
-        borderBottom:`1px solid ${c("#0a1826")}`,
-        flexShrink:0,
-        overflow:"hidden",
-        paddingTop:"env(safe-area-inset-top, 44px)",
-      }}>
-        <div style={{ height:52, display:"flex", alignItems:"center", padding:"0 10px", gap:8 }}>
-        <div style={{ width:28, height:28, background:`linear-gradient(135deg,${c("#0d4080")},${c("#00b894")})`, borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>⚡</div>
-        {!isMobile && <span style={{ fontSize:14, fontWeight:900, letterSpacing:"-0.5px", background:`linear-gradient(90deg,${c("#3b9eff")},${c("#00d4aa")})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>OptionScope</span>}
-        <div style={{ display:"flex", gap:3, background:c("#080f1c"), borderRadius:8, padding:3 }}>
-          {[["home","🏠","🏠 Home"],["premium","💰","💰 Premium"],["compass","🧭","🧭 Compass"],["radar","📡","📡 Radar"],["band","🎯","🎯 Band"],["watchlist","🔭","🔭 Watchlist"],["signals","📶","📶 Signals"]].map(([id,icon,label])=>(
-            <button key={id} onClick={()=>setView(id)} style={{
-              padding:"5px 12px", borderRadius:6, border:"none", cursor:"pointer",
-              fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif",
-              background:view===id?c("#1a3555"):"transparent", color:view===id?c("#3b9eff"):c("#3a5060"),
-            }}>{isMobile?icon:label}</button>
-          ))}
+      {/* TOPBAR — 同 Home 共用 */}
+      <AppHeader view={view} onNavigate={setView} light={light} onToggleLight={()=>setLightState(v=>!v)} />
+      {STANDALONE_VIEWS.indexOf(view)<0 && (
+        <div style={{ background:c("#050c18"), borderBottom:`1px solid ${c("#0a1826")}`, display:"flex", alignItems:"center", gap:8, padding:"6px 10px", flexShrink:0 }}>
+          <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6, color:c("#667788"), padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer", maxWidth:120 }}>
+            {categories.map(c=><option key={c} value={c}>{c==="all"?"All":CATEGORY_ICON[c]+" "+c.replace("_"," ")}</option>)}
+          </select>
+          <select value={filterScore} onChange={e=>setFilterScore(+e.target.value)} style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6, color:c("#667788"), padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer" }}>
+            <option value={0}>All</option>
+            <option value={60}>≥60</option>
+            <option value={80}>≥80</option>
+          </select>
+          <button onClick={loadResults} style={{ padding:"5px 10px", background:c("#0d3060"), border:"none", borderRadius:7, color:c("#88bbee"), fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif", cursor:"pointer", flexShrink:0 }}>↻</button>
         </div>
-        <div style={{ flex:1 }} />
-        <button onClick={()=>setLightState(v=>!v)} title="切換深／淺色" style={{
-          background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6,
-          color:c("#8aaabb"), padding:"4px 8px", fontSize:12, cursor:"pointer",
-          flexShrink:0, lineHeight:1,
-        }}>{light?"🌙":"☀"}</button>
-        {STANDALONE_VIEWS.indexOf(view)<0 && <>
-        <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6, color:c("#667788"), padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer", maxWidth:90 }}>
-          {categories.map(c=><option key={c} value={c}>{c==="all"?"All":CATEGORY_ICON[c]+" "+c.replace("_"," ")}</option>)}
-        </select>
-        <select value={filterScore} onChange={e=>setFilterScore(+e.target.value)} style={{ background:c("#080f1c"), border:`1px solid ${c("#0e1c28")}`, borderRadius:6, color:c("#667788"), padding:"4px 6px", fontSize:10, fontFamily:"DM Mono,monospace", outline:"none", cursor:"pointer" }}>
-          <option value={0}>All</option>
-          <option value={60}>≥60</option>
-          <option value={80}>≥80</option>
-        </select>
-        <button onClick={loadResults} style={{ padding:"5px 10px", background:c("#0d3060"), border:"none", borderRadius:7, color:c("#88bbee"), fontSize:11, fontWeight:700, fontFamily:"'Syne',sans-serif", cursor:"pointer", flexShrink:0 }}>↻</button>
-        </>}
-        </div>
-      </div>
+      )}
 
       {/* SUMMARY BAR — OptionScope scanner only */}
       {STANDALONE_VIEWS.indexOf(view)<0 && !loading && !error && data && (
