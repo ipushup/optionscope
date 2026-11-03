@@ -1,7 +1,5 @@
 name: Signal Board
 on:
-  schedule:
-    - cron: '*/30 * * * 1-5'    # GitHub cron 唔準時，所以每次開 55 分鐘循環、互相重疊；新一輪會取代舊一輪
   workflow_dispatch:
     inputs:
       limit: {default: "0"}

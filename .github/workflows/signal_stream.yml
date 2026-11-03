@@ -3,10 +3,8 @@ on:
   workflow_dispatch:
     inputs:
       loop: {default: "3300"}
-      name: {default: "signals2.json"}   # 試跑寫去 signals2.json；轉正後改 signals.json
-concurrency:
-  group: signal-stream
-  cancel-in-progress: false
+      name: {default: "signals.json"}
+# 唔設 concurrency：接力時新舊 job 重疊約 20 分鐘（新 job 熱身要 ~5 分鐘），兩邊都寫同一個 signals.json，冇空窗
 jobs:
   stream:
     runs-on: ubuntu-latest
@@ -24,7 +22,7 @@ jobs:
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           LONGBRIDGE_ENABLE_OVERNIGHT: "true"
           SB_LOOP_SECS: ${{ inputs.loop || '3300' }}
-          SB_INGEST_NAME: ${{ inputs.name || 'signals2.json' }}
+          SB_INGEST_NAME: ${{ inputs.name || 'signals.json' }}
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
         run: python scanner/signal_stream.py
