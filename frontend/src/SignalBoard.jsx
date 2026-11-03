@@ -32,8 +32,8 @@ function beep() {
 }
 const stamp = iso => {
   try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-    return `${p.day} ${p.month} ${p.hour}:${p.minute} HKT`;
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+    return `${p.day} ${p.month} ${p.hour}:${p.minute}:${p.second} HKT`;
   } catch { return ""; }
 };
 
