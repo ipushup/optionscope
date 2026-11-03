@@ -191,6 +191,7 @@ const Msg = ({ t }) => (
 
 export default function Watchlist({ isMobile, light }) {
   const [status, setStatus] = useState(null);   // watchlist_merged.json
+  const [sigQ, setSigQ] = useState({});          // Longbridge 即時（signals.json，Signal Board 個 job 每輪更新）→ {ticker: {last, chg_pct, ext_chg_pct}}
   const [quotes, setQuotes] = useState({});      // watchlist_quotes.json -> {ticker: {...}}
   const [qAt, setQAt] = useState(null);
   const [, tick] = useState(0);                  // 15s 迫 re-render，令「幾分鐘前」跳動
@@ -277,8 +278,21 @@ export default function Watchlist({ isMobile, light }) {
         .then(r => r.json())
         .then(d => { setQuotes(d.quotes || {}); setQAt(d.quoted_at); })
         .catch(() => {});
-    pull();
-    const id = setInterval(() => { pull(); tick(n => n + 1); }, 15_000);
+    const pullLB = () =>
+      fetch("/signals.json", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d || (Date.now() - new Date(d.updated).getTime()) > 300_000) { setSigQ({}); return; }   // 太舊就唔用，跌返 yfinance
+          const m = {};
+          for (const r of d.rows || []) {
+            if (!(r.reg > 0) || !(r.pc > 0)) continue;
+            m[r.sym] = { last: r.reg, chg_pct: +((r.reg / r.pc - 1) * 100).toFixed(2),
+                         ext_chg_pct: r.sess === "盤中" ? null : +((r.px / r.reg - 1) * 100).toFixed(2) };
+          }
+          setSigQ(m);
+        }).catch(() => {});
+    pull(); pullLB();
+    const id = setInterval(() => { pull(); pullLB(); tick(n => n + 1); }, 15_000);
     return () => clearInterval(id);
   }, []);
 
@@ -287,7 +301,7 @@ export default function Watchlist({ isMobile, light }) {
 
   // live() 覆蓋 status 裡面嘅snapshot報價 —— 同 Band.jsx 嘅 live(symbol) 一樣諗法，
   // 分開兩個檔案輪詢，唔使成個merge file連tband都要15分鐘一次重寫。
-  const live = ticker => quotes[ticker];
+  const live = ticker => sigQ[ticker] ? { ...quotes[ticker], ...sigQ[ticker] } : quotes[ticker];
 
   const sections = [...new Set(status.rows.map(r => r.section))].sort();
   const query = q.trim().toUpperCase();
