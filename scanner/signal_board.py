@@ -31,7 +31,8 @@ BARS = 500
 RATE = float(os.getenv("SB_RATE", "9"))                       # 每秒最多幾個 candlestick call
 THREADS = int(os.getenv("SB_THREADS", "5"))   # Longbridge 同時最多 5 個請求
 PARTS = int(os.getenv("SB_PARTS", "4"))       # 每輪分幾次中途推
-OUT = Path(__file__).resolve().parent.parent / "frontend" / "public" / "signals.json"
+OUT = Path(os.getenv("SB_OUT") or Path(__file__).resolve().parent.parent / "frontend" / "public" / "signals.json")
+INGEST_NAME = os.getenv("SB_INGEST_NAME", "signals.json")
 US_OK = re.compile(r"^[A-Z]{1,5}$")
 
 BULL = {"TB": "TB", "UTB": "UT", "HB": "HEAVY"}
@@ -161,7 +162,7 @@ def push(path):
     if not _FAST[0] and time.time() - _LAST_PUSH[0] < 300:
         return
     _LAST_PUSH[0] = time.time()
-    req = urllib.request.Request(f"{gw}/_ingest/signals.json", data=Path(path).read_bytes(), method="PUT",
+    req = urllib.request.Request(f"{gw}/_ingest/{INGEST_NAME}", data=Path(path).read_bytes(), method="PUT",
                                  headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json",
                                           "User-Agent": "curl/8.5.0", "Accept": "*/*"})   # Cloudflare 會擋 Python-urllib UA
     try:

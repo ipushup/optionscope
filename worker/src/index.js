@@ -104,7 +104,7 @@ async function handleLogin(req, env) {
 // ── 高頻檔（signals.json / market.json）改放 Durable Object，唔用 KV ──
 // Cloudflare 免費版 KV 每日只可寫 1,000 次；循環 job 每 30–60 秒寫一次會用爆，
 // 之後連每日掃描嘅上傳都 500（error 1101）。DO（SQLite）免費版每日 10 萬次寫入，夠晒。
-const LIVE_NAMES = new Set(["signals.json", "market.json"]);
+const LIVE_NAMES = new Set(["signals.json", "signals2.json", "market.json"]);
 const liveStub = (env) => env.LIVE.get(env.LIVE.idFromName("live"));
 
 export class LiveStore {
