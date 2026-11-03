@@ -42,7 +42,7 @@ report("A:5 symbols", t0, time.time() - t0)
 
 # B: 全 universe，睇上限
 syms = [f"{u['sym']}.US" for u in sb.universe()]
-ok, fail = 0, None
+ok, bad = 0, []
 t1 = time.time()
 for s in syms:
     if s in small:
@@ -50,9 +50,11 @@ for s in syms:
     try:
         sub(s); ok += 1
     except Exception as e:
-        fail = (ok, s, repr(e)[:300]); break
-    time.sleep(0.12)
-print(f"B: subscribed {ok}/{len(syms)} in {time.time()-t1:.0f}s fail={fail}", flush=True)
+        bad.append((s, repr(e)[:120]))
+    time.sleep(0.05)
+fail = [x for x in bad if "invalid security" not in x[1]]
+print(f"invalid symbols skipped: {[x[0] for x in bad if 'invalid security' in x[1]]}", flush=True)
+print(f"B: subscribed {ok}/{len(syms)} in {time.time()-t1:.0f}s other_fail={len(fail)} first={fail[:3]}", flush=True)
 try:
     print("subscriptions():", len(ctx.subscriptions()), flush=True)
 except Exception as e:
