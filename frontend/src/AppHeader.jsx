@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
  *   第二行：主要分頁（橫掃，active 底線）
  * ☰ 展開全部頁面（包括未開放／暫停嘅）。
  */
-const F = "'Syne',system-ui,sans-serif";
+const F = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";   // 頂欄自己載字體，唔靠頁面（Home 冇載 Syne，其他頁有 → 之前 xMarket 字體唔同）
 const M = "'DM Mono',ui-monospace,monospace";
 
 const TH = {
@@ -50,6 +50,7 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
 
   return (
     <header ref={box} style={{ position: "sticky", top: 0, zIndex: 50, background: T.bg, borderBottom: `1px solid ${T.line}`, paddingTop: "env(safe-area-inset-top, 0px)", fontFamily: F, width: "100%", boxSizing: "border-box" }}>
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap');"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 6, height: 56, padding: "0 12px" }}>
         <button type="button" onClick={() => setOpen(v => !v)} aria-label="選單" aria-expanded={open} style={iconBtn}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
