@@ -97,7 +97,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const age = data ? (now - new Date(data.updated).getTime()) / 1000 : 0;
   const chip = (on, extra) => ({
     background: on ? T.soft : "transparent", color: on ? T.txt : T.dim,
-    border: `1px solid ${on ? T.line : "transparent"}`, borderRadius: 7, padding: "5px 10px",
+    border: `1px solid ${on ? T.line : "transparent"}`, borderRadius: 7, padding: isMobile ? "5px 7px" : "5px 10px",
     fontFamily: M, fontSize: 12, cursor: "pointer", ...extra,
   });
 
@@ -116,7 +116,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         {[["all", "全部"], ["bull", "偏多"], ["bear", "偏空"]].map(([k, l]) => <button key={k} onClick={() => setSide(k)} style={chip(side === k)}>{l}</button>)}
       </div>
       <button onClick={() => setSound(v => !v)} title={sound ? "提示音：開" : "提示音：靜音"} aria-label={sound ? "提示音開" : "提示音靜音"}
-        style={chip(sound, { padding: "6px 9px", display: "flex", alignItems: "center", marginLeft: isMobile ? "auto" : 0 })}><SoundIcon on={sound} /></button>
+        style={chip(sound, { padding: "6px 8px", display: "flex", alignItems: "center", flexShrink: 0 })}><SoundIcon on={sound} /></button>
     </>
   );
 
@@ -159,16 +159,15 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
+      <div style={{ display: "flex", gap: isMobile ? 4 : 8, alignItems: "center", marginBottom: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
         <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
           {["5m", "15m"].map(x => <button key={x} onClick={() => setTf(x)} style={chip(tf === x)}>{x}</button>)}
         </div>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="搜尋 symbol"
-          style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: "6px 10px", fontFamily: M, fontSize: 12, width: isMobile ? "auto" : 130, flex: isMobile ? 1 : "0 0 auto", minWidth: 0 }} />
-        {!isMobile && <SideAndSound />}
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "搜尋" : "搜尋 symbol"}
+          style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: isMobile ? "6px 8px" : "6px 10px", fontFamily: M, fontSize: 12, width: isMobile ? "auto" : 130, flex: isMobile ? 1 : "0 0 auto", minWidth: 0 }} />
+        <SideAndSound />
       </div>
-      {isMobile && <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}><SideAndSound /></div>}
-      {!isMobile && <div style={{ height: 4 }} />}
+      <div style={{ height: isMobile ? 4 : 8 }} />
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
         TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)}
