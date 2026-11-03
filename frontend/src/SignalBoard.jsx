@@ -45,6 +45,8 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const [side, setSide] = useState("all");      // all | bull | bear
   const [q, setQ] = useState("");
   const [sound, setSound] = useState(false);
+  const [sec, setSec] = useState("all");         // section 篩選
+  const [hideSkip, setHideSkip] = useState(true); // 隱藏被 rU60 濾走嘅 skip
   const seen = useRef({});                       // sym → 最新信號 key（用嚟判斷有冇新信號）
   useEffect(() => { try { localStorage.setItem("os_sb_tf", tf); } catch { /* */ } }, [tf]);
 
@@ -62,20 +64,27 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     if (!data) return [];
     const out = [];
     for (const r of data.rows) {
-      const d = r[tf]; if (!d) continue;
+      let d = r[tf]; if (!d) continue;
+      if (hideSkip) d = { ...d, ev: d.ev.filter(e => e.k !== "TBskip") };
       const score = Math.max(d.bull, d.bear);
       const dir = d.bull === d.bear ? (d.bull ? "mix" : "none") : d.bull > d.bear ? "bull" : "bear";
       const first = d.ev.length ? Math.min(...d.ev.map(e => e.ago)) : 999;
       out.push({ ...r, d, score, dir, first });
     }
     return out;
-  }, [data, tf]);
+  }, [data, tf, hideSkip]);
+
+  const secs = useMemo(() => {
+    const m = new Map();
+    for (const r of data?.rows || []) if (r.section && !m.has(r.section)) m.set(r.section, r.section.replace(/^\d+-/, ""));
+    return [...m];
+  }, [data]);
 
   const shown = useMemo(() => {
     const k = q.trim().toUpperCase();
-    return rows.filter(r => (!k || r.sym.includes(k)) && (side === "all" || r.dir === side || r.dir === "mix"))
+    return rows.filter(r => (!k || r.sym.includes(k)) && (sec === "all" || r.section === sec) && (side === "all" || r.dir === side || r.dir === "mix"))
       .sort((a, b) => a.first - b.first || a.sym.localeCompare(b.sym));      // 最新信號喺最上
-  }, [rows, q, side]);
+  }, [rows, q, side, sec]);
 
   // 有股票出現新信號（最新一至兩支棒內）→ 響
   useEffect(() => {
@@ -85,7 +94,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     for (const r of rows) {
       const e = [...r.d.ev].sort((a, b) => a.ago - b.ago)[0];
       const key = e ? `${e.k}@${e.t}` : "";
-      if (!first && key && key !== seen.current[r.sym] && e.ago <= 1) ping = true;
+      if (!first && key && key !== seen.current[r.sym] && e.ago <= 1 && e.k === "TB" && e.tier === "strong") ping = true;   // 只喺 TB★ 先響
       seen.current[r.sym] = key;
     }
     if (ping && sound) beep();
@@ -167,7 +176,11 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: isMobile ? "6px 8px" : "6px 10px", fontFamily: M, fontSize: 12, width: isMobile ? "auto" : 130, flex: isMobile ? 1 : "0 0 auto", minWidth: 0 }} />
         <SideAndSound />
       </div>
-      <div style={{ height: isMobile ? 4 : 8 }} />
+      <div style={{ display: "flex", gap: 4, overflowX: "auto", marginBottom: 8, paddingBottom: 2, WebkitOverflowScrolling: "touch" }}>
+        <button onClick={() => setHideSkip(v => !v)} style={chip(hideSkip, { flexShrink: 0, whiteSpace: "nowrap" })}>隱 skip</button>
+        <span style={{ width: 1, background: T.line, flexShrink: 0 }} />
+        {[["all", "全部板塊"], ...secs].map(([k, l]) => <button key={k} onClick={() => setSec(k)} style={chip(sec === k, { flexShrink: 0, whiteSpace: "nowrap" })}>{l}</button>)}
+      </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
         TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)}

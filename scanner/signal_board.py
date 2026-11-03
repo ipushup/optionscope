@@ -28,7 +28,9 @@ FRESH = int(os.getenv("SB_FRESH", "24"))
 LIMIT = int(os.getenv("SB_LIMIT", "0") or 0)
 PERIOD = {"15m": Period.Min_15, "5m": Period.Min_5}
 BARS = 500
-RATE = 8.0                      # 每秒最多幾個 candlestick call
+RATE = float(os.getenv("SB_RATE", "9"))                       # 每秒最多幾個 candlestick call
+THREADS = int(os.getenv("SB_THREADS", "5"))   # Longbridge 同時最多 5 個請求
+PARTS = int(os.getenv("SB_PARTS", "4"))       # 每輪分幾次中途推
 OUT = Path(__file__).resolve().parent.parent / "frontend" / "public" / "signals.json"
 US_OK = re.compile(r"^[A-Z]{1,5}$")
 
@@ -158,7 +160,7 @@ def main():
     while True:
         t0 = time.time()
         try:
-            run_once(ctx)
+            run_once(ctx, push if loop_s else None)
             if loop_s:
                 push(OUT)
         except Exception as e:                                 # 一輪錯唔好搞死成個循環
@@ -168,7 +170,10 @@ def main():
         time.sleep(max(1.0, every - (time.time() - t0)))
 
 
-def run_once(ctx):
+CACHE = {}          # sym → {tf: analyse 結果}；每輪逐步覆寫，所以中途 publish 都有齊全部股票
+
+
+def run_once(ctx, on_write=None):
     uni = universe()
     syms = [u["sym"] for u in uni]
     quotes = {}
@@ -179,34 +184,43 @@ def run_once(ctx):
         except Exception as e:
             print(f"::warning::quote batch failed: {e}")
     jobs = [(u, tf) for u in uni for tf in TFS]
-    res = {}
 
     def work(j):
         u, tf = j
         df = fetch(ctx, u["sym"], tf)
         return u["sym"], tf, (analyse(df) if df is not None else None)
 
-    with ThreadPoolExecutor(4) as ex:
-        for sym, tf, r in ex.map(work, jobs):
-            if r:
-                res.setdefault(sym, {})[tf] = r
-    rows = []
-    for u in uni:
-        s = u["sym"]
-        if s in res:
+    def write():
+        rows = []
+        for u in uni:
+            s = u["sym"]
+            r = CACHE.get(s)
+            if not r:
+                continue
             ld, pc = quotes.get(s, (None, None))
-            d = res[s].get("15m") or res[s].get(TFS[0])
+            d = r.get("15m") or r.get(TFS[0]) or next(iter(r.values()))
             px, sess = d["px"], session_of(d["t"])
             # 盤中：對上日收市；盤前/盤後/夜盤：對最近一個正式收市（last_done）
             ref = pc if sess == "盤中" else ld
             chg = round((px / ref - 1) * 100, 2) if ref else None
             rows.append({"sym": s, "section": u["section"], "px": px, "chg": chg,
-                         "sess": sess, "reg": ld, **res[s]})
-    out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-           "near": NEAR, "fresh": FRESH, "tfs": TFS, "n": len(rows), "rows": rows}
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
-    print(f"signals.json: {len(rows)}/{len(uni)} symbols, {OUT.stat().st_size/1024:.0f} KB")
+                         "sess": sess, "reg": ld, **r})
+        out = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "near": NEAR, "fresh": FRESH, "tfs": TFS, "n": len(rows), "rows": rows}
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
+        return len(rows)
+
+    t0 = time.time(); step = max(1, len(jobs) // PARTS); done = 0
+    with ThreadPoolExecutor(THREADS) as ex:
+        for sym, tf, r in ex.map(work, jobs):        # 按次序出結果
+            if r:
+                CACHE.setdefault(sym, {})[tf] = r
+            done += 1
+            if on_write and done % step == 0 and done < len(jobs):
+                write(); on_write(OUT)               # 中途先推一次，唔使等成輪
+    n = write()
+    print(f"signals.json: {n}/{len(uni)} symbols, {OUT.stat().st_size/1024:.0f} KB, round {time.time()-t0:.0f}s")
 
 
 if __name__ == "__main__":
