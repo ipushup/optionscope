@@ -14,6 +14,6 @@ for f in "$@"; do
   code=$(curl -sS -o /tmp/ingest_out -w "%{http_code}" -X PUT \
     -H "Authorization: Bearer ${INGEST_TOKEN}" -H "Content-Type: application/json" \
     --data-binary @"$f" "${GATEWAY_URL%/}/_ingest/${name}") || code=000
-  if [ "$code" = "200" ]; then echo "✓ $name"; else echo "::error::upload $name failed ($code): $(cat /tmp/ingest_out 2>/dev/null)"; fail=1; fi
+  if [ "$code" = "200" ]; then echo "✓ $name $(head -c 120 /tmp/ingest_out)"; else echo "::error::upload $name failed ($code): $(cat /tmp/ingest_out 2>/dev/null)"; fail=1; fi
 done
 exit $fail
