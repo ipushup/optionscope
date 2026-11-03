@@ -194,6 +194,7 @@ export default function Watchlist({ isMobile, light }) {
   const [sigQ, setSigQ] = useState({});          // Longbridge 即時（signals.json，Signal Board 個 job 每輪更新）→ {ticker: {last, chg_pct, ext_chg_pct}}
   const [quotes, setQuotes] = useState({});      // watchlist_quotes.json -> {ticker: {...}}
   const [qAt, setQAt] = useState(null);
+  const [lbAt, setLbAt] = useState(null);          // Longbridge 即時報價最後更新時間（signals.json.updated）
   const [, tick] = useState(0);                  // 15s 迫 re-render，令「幾分鐘前」跳動
   const [err, setErr] = useState(null);
   const [q, setQ] = useState("");
@@ -282,14 +283,14 @@ export default function Watchlist({ isMobile, light }) {
       fetch("/signals.json", { cache: "no-store" })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
-          if (!d || (Date.now() - new Date(d.updated).getTime()) > 300_000) { setSigQ({}); return; }   // 太舊就唔用，跌返 yfinance
+          if (!d || (Date.now() - new Date(d.updated).getTime()) > 300_000) { setSigQ({}); setLbAt(null); return; }   // 太舊就唔用，跌返 yfinance
           const m = {};
           for (const r of d.rows || []) {
             if (!(r.reg > 0) || !(r.pc > 0)) continue;
             m[r.sym] = { last: r.reg, chg_pct: +((r.reg / r.pc - 1) * 100).toFixed(2),
                          ext_chg_pct: r.sess === "盤中" ? null : +((r.px / r.reg - 1) * 100).toFixed(2) };
           }
-          setSigQ(m);
+          setSigQ(m); setLbAt(d.updated);
         }).catch(() => {});
     pull(); pullLB();
     const id = setInterval(() => { pull(); pullLB(); tick(n => n + 1); }, 15_000);
@@ -336,6 +337,13 @@ export default function Watchlist({ isMobile, light }) {
     else { setSortKey(null); setSortDir(1); }
   };
 
+  const hkTime = iso => {
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+        .formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+      return `${p.hour}:${p.minute}:${p.second}`;
+    } catch { return "—"; }
+  };
   const elapsed = qAt ? Math.max(0, Math.round((Date.now() - new Date(qAt).getTime()) / 60000)) : null;
   const elapsedLabel = elapsed == null ? "—" : elapsed < 1 ? "啱啱" : `${elapsed} 分鐘前`;
 
@@ -360,7 +368,7 @@ export default function Watchlist({ isMobile, light }) {
             🔭 WATCHLIST
           </span>
           <span style={{ fontSize: 10.5, fontFamily: M, color: C.mute }}>
-            {status.band_bar_date ? `Triple Band ${status.band_bar_date}` : ""} · 報價 {elapsedLabel}
+            {status.band_bar_date ? `Triple Band ${status.band_bar_date}` : ""} · 報價 {lbAt ? <>{hkTime(lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : <>{qAt ? `${hkTime(qAt)} HKT · ` : ""}{elapsedLabel} (yfinance)</>}
             {syncErr && <span style={{ color: C.warn }}> · ⚠ highlight sync失敗(用緊local)</span>}
           </span>
         </div>
