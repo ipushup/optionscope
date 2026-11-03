@@ -43,10 +43,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const [err, setErr] = useState(null);
   const [tf, setTf] = useState(() => { try { return localStorage.getItem("os_sb_tf") || "15m"; } catch { return "15m"; } });
   const [side, setSide] = useState("all");      // all | bull | bear
-  const [minScore, setMinScore] = useState(0);
   const [q, setQ] = useState("");
   const [sound, setSound] = useState(false);
-  const seen = useRef({});                       // sym → 上次分數
+  const seen = useRef({});                       // sym → 最新信號 key（用嚟判斷有冇新信號）
   useEffect(() => { try { localStorage.setItem("os_sb_tf", tf); } catch { /* */ } }, [tf]);
 
   useEffect(() => {
@@ -74,19 +73,20 @@ export default function SignalBoard({ isMobile, light, onBack }) {
 
   const shown = useMemo(() => {
     const k = q.trim().toUpperCase();
-    return rows.filter(r => r.score >= minScore && (!k || r.sym.includes(k)) &&
-      (side === "all" || r.dir === side || r.dir === "mix"))
-      .sort((a, b) => b.score - a.score || a.first - b.first || a.sym.localeCompare(b.sym));
-  }, [rows, q, side, minScore]);
+    return rows.filter(r => (!k || r.sym.includes(k)) && (side === "all" || r.dir === side || r.dir === "mix"))
+      .sort((a, b) => a.first - b.first || a.sym.localeCompare(b.sym));      // 最新信號喺最上
+  }, [rows, q, side]);
 
-  // 新到 3 分 → 響
+  // 有股票出現新信號（最新一至兩支棒內）→ 響
   useEffect(() => {
     if (!rows.length) return;
     let ping = false;
+    const first = Object.keys(seen.current).length === 0;
     for (const r of rows) {
-      const p = seen.current[r.sym] ?? 0;
-      if (r.score >= 3 && p < 3) ping = true;
-      seen.current[r.sym] = r.score;
+      const e = [...r.d.ev].sort((a, b) => a.ago - b.ago)[0];
+      const key = e ? `${e.k}@${e.t}` : "";
+      if (!first && key && key !== seen.current[r.sym] && e.ago <= 1) ping = true;
+      seen.current[r.sym] = key;
     }
     if (ping && sound) beep();
   }, [rows, sound]);
@@ -101,6 +101,13 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     fontFamily: M, fontSize: 12, cursor: "pointer", ...extra,
   });
 
+  const SessBadge = ({ s }) => {
+    const t = { 夜盤: "24h", 盤前: "pre", 盤後: "post" }[s];
+    if (!t) return null;
+    return <span title={s} style={{ marginLeft: 5, padding: "1px 4px", border: `1px solid ${T.line}`, borderRadius: 4,
+      fontFamily: M, fontSize: 9, fontWeight: 500, color: T.dim, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
+  };
+
   const Cell = ({ r, grp }) => {
     const e = r.d.ev.filter(x => GROUP[x.k] === grp).sort((a, b) => a.ago - b.ago)[0];
     if (!e) return <span style={{ color: T.mute }}>–</span>;
@@ -109,7 +116,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     let col = skip ? T.mute : bull ? T.up : T.dn;
     if (e.k === "TB" && e.tier === "weak") col = T.yel;
     if (e.k === "TS" && e.tier === "weak") col = T.warn;
-    const label = e.k === "UTB" ? "▲ UT" : e.k === "UTS" ? "▼ UT" : e.k === "HB" ? "Heavy B" : e.k === "HS" ? "Heavy S" : skip ? "skip" : e.k + (e.tier === "strong" ? "★" : "");
+    const label = e.k === "UTB" ? "B" : e.k === "UTS" ? "S" : e.k === "HB" ? "HB" : e.k === "HS" ? "HS" : skip ? "skip" : e.k + (e.tier === "strong" ? "★" : "");
     const fresh = e.ago <= near;
     return (
       <span style={{ color: col, opacity: fresh ? 1 : 0.45, whiteSpace: "nowrap", fontWeight: fresh ? 700 : 500 }}
@@ -119,8 +126,8 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
-  const th = { textAlign: "left", padding: "8px 10px", color: T.mute, fontWeight: 500, fontSize: 11, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.card };
-  const td = { padding: isMobile ? "9px 8px" : "9px 10px", borderBottom: `1px solid ${T.soft}`, fontSize: isMobile ? 12 : 13, fontFamily: M };
+  const th = { textAlign: "left", padding: isMobile ? "8px 6px" : "8px 10px", color: T.mute, fontWeight: 500, fontSize: 11, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.card };
+  const td = { padding: isMobile ? "9px 6px" : "9px 10px", borderBottom: `1px solid ${T.soft}`, fontSize: isMobile ? 12 : 13, fontFamily: M };
 
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 12px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
@@ -140,45 +147,41 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         <div style={{ display: "flex", gap: 2 }}>
           {[["all", "全部"], ["bull", "偏多"], ["bear", "偏空"]].map(([k, l]) => <button key={k} onClick={() => setSide(k)} style={chip(side === k)}>{l}</button>)}
         </div>
-        <div style={{ display: "flex", gap: 2 }}>
-          {[0, 1, 2, 3].map(n => <button key={n} onClick={() => setMinScore(n)} style={chip(minScore === n)}>{n}+</button>)}
-        </div>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="搜尋 symbol"
           style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: "6px 10px", fontFamily: M, fontSize: 12, width: 130 }} />
         <button onClick={() => setSound(s => !s)} style={chip(sound)}>{sound ? "🔔 開" : "🔕 靜音"}</button>
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        分數 = {near} 棒（{ago(near, tf)}）內同時出現幾組信號（TB、UT、Heavy）。TB★ 強 · 黃/橙 弱 · skip = 被 rU60 濾走。灰淡 = 超過接近區間。
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)}
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 440 : 520 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 0 : 520 }}>
           <thead><tr>
-            <th style={th}>股票</th><th style={th}>分數</th><th style={th}>TB / TS</th>
+            <th style={th}>股票</th><th style={th}>TB / TS</th>
             <th style={th}>UT</th><th style={th}>Heavy</th>
             {!isMobile && <th style={{ ...th, textAlign: "right" }}>價 / 升跌</th>}
           </tr></thead>
           <tbody>
             {shown.map(r => {
-              const col = r.dir === "bull" ? T.up : r.dir === "bear" ? T.dn : r.dir === "mix" ? T.warn : T.mute;
               return (
                 <tr key={r.sym} onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=${MIN[tf]}`, "_blank", "noopener")}
                   style={{ cursor: "pointer" }}>
                   <td style={{ ...td, fontWeight: 700, fontFamily: SANS }}>
                     {r.sym}
-                    <span style={{ marginLeft: 6, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
-                    {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""} <span style={{ color: T.mute }}>{r.sess}</span></div>}
+                    <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
+                    <SessBadge s={r.sess} />
+                    {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
                   </td>
-                  <td style={{ ...td, color: col, fontWeight: 700 }}>{r.score ? `${r.dir === "bear" ? "▼" : r.dir === "bull" ? "▲" : "◆"} ${r.score}` : "·"}</td>
                   <td style={td}><Cell r={r} grp="TB" /></td>
                   <td style={td}><Cell r={r} grp="UT" /></td>
                   <td style={td}><Cell r={r} grp="HEAVY" /></td>
-                  {!isMobile && <td style={{ ...td, textAlign: "right", color: r.chg >= 0 ? T.up : T.dn }}>{r.px?.toFixed(2)} <span style={{ fontSize: 11 }}>{r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</span> <span style={{ fontSize: 10, color: T.mute }}>{r.sess}</span></td>}
+                  {!isMobile && <td style={{ ...td, textAlign: "right", color: r.chg >= 0 ? T.up : T.dn }}>{r.px?.toFixed(2)} <span style={{ fontSize: 11 }}>{r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</span></td>}
                 </tr>
               );
             })}
-            {data && !shown.length && <tr><td colSpan={6} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
+            {data && !shown.length && <tr><td colSpan={5} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
           </tbody>
         </table>
       </div>
