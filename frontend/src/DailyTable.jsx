@@ -108,7 +108,7 @@ export default function DailyTable({ isMobile, light }) {
       </div>
 
       <div style={{ fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute, marginBottom: 10 }}>
-        ST／UT：B/S(Nd) = 現時狀態同維持咗幾多日（今日剛轉 = 0d）· Signal = 今日 ST 翻轉或 UT 觸發 · Ideal ★ = BUY＋放量＋RSI 45–72＋ATR ≤ 2x · 虛線「未收線」= 今日日線未完，收市前可能改變 · EMA 綠＝價在線上、紅＝線下、灰＝歷史不足 · Whale：P 拉升、U 洗出、W 弱（由舊到新）
+        ST／UT：B/S(Nd) = 現時狀態同維持咗幾多日（今日剛轉 = 0d，⚑ = 今日剛翻轉／觸發）· Signal = 今日 ST 翻轉或 UT 觸發 · Ideal ★ = BUY＋放量＋RSI 45–72＋ATR ≤ 2x · 虛線「未收線」= 今日日線未完，收市前可能改變 · EMA 綠＝價在線上、紅＝線下、灰＝歷史不足 · Whale：P 拉升、U 洗出、W 弱（由舊到新）
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 300px)" }}>
@@ -134,8 +134,8 @@ export default function DailyTable({ isMobile, light }) {
                     {r.sig ? <span style={pill(r.sig === "BUY" ? T.upBg : T.dnBg, r.sig === "BUY" ? T.up : T.dn)}>{r.sig}</span> : <span style={{ color: T.mute }}>—</span>}
                     {r.sig && r.live && <span style={{ marginLeft: 5, border: `1px dashed ${T.mute}`, color: T.mute, borderRadius: 4, padding: "0 4px", fontSize: 9, verticalAlign: "middle" }}>未收線</span>}
                   </td>
-                  <td style={{ ...td, color: r.st.t === "Up" ? T.up : T.dn }}>{r.st.t === "Up" ? "B" : "S"}<span style={{ color: T.mute }}>({r.st.days}d)</span></td>
-                  <td style={td} title={r.ut.stop != null ? `UT 止蝕位 ${r.ut.stop.toFixed(2)}` : ""}><span style={{ color: r.ut.pos === "L" ? T.up : T.dn }}>{r.ut.pos === "L" ? "B" : "S"}</span><span style={{ color: T.mute }}>{r.ut.days != null ? `(${r.ut.days}d)` : ""}</span></td>
+                  <td style={{ ...td, color: r.st.t === "Up" ? T.up : T.dn }}>{r.st.t === "Up" ? "B" : "S"}<span style={{ color: T.mute }}>({r.st.days}d)</span>{r.st.flip && <span style={{ color: T.warn, marginLeft: 4 }} title="今日 ST 翻轉">⚑</span>}</td>
+                  <td style={td} title={r.ut.stop != null ? `UT 止蝕位 ${r.ut.stop.toFixed(2)}` : ""}><span style={{ color: r.ut.pos === "L" ? T.up : T.dn }}>{r.ut.pos === "L" ? "B" : "S"}</span><span style={{ color: T.mute }}>{r.ut.days != null ? `(${r.ut.days}d)` : ""}</span>{r.ut.cross && <span style={{ color: T.warn, marginLeft: 4 }} title="今日 UT 觸發">⚑</span>}</td>
                   <td style={td}><span style={{ display: "inline-flex", gap: 3 }}>
                     {r.ema.map(e => <span key={e.p} style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: !e.valid ? T.soft : e.above ? T.upBg : T.dnBg, color: !e.valid ? T.mute : e.above ? T.up : T.dn, opacity: e.valid ? 1 : 0.6 }}>{e.p}</span>)}
                   </span></td>
