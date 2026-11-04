@@ -274,8 +274,8 @@ function BandSection({ band, bq, T }) {
                     <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
-                          {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 600, flexShrink: 0 }}>{par} ›</span>}
-                          <span style={{ fontWeight: 800, fontSize: 16, color: T.txt, flexShrink: 0 }}>{r.symbol}</span>
+                          {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
+                          <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{r.symbol}</span>
                                                     {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
                           </span>}
