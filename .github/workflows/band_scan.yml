@@ -78,6 +78,11 @@ jobs:
             exit 1
           fi
           echo "Pulled band.json from gh-pages OK"
+          # 報價 run 只抽開緊市嗰邊（美股時段唔抽港股）。一定要攞返上一份 band_quotes.json，
+          # band_quotes.py 先會保留另一邊市場上次嘅報價，否則港股報價會被洗走（首頁顯示 N/A）。
+          git show origin/gh-pages:band_quotes.json > frontend/public/band_quotes.json 2>/dev/null \
+            && echo "Pulled band_quotes.json from gh-pages OK" \
+            || echo "ℹ gh-pages 冇 band_quotes.json，由空白開始"
 
       # 業績 veto 來源（daily_brief 出）。冇就跳過，唔會 fail。
       - name: Pull earnings.json from gh-pages
