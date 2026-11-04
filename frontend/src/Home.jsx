@@ -228,9 +228,9 @@ function BandSection({ band, bq, T }) {
     const last = lb ? g.reg : px;
     const chg = lb ? (g.reg / g.pc - 1) * 100 : (q.chg_pct ?? null);
     const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
-    const d5 = g && g["5m"];
-    const evOf = (grp) => d5 && (d5.ev || []).filter((e) => (grp === "UT" ? e.k === "UTB" || e.k === "UTS" : e.k === "HB" || e.k === "HS")).sort((a, b) => a.ago - b.ago)[0];
-    return { ...r, px, low, st, last, chg, ext, ut: evOf("UT"), utPos: d5 ? d5.ut_pos : null, hv: evOf("HEAVY"), ema: (dly[r.symbol] || {}).ema };
+    const dd = dly[r.symbol] || {};
+    const wl = dd.whale && dd.whale.length ? dd.whale[dd.whale.length - 1] : null;
+    return { ...r, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: wl ? wl.type : null, ema: dd.ema };
   });
   const pill = { HOLD: T.up, BROKE: T.dn, TIER: T.acc, "—": T.mute };
   const th = { textAlign: "left", fontFamily: M, fontSize: 10, letterSpacing: "0.1em", color: T.mute, fontWeight: 400, padding: "8px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
@@ -258,29 +258,24 @@ function BandSection({ band, bq, T }) {
             ) : (
               <div>
                 <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
-                  <thead><tr>{[["SYMBOL", "left"], ["PRICE"], ["CHG%"], ["EXT%"], ["UT"], ["HEAVY"], ["EMA", "center"]].map(([h, al]) => <th key={h} style={{ ...th, padding: "8px 5px", textAlign: al || "right" }}>{h}</th>)}</tr></thead>
+                  <thead><tr>{[["SYMBOL", "left"], ["PRICE"], ["CHG%"], ["EXT%"], ["UT", "center"], ["HEAVY", "center"], ["EMA", "center"]].map(([h, al]) => <th key={h} style={{ ...th, padding: "8px 3px", fontSize: 9.5, letterSpacing: "0.02em", textAlign: al || "right" }}>{h}</th>)}</tr></thead>
                   <tbody>
                     {rows.map((r) => {
-                      const c5 = { padding: "9px 5px", textAlign: "right" };
+                      const c5 = { padding: "9px 3px", textAlign: "right", fontSize: 11 };
                       const pc = (v) => (v == null ? T.mute : v >= 0 ? T.up : T.dn);
-                      const pf = (v) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`);
-                      const ev = (e, pos) => {
-                        if (!e) return pos == null ? <span style={{ color: T.mute }}>–</span> : <span style={{ color: T.mute }}>{pos > 0 ? "B" : "S"}</span>;
-                        const bull = e.k === "UTB" || e.k === "HB";
-                        const lab = e.k === "UTB" ? "B" : e.k === "UTS" ? "S" : e.k;
-                        const m = e.ago * 5;
-                        return <span style={{ color: bull ? T.up : T.dn, fontWeight: 700 }}>{lab} <span style={{ color: T.dim, fontWeight: 400, fontSize: 10 }}>{m < 60 ? `${m}m` : `${Math.floor(m / 60)}h`}</span></span>;
-                      };
+                      const pf = (v) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}`);
+                      const utC = r.utPos == null ? T.mute : r.utPos === "L" ? T.up : T.dn;
+                      const hvC = r.hv === "P" ? T.up : r.hv === "U" ? T.dn : T.mute;
                       return (
                         <tr key={r.symbol} style={{ opacity: r.st === "BROKE" ? 0.45 : 1 }} title={`${r.symbol} · ${r.st} · kill low ${fmt(r.kill_low)}`}>
-                          <td style={{ ...td, padding: "9px 5px", fontSize: 11.5, color: T.acc, fontWeight: 700 }}>{PARENTS[r.symbol] && <span style={{ color: T.mute, fontWeight: 600 }}>{PARENTS[r.symbol]} › </span>}{r.symbol}<span style={{ color: pill[r.st], fontSize: 8, marginLeft: 4 }}>●</span></td>
-                          <td style={{ ...td, ...c5, fontSize: 11.5 }}>{r.last != null ? fmt(r.last) : "N/A"}</td>
-                          <td style={{ ...td, ...c5, fontSize: 11.5, color: pc(r.chg) }}>{pf(r.chg)}</td>
-                          <td style={{ ...td, ...c5, fontSize: 11.5, color: pc(r.ext) }}>{pf(r.ext)}</td>
-                          <td style={{ ...td, ...c5, fontSize: 11.5 }}>{ev(r.ut, r.utPos)}</td>
-                          <td style={{ ...td, ...c5, fontSize: 11.5 }}>{ev(r.hv, null)}</td>
-                          <td style={{ ...td, padding: "9px 5px", textAlign: "center", whiteSpace: "nowrap" }} title="EMA 10/20/50/89/250 (綠=價在線上)">
-                            {r.ema ? r.ema.map((e) => <span key={e.p} style={{ display: "inline-block", width: 6, height: 6, borderRadius: 3, marginLeft: 2, background: !e.valid ? T.mute : e.above ? T.up : T.dn, opacity: e.valid ? 1 : 0.4 }} />) : <span style={{ color: T.mute }}>–</span>}
+                          <td style={{ ...td, padding: "9px 3px 9px 6px", fontSize: 11, color: T.acc, fontWeight: 700, borderLeft: `3px solid ${pill[r.st]}` }}>{PARENTS[r.symbol] && <span style={{ color: T.mute, fontWeight: 600, fontSize: 9.5 }}>{PARENTS[r.symbol]}›</span>}{r.symbol}</td>
+                          <td style={{ ...td, ...c5 }}>{r.last != null ? fmt(r.last) : "N/A"}</td>
+                          <td style={{ ...td, ...c5, color: pc(r.chg) }}>{pf(r.chg)}</td>
+                          <td style={{ ...td, ...c5, color: pc(r.ext) }}>{pf(r.ext)}</td>
+                          <td style={{ ...td, ...c5, textAlign: "center", color: utC, fontWeight: 700 }}>{r.utPos == null ? "–" : r.utPos === "L" ? "B" : "S"}</td>
+                          <td style={{ ...td, ...c5, textAlign: "center", color: hvC, fontWeight: 700 }}>{r.hv || "–"}</td>
+                          <td style={{ ...td, padding: "9px 3px", textAlign: "center", whiteSpace: "nowrap", fontSize: 0 }} title="EMA 10/20/50/89/250 (綠=價在線上)">
+                            {r.ema ? r.ema.map((e) => <span key={e.p} style={{ display: "inline-block", width: 5, height: 5, borderRadius: 3, marginLeft: 2, background: !e.valid ? T.mute : e.above ? T.up : T.dn, opacity: e.valid ? 1 : 0.4 }} />) : <span style={{ color: T.mute, fontSize: 11 }}>–</span>}
                           </td>
                         </tr>
                       );
@@ -291,7 +286,7 @@ function BandSection({ band, bq, T }) {
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            ● status: green HOLD (day low above kill low) · red BROKE (touched kill low, dimmed) · blue TIER (price above kill close). PRICE / CHG% / EXT% and UT / HEAVY (5m) from Longbridge realtime; EMA dots = 10/20/50/89/250 (green above, red below). Status refreshes about every 15 min.
+            Left bar: green HOLD (day low above kill low) · red BROKE (touched kill low, dimmed) · blue TIER (price above kill close). PRICE / CHG% / EXT% from Longbridge realtime. UT = daily UT Bot state (B/S). HEAVY = latest daily whale (P pump / U oust / W weak). EMA dots = 10/20/50/89/250 (green above, red below). Status refreshes about every 15 min.
           </div>
         </>
       )}
