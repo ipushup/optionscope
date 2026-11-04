@@ -11,7 +11,7 @@ const F = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";   // 
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 
 const TH = {
-  dark: { bg: "#111316", line: "#33383f", soft: "#2b2f35", card: "#202327", txt: "#e6e9ec", sub: "#b4bcc4", mute: "#7d868f", acc: "#3b9eff" },
+  dark: { bg: "#0f1112", line: "#26292c", soft: "#1d1f21", card: "#151718", txt: "#e3e4e5", sub: "#b9babd", mute: "#75777a", acc: "#3b9eff" },
   light: { bg: "#ffffff", line: "#d9dde2", soft: "#e8ebef", card: "#ffffff", txt: "#1b1f24", sub: "#3c444d", mute: "#6b7580", acc: "#0b6bcb" },
 };
 

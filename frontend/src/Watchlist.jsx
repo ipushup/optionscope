@@ -23,9 +23,9 @@ import { useEffect, useState, useRef } from "react";
 
 const THEMES = {
   dark: {
-    bg: "#050d18", card: "#101f31", line: "#23394f", chip: "#0e1c2c",
-    txt: "#eaf2fa", dim: "#a8bdd2", sub: "#c3d3e3", mute: "#7b93aa",
-    up: "#2ee89a", dn: "#ff6b83", warn: "#ffb35c", acc: "#5cb3ff",
+    bg: "#0f1112", card: "#151718", line: "#26292c", chip: "#1d1f21",
+    txt: "#e3e4e5", dim: "#9b9b9e", sub: "#b9babd", mute: "#75777a",
+    up: "#14ac9c", dn: "#f23c75", warn: "#ffb35c", acc: "#5cb3ff",
     tabOn: "#1e4270",
     hlYellow: "rgba(255,196,0,0.26)", hlRed: "rgba(255,90,90,0.26)", hlBlue: "rgba(92,179,255,0.26)",
   },
