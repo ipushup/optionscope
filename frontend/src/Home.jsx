@@ -535,17 +535,17 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         </div>
 
         <section aria-labelledby="s1">
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
-            <div id="s1" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>01 / MARKET SNAPSHOT</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px 8px", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{live ? <span style={{ color: T.up }}>● live</span> : "snapshot"}</div>
-              <div role="group" aria-label="Chart mode" style={{ display: "inline-flex", border: `1px solid ${T.line}`, borderRadius: 8, overflow: "hidden" }}>
+              <div id="s1" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>01 / MARKET SNAPSHOT</div>
+              <div role="tablist" aria-label="Chart mode" style={{ display: "flex", border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden" }}>
                 {[["daily", "Daily"], ["intraday", "Intraday"]].map(([k, label]) => (
-                  <button key={k} type="button" onClick={() => pickMode(k)} aria-pressed={mode === k}
-                    style={{ fontFamily: M, fontSize: 11, padding: "6px 9px", minHeight: 32, border: "none", cursor: "pointer", background: mode === k ? T.card : "transparent", color: mode === k ? T.acc : T.mute }}>{label}</button>
+                  <button key={k} role="tab" aria-selected={mode === k} onClick={() => pickMode(k)}
+                    style={{ fontFamily: M, fontSize: 11, fontWeight: 600, padding: "3px 10px", border: 0, cursor: "pointer", background: mode === k ? T.soft : "transparent", color: mode === k ? T.txt : T.mute }}>{label}</button>
                 ))}
               </div>
             </div>
+            <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>{live ? <span style={{ color: T.up }}>● live</span> : "snapshot"}</div>
           </div>
           {mk ? (
             <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={daily?.cards?.[cd.id]} light={light} />)}</div>
