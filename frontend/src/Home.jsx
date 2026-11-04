@@ -261,15 +261,13 @@ function BandSection({ band, bq, T }) {
                   const cc = (v) => (v >= 0 ? T.up : T.dn);
                   const g = sig[r.symbol];
                   const par = PARENTS[r.symbol];
-                  const secName = g && g.section ? g.section.replace(/^[\d.]+-/, "") : "";
                   return (
                     <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 600, flexShrink: 0 }}>{par} ›</span>}
                           <span style={{ fontWeight: 800, fontSize: 16, color: T.acc, flexShrink: 0 }}>{r.symbol}</span>
-                          {!par && secName && <span style={{ fontSize: 10, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{secName}</span>}
-                          {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
+                                                    {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
                           </span>}
                         </div>
