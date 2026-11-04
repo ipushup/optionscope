@@ -205,24 +205,41 @@ function Tile({ label, value, sub, color, T }) {
 function BandSection({ band, bq, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
+  const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
+  const [dly, setDly] = useState({});    // daily.json: sym -> row (EMA stack)
+  useEffect(() => {
+    const pull = () => {
+      fetch("/signals.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d || Date.now() - new Date(d.updated).getTime() > 300000) { setSig({}); return; }
+        const m = {}; for (const r of d.rows || []) m[r.sym] = r; setSig(m);
+      }).catch(() => {});
+      fetch("/daily.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+        const m = {}; for (const r of (d && d.rows) || []) m[r.sym] = r; setDly(m);
+      }).catch(() => {});
+    };
+    pull(); const id = setInterval(pull, 15000); return () => clearInterval(id);
+  }, []);
   const rows = groupRows(band?.forming || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map((r) => {
     const q = quotes[r.symbol] || {};
     const px = q.price ?? null, low = q.day_low ?? null;
     let st = "—";
     if (px != null && low != null) st = low <= r.kill_low ? "BROKE" : px > r.kill_close ? "TIER" : "HOLD";
-    return { ...r, px, low, st };
+    const g = sig[r.symbol], lb = g && g.reg > 0 && g.pc > 0;
+    const last = lb ? g.reg : px;
+    const chg = lb ? (g.reg / g.pc - 1) * 100 : (q.chg_pct ?? null);
+    const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
+    const d5 = g && g["5m"];
+    const evOf = (grp) => d5 && (d5.ev || []).filter((e) => (grp === "UT" ? e.k === "UTB" || e.k === "UTS" : e.k === "HB" || e.k === "HS")).sort((a, b) => a.ago - b.ago)[0];
+    return { ...r, px, low, st, last, chg, ext, ut: evOf("UT"), utPos: d5 ? d5.ut_pos : null, hv: evOf("HEAVY"), ema: (dly[r.symbol] || {}).ema };
   });
   const pill = { HOLD: T.up, BROKE: T.dn, TIER: T.acc, "—": T.mute };
   const th = { textAlign: "left", fontFamily: M, fontSize: 10, letterSpacing: "0.1em", color: T.mute, fontWeight: 400, padding: "8px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
   const td = { fontFamily: M, fontSize: 12, padding: "9px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
   return (
     <section aria-labelledby="s2">
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute }}>02 / TRIPLE BAND</div>
-          <h2 id="s2" style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700 }}>Signals</h2>
-        </div>
-        <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>bar {band?.bar_date || "—"} · prices {bq?.quoted_at ? ageText(bq.quoted_at) : "—"}</div>
+      <div id="s2" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
+        <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute, whiteSpace: "nowrap" }}>02 / TRIPLE BAND</div>
+        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>bar {band?.bar_date || "—"} · prices {bq?.quoted_at ? ageText(bq.quoted_at) : "—"}</div>
       </div>
       {!band ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>band.json not available.</div>
@@ -239,26 +256,42 @@ function BandSection({ band, bq, T }) {
             {rows.length === 0 ? (
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>No forming signals.</div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
-                  <thead><tr>{["SYMBOL", "PRICE", "KILL LOW", "DAY LOW", "STATUS"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+              <div>
+                <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
+                  <thead><tr>{[["SYMBOL", "left"], ["PRICE"], ["CHG%"], ["EXT%"], ["UT"], ["HEAVY"], ["EMA", "center"]].map(([h, al]) => <th key={h} style={{ ...th, padding: "8px 5px", textAlign: al || "right" }}>{h}</th>)}</tr></thead>
                   <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.symbol}>
-                        <td style={{ ...td, color: T.acc, fontWeight: 700 }}>{PARENTS[r.symbol] && <span style={{ color: T.mute || T.sub, fontWeight: 600 }}>{PARENTS[r.symbol]} › </span>}{r.symbol}</td>
-                        <td style={td}>{r.px != null ? fmt(r.px) : "N/A"}</td>
-                        <td style={td}>{fmt(r.kill_low)}</td>
-                        <td style={td}>{r.low != null ? fmt(r.low) : "N/A"}</td>
-                        <td style={td}><span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "2px 9px", fontSize: 11 }}>{r.st}</span></td>
-                      </tr>
-                    ))}
+                    {rows.map((r) => {
+                      const c5 = { padding: "9px 5px", textAlign: "right" };
+                      const pc = (v) => (v == null ? T.mute : v >= 0 ? T.up : T.dn);
+                      const pf = (v) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`);
+                      const ev = (e, pos) => {
+                        if (!e) return pos == null ? <span style={{ color: T.mute }}>–</span> : <span style={{ color: T.mute }}>{pos > 0 ? "B" : "S"}</span>;
+                        const bull = e.k === "UTB" || e.k === "HB";
+                        const lab = e.k === "UTB" ? "B" : e.k === "UTS" ? "S" : e.k;
+                        const m = e.ago * 5;
+                        return <span style={{ color: bull ? T.up : T.dn, fontWeight: 700 }}>{lab} <span style={{ color: T.dim, fontWeight: 400, fontSize: 10 }}>{m < 60 ? `${m}m` : `${Math.floor(m / 60)}h`}</span></span>;
+                      };
+                      return (
+                        <tr key={r.symbol} style={{ opacity: r.st === "BROKE" ? 0.45 : 1 }} title={`${r.symbol} · ${r.st} · kill low ${fmt(r.kill_low)}`}>
+                          <td style={{ ...td, padding: "9px 5px", fontSize: 11.5, color: T.acc, fontWeight: 700 }}>{PARENTS[r.symbol] && <span style={{ color: T.mute, fontWeight: 600 }}>{PARENTS[r.symbol]} › </span>}{r.symbol}<span style={{ color: pill[r.st], fontSize: 8, marginLeft: 4 }}>●</span></td>
+                          <td style={{ ...td, ...c5, fontSize: 11.5 }}>{r.last != null ? fmt(r.last) : "N/A"}</td>
+                          <td style={{ ...td, ...c5, fontSize: 11.5, color: pc(r.chg) }}>{pf(r.chg)}</td>
+                          <td style={{ ...td, ...c5, fontSize: 11.5, color: pc(r.ext) }}>{pf(r.ext)}</td>
+                          <td style={{ ...td, ...c5, fontSize: 11.5 }}>{ev(r.ut, r.utPos)}</td>
+                          <td style={{ ...td, ...c5, fontSize: 11.5 }}>{ev(r.hv, null)}</td>
+                          <td style={{ ...td, padding: "9px 5px", textAlign: "center", whiteSpace: "nowrap" }} title="EMA 10/20/50/89/250 (綠=價在線上)">
+                            {r.ema ? r.ema.map((e) => <span key={e.p} style={{ display: "inline-block", width: 6, height: 6, borderRadius: 3, marginLeft: 2, background: !e.valid ? T.mute : e.above ? T.up : T.dn, opacity: e.valid ? 1 : 0.4 }} />) : <span style={{ color: T.mute }}>–</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            HOLD: day low above kill low. BROKE: day low touched kill low. TIER: price above kill close. Prices refresh about every 15 min.
+            ● status: green HOLD (day low above kill low) · red BROKE (touched kill low, dimmed) · blue TIER (price above kill close). PRICE / CHG% / EXT% and UT / HEAVY (5m) from Longbridge realtime; EMA dots = 10/20/50/89/250 (green above, red below). Status refreshes about every 15 min.
           </div>
         </>
       )}
