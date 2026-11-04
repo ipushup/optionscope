@@ -198,7 +198,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
             <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{last?.toFixed(2)}</span>
-            {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: light ? "#fff" : "#06201a" }}>{pf(chg)}</span>}
+            {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: "#fff" }}>{pf(chg)}</span>}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
@@ -208,7 +208,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                 title={`${e.k} ${e.t} UTC${e.tier ? " · " + e.tier : ""}${e.val ? " · Δ" + e.val : ""}`}>
                 {t.label} {ago(e.ago, tf)}</span>); }) : <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>–</span>}
           </div>
-          {ext != null && <div style={{ fontFamily: M, fontSize: 11, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
+          {ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
             <span style={{ color: T.mute }}>{r.sess}</span> {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span></div>}
         </div>
       </div>
