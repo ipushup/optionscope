@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PARENTS } from "./parents";
 import AppHeader from "./AppHeader";
 
 /**
@@ -244,7 +245,7 @@ function BandSection({ band, bq, T }) {
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.symbol}>
-                        <td style={{ ...td, color: T.acc, fontWeight: 700 }}>{r.symbol}</td>
+                        <td style={{ ...td, color: T.acc, fontWeight: 700 }}>{PARENTS[r.symbol] && <span style={{ color: T.mute || T.sub, fontWeight: 600 }}>{PARENTS[r.symbol]} › </span>}{r.symbol}</td>
                         <td style={td}>{r.px != null ? fmt(r.px) : "N/A"}</td>
                         <td style={td}>{fmt(r.kill_low)}</td>
                         <td style={td}>{r.low != null ? fmt(r.low) : "N/A"}</td>
