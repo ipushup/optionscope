@@ -256,36 +256,44 @@ function BandSection({ band, bq, T }) {
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>No forming signals.</div>
             ) : (
               <div>
-                <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
-                  <thead><tr>{[["SYMBOL", "left"], ["PRICE"], ["CHG%"], ["EXT%"], ["UT", "center"], ["HEAVY", "center"], ["EMA", "center"]].map(([h, al]) => <th key={h} style={{ ...th, padding: "8px 3px", fontSize: 9.5, letterSpacing: "0.02em", textAlign: al || "right" }}>{h}</th>)}</tr></thead>
-                  <tbody>
-                    {rows.map((r) => {
-                      const c5 = { padding: "9px 3px", textAlign: "right", fontSize: 11 };
-                      const pc = (v) => (v == null ? T.mute : v >= 0 ? T.up : T.dn);
-                      const pf = (v) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}`);
-                      const utC = r.utPos == null ? T.mute : r.utPos === "L" ? T.up : T.dn;
-                      const hvC = r.hv === "HB" ? T.up : r.hv === "HS" ? T.dn : T.mute;
-                      return (
-                        <tr key={r.symbol} style={{ opacity: r.st === "BROKE" ? 0.45 : 1 }} title={`${r.symbol} · ${r.st} · kill low ${fmt(r.kill_low)}`}>
-                          <td style={{ ...td, padding: "9px 3px 9px 6px", fontSize: 11, color: T.acc, fontWeight: 700, borderLeft: `3px solid ${pill[r.st]}` }}>{PARENTS[r.symbol] && <span style={{ color: T.mute, fontWeight: 600, fontSize: 9.5 }}>{PARENTS[r.symbol]}›</span>}{r.symbol}</td>
-                          <td style={{ ...td, ...c5 }}>{r.last != null ? fmt(r.last) : "N/A"}</td>
-                          <td style={{ ...td, ...c5, color: pc(r.chg) }}>{pf(r.chg)}</td>
-                          <td style={{ ...td, ...c5, color: pc(r.ext) }}>{pf(r.ext)}</td>
-                          <td style={{ ...td, ...c5, textAlign: "center", color: utC, fontWeight: 700 }}>{r.utPos == null ? "–" : r.utPos === "L" ? "B" : "S"}</td>
-                          <td style={{ ...td, ...c5, textAlign: "center", color: hvC, fontWeight: 700 }}>{r.hv || "–"}</td>
-                          <td style={{ ...td, padding: "9px 3px", textAlign: "center", whiteSpace: "nowrap", fontSize: 0 }} title="EMA 10/20/50/89/250 (綠=價在線上)">
-                            {r.ema ? r.ema.map((e) => <span key={e.p} style={{ display: "inline-block", width: 5, height: 5, borderRadius: 3, marginLeft: 2, background: !e.valid ? T.mute : e.above ? T.up : T.dn, opacity: e.valid ? 1 : 0.4 }} />) : <span style={{ color: T.mute, fontSize: 11 }}>–</span>}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                {rows.map((r) => {
+                  const pf = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`;
+                  const cc = (v) => (v >= 0 ? T.up : T.dn);
+                  const g = sig[r.symbol];
+                  const par = PARENTS[r.symbol];
+                  const secName = g && g.section ? g.section.replace(/^[\d.]+-/, "") : "";
+                  return (
+                    <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
+                          {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 600, flexShrink: 0 }}>{par} ›</span>}
+                          <span style={{ fontWeight: 800, fontSize: 16, color: T.acc, flexShrink: 0 }}>{r.symbol}</span>
+                          {!par && secName && <span style={{ fontSize: 10, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{secName}</span>}
+                          {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
+                            {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
+                          </span>}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
+                          <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{r.last != null ? fmt(r.last) : "N/A"}</span>
+                          {r.chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(r.chg), color: "#06201a" }}>{pf(r.chg)}</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
+                        <div style={{ fontFamily: M, fontSize: 11, color: T.dim, whiteSpace: "nowrap" }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"} · kill close ${fmt(r.kill_close)}`}>
+                          <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 7px", fontSize: 10, marginRight: 6 }}>{r.st}</span>
+                          <span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}
+                        </div>
+                        {r.ext != null && <div style={{ fontFamily: M, fontSize: 11, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <span style={{ color: T.mute }}>{g.sess}</span> {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span></div>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            Left bar: green HOLD (day low above kill low) · red BROKE (touched kill low, dimmed) · blue TIER (price above kill close). PRICE / CHG% / EXT% from Longbridge realtime. UT = daily UT Bot state (B/S). HEAVY = daily Heavy Buy / Heavy Sell (whichever is more recent). EMA dots = 10/20/50/89/250 (green above, red below). Status refreshes about every 15 min.
+            HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). TIER: price above kill close. Price, CHG% and pre/post EXT% from Longbridge realtime; EMA 10/20/50/89/250 (green above, red below). HOLD/BROKE/TIER refreshes about every 15 min.
           </div>
         </>
       )}
