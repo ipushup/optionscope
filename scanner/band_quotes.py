@@ -161,6 +161,51 @@ def log_forming(band, quotes):
         print(f"  forming log 寫唔到: {e}")
 
 
+EMA_PERIODS = (10, 20, 50, 89, 250)
+
+
+def daily_ctx(tickers):
+    """
+    港股用：前一日收市價（算 CHG%）同日線 EMA 10/20/50/89/250 數值。
+    前端用即時價同 EMA 值比較 → 綠／紅；同美股 Daily Table 嘅 EMA stack 同一個概念。
+    返回 {sym: {"last_date", "c1", "c2", "ema":[{"p","v","valid"}]}}，c1 = 最後一支日線收市，c2 = 前一支。
+    """
+    out = {}
+    for i in range(0, len(tickers), CHUNK):
+        part = tickers[i:i + CHUNK]
+        try:
+            df = yf.download(" ".join(part), period="2y", interval="1d",
+                             progress=False, auto_adjust=False,
+                             threads=False, group_by="ticker")
+        except Exception as e:
+            print(f"  daily ctx batch fail {part[0]}…: {e}")
+            continue
+        if df is None or df.empty:
+            continue
+        for sym in part:
+            try:
+                d = df[sym] if isinstance(df.columns, pd.MultiIndex) else df
+                cl = d["Close"].dropna()
+                if len(cl) < 2:
+                    continue
+                emas = []
+                for p_ in EMA_PERIODS:
+                    v = float(cl.ewm(span=p_, adjust=False).mean().iloc[-1])
+                    emas.append({"p": p_, "v": round(v, 4), "valid": bool(len(cl) >= p_)})
+                out[sym] = {"last_date": str(cl.index[-1].date()),
+                            "c1": round(float(cl.iloc[-1]), 4), "c2": round(float(cl.iloc[-2]), 4),
+                            "ema": emas}
+            except Exception:
+                continue
+        time.sleep(0.5)
+    return out
+
+
+def hk_today():
+    from zoneinfo import ZoneInfo
+    return str(datetime.now(ZoneInfo("Asia/Hong_Kong")).date())
+
+
 def load_prev_quotes():
     """保留另一邊市場上次嘅報價，唔好抹走。"""
     if os.path.exists(OUT_PATH):
@@ -224,6 +269,22 @@ def main():
     quotes = load_prev_quotes()
     fresh = grab(sel)
     quotes.update(fresh)
+    # 港股：補 prev_close + EMA（美股有 Longbridge 即時串流，唔使）
+    try:
+        hk = [t for t in sel if t.endswith(".HK")]
+        if hk:
+            today = hk_today()
+            for sym, c in daily_ctx(hk).items():
+                q = quotes.get(sym)
+                if not q:
+                    continue
+                live = q.get("bars", 0) > 0          # 今日 1m 即時；0 = 價錢本身就係最後一支日線
+                # 今日已有日線棒 → 前收 = c2；今日未有（開市前／盤中 yfinance 日線未更新）→ 前收 = c1
+                q["prev_close"] = c["c2"] if (not live or c["last_date"] >= today) else c["c1"]
+                q["ema"] = c["ema"]
+            print(f"HK daily ctx: {sum(1 for t in hk if quotes.get(t, {}).get('ema'))}/{len(hk)}")
+    except Exception as e:
+        print(f"⚠ HK daily ctx 失敗（唔影響報價）: {e}")
     if not fresh:
         print("⚠ 今次一個報價都攞唔到（Yahoo throttle？）—— 沿用舊報價")
     write_payload(quotes, scanned_at,
