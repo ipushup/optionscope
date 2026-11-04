@@ -126,7 +126,7 @@ export default function DailyTable({ isMobile, light }) {
                 <tr key={r.sym}>
                   <td style={{ ...td, position: "sticky", left: 0, background: T.card, zIndex: 1, fontFamily: SANS, cursor: "pointer" }}
                     onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=D`, "_blank", "noopener")}>
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>{r.sym}</span>{r.ideal && <span style={{ color: T.warn, marginLeft: 4 }}>★</span>}
+                    <span style={{ fontWeight: 500, fontSize: 14 }}>{r.sym}</span>{r.ideal && <span style={{ color: T.warn, marginLeft: 4 }}>★</span>}
                     <span style={{ display: "block", fontSize: 11, color: T.mute, fontWeight: 400, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>{(r.section || "").replace(/^\d+-/, "")}</span>
                   </td>
                   <td style={{ ...td, textAlign: "right" }}>{r.px.toFixed(2)} <span style={{ color: up ? T.up : T.dn }}>{r.chg != null ? `${up ? "+" : ""}${r.chg.toFixed(2)}%` : ""}</span></td>

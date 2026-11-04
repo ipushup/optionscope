@@ -189,8 +189,8 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         style={{ padding: "9px 12px 8px", borderBottom: `1px solid ${T.soft}`, cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
-            {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 600, flexShrink: 0 }}>{par} ›</span>}
-            <span style={{ fontWeight: 800, fontSize: 16, flexShrink: 0 }}>{r.sym}</span>
+            {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
+            <span style={{ fontWeight: 500, fontSize: 16, flexShrink: 0 }}>{r.sym}</span>
             {!par && <span style={{ fontSize: 10, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{(r.section || "").replace(/^[\d.]+-/, "")}</span>}
             {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
               {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
@@ -267,7 +267,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
               return (
                 <tr key={r.sym} onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=${MIN[tf]}`, "_blank", "noopener")}
                   style={{ cursor: "pointer" }}>
-                  <td style={{ ...td, fontWeight: 700, fontFamily: SANS }}>
+                  <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>
                     {r.sym}
                     <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
                     <SessBadge s={r.sess} />

@@ -261,7 +261,7 @@ function Info({ children, label = "點解／點睇" }) {
 
 /** 卡片：左上 symbol / 右上大字主數值；下面兩行細節。 */
 const Sym = ({ s }) => PARENTS[s]
-  ? <><span style={{ color: C.mute, fontWeight: 600 }}>{PARENTS[s]} › </span>{s}</>
+  ? <><span style={{ color: C.mute, fontWeight: 400 }}>{PARENTS[s]} › </span>{s}</>
   : s;
 
 function Card({ sym, tag, main, mainSub, rows, flag, dim, strike }) {
@@ -273,7 +273,7 @@ function Card({ sym, tag, main, mainSub, rows, flag, dim, strike }) {
       opacity: dim ?? 1, textDecoration: strike ? "line-through" : "none",
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
-        <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: ".01em", color: C.txt }}><Sym s={sym} /></span>
+        <span style={{ fontSize: 17, fontWeight: 500, letterSpacing: ".01em", color: C.txt }}><Sym s={sym} /></span>
         {tag}
         <span style={{ marginLeft: "auto", textAlign: "right" }}>
           <span style={{ fontSize: 21, fontWeight: 800, fontFamily: M, letterSpacing: "-.02em", color: C.txt }}>
@@ -419,7 +419,7 @@ function Forming({ rows, q, flog, isMobile }) {
                 background: c.broke ? C.flagBg : "transparent",
                 opacity: c.broke ? .4 : 1, textDecoration: c.broke ? "line-through" : "none",
               }}>
-                <Td l b><Sym s={r.symbol} /></Td>
+                <Td l><Sym s={r.symbol} /></Td>
                 <Td c={C.acc} b>{N(r.ext)}</Td>
                 <Td>{N(c.lo)}</Td>
                 <Td c={C.dn}>{N(r.kill_low)}</Td>
@@ -484,7 +484,7 @@ function Confirmed({ rows, live, exec, isMobile }) {
             const gap = p ? (p / r.price - 1) * 100 : null;
             return (
               <tr key={r.symbol} style={{ background: r.veto_days != null ? C.flagBg : "transparent" }}>
-                <Td l b><Sym s={r.symbol} /></Td>
+                <Td l><Sym s={r.symbol} /></Td>
                 <Td c={C.dim}>{N(r.price)}</Td>
                 <Td b>{N(p)}</Td>
                 <Td b c={gapC(gap)}>{P(gap)}</Td>
@@ -547,7 +547,7 @@ function Candidates({ rows, live, cnt, band, isMobile }) {
             const ds = p && r.ut_pos === 1 ? (p - r.ut_stop) / p * 100 : null;
             return (
               <tr key={`${r.symbol}${r.entry_date}`} style={{ background: r.veto_days != null ? C.flagBg : "transparent" }}>
-                <Td l b><Sym s={r.symbol} /></Td>
+                <Td l><Sym s={r.symbol} /></Td>
                 <Td c={C.dim}>{r.entry_date?.slice(5)}</Td>
                 <Td c={C.dim}>{N(r.entry_price)}</Td>
                 <Td b>{N(p)}</Td>
@@ -586,7 +586,7 @@ function Exits({ rows, isMobile }) {
         <Tbl cols={["標的", "訊號日", "入場價", "出場價", "回報", "持有"]}>
           {rows.map(r => (
             <tr key={`${r.symbol}${r.entry_date}`}>
-              <Td l b><Sym s={r.symbol} /></Td>
+              <Td l><Sym s={r.symbol} /></Td>
               <Td c={C.dim}>{r.entry_date?.slice(5)}</Td>
               <Td c={C.dim}>{N(r.entry_price)}</Td>
               <Td b>{N(r.price)}</Td>
@@ -626,7 +626,7 @@ function Observe({ rows, live, isMobile }) {
           <Tbl cols={["標的", "市場", "類別", "現價", "ext", "rU60", "UT stop"]}>
             {rows.map(r => (
               <tr key={r.symbol}>
-                <Td l b><Sym s={r.symbol} /></Td>
+                <Td l><Sym s={r.symbol} /></Td>
                 <Td c={C.dim}>{r.market}</Td>
                 <Td c={C.dim}>{r.market === "HK" ? "港股" : "small"}</Td>
                 <Td>{N(live(r.symbol))}</Td>
