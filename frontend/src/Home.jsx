@@ -229,7 +229,7 @@ function BandSection({ band, bq, T }) {
         <>
           <div className="os-grid">
             <Tile label="CONFIRMED" value={c.confirmed} sub="entries confirmed" color={T.up} T={T} />
-            <Tile label="FORMING" value={c.forming} sub={`${rows.length} still alive`} color={T.acc} T={T} />
+            <Tile label="FORMING" value={c.forming_live ?? c.forming} sub={`${c.forming ?? "—"} formed today · ${rows.length} listed`} color={T.acc} T={T} />
             <Tile label="EXITS" value={c.exits} sub="exit signals" color={T.dn} T={T} />
             <Tile label="CANDIDATES" value={c.candidates} sub={`of ${c.universe ?? "—"} scanned`} T={T} />
           </div>
