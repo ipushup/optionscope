@@ -139,6 +139,13 @@ def analyse_daily(df, live):
     rsi_val, _, _, rsi_arrow, _, _ = C.compute_rsi(df)
     atr_val, _, _ = C.compute_atr_ratio(df)
     whale = [{"type": w["type"], "val": w["val"]} for w in C.compute_whale_history(df)]
+    # Heavy Buy / Heavy Sell（同 Signal Board 同一套 heavy_now，喺日線上計）：兩者之中較新嗰個 = 現時狀態
+    bi, _bv, si, _sv = sb.S.heavy_now(df) if len(df) > 101 else (None, 0, None, 0)
+    n = len(df)
+    heavy = None
+    if bi is not None or si is not None:
+        k = "HB" if (si is None or (bi is not None and bi >= si)) else "HS"
+        heavy = {"k": k, "days": n - 1 - (bi if k == "HB" else si)}
     sig = st_flip or ("BUY" if ut_cross == "B" else "SELL" if ut_cross == "S" else None)
     ideal = bool(sig == "BUY" and vol_sig == "strong" and (vr or 0) >= 1.5 and rsi_val is not None
                  and 45 <= rsi_val <= 72 and atr_val is not None and atr_val <= 2.0)
@@ -150,6 +157,7 @@ def analyse_daily(df, live):
         "sig": sig,
         "ema": [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in ema["pills"]],
         "whale": whale,
+        "heavy": heavy,
         "vol": {"sig": vol_sig, "ratio": vr},
         "rsi": {"val": rsi_val, "arrow": rsi_arrow},
         "atr": atr_val,

@@ -229,8 +229,7 @@ function BandSection({ band, bq, T }) {
     const chg = lb ? (g.reg / g.pc - 1) * 100 : (q.chg_pct ?? null);
     const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
     const dd = dly[r.symbol] || {};
-    const wl = dd.whale && dd.whale.length ? dd.whale[dd.whale.length - 1] : null;
-    return { ...r, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: wl ? wl.type : null, ema: dd.ema };
+    return { ...r, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: dd.ema };
   });
   const pill = { HOLD: T.up, BROKE: T.dn, TIER: T.acc, "—": T.mute };
   const th = { textAlign: "left", fontFamily: M, fontSize: 10, letterSpacing: "0.1em", color: T.mute, fontWeight: 400, padding: "8px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
@@ -265,7 +264,7 @@ function BandSection({ band, bq, T }) {
                       const pc = (v) => (v == null ? T.mute : v >= 0 ? T.up : T.dn);
                       const pf = (v) => (v == null ? "–" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}`);
                       const utC = r.utPos == null ? T.mute : r.utPos === "L" ? T.up : T.dn;
-                      const hvC = r.hv === "P" ? T.up : r.hv === "U" ? T.dn : T.mute;
+                      const hvC = r.hv === "HB" ? T.up : r.hv === "HS" ? T.dn : T.mute;
                       return (
                         <tr key={r.symbol} style={{ opacity: r.st === "BROKE" ? 0.45 : 1 }} title={`${r.symbol} · ${r.st} · kill low ${fmt(r.kill_low)}`}>
                           <td style={{ ...td, padding: "9px 3px 9px 6px", fontSize: 11, color: T.acc, fontWeight: 700, borderLeft: `3px solid ${pill[r.st]}` }}>{PARENTS[r.symbol] && <span style={{ color: T.mute, fontWeight: 600, fontSize: 9.5 }}>{PARENTS[r.symbol]}›</span>}{r.symbol}</td>
@@ -286,7 +285,7 @@ function BandSection({ band, bq, T }) {
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            Left bar: green HOLD (day low above kill low) · red BROKE (touched kill low, dimmed) · blue TIER (price above kill close). PRICE / CHG% / EXT% from Longbridge realtime. UT = daily UT Bot state (B/S). HEAVY = latest daily whale (P pump / U oust / W weak). EMA dots = 10/20/50/89/250 (green above, red below). Status refreshes about every 15 min.
+            Left bar: green HOLD (day low above kill low) · red BROKE (touched kill low, dimmed) · blue TIER (price above kill close). PRICE / CHG% / EXT% from Longbridge realtime. UT = daily UT Bot state (B/S). HEAVY = daily Heavy Buy / Heavy Sell (whichever is more recent). EMA dots = 10/20/50/89/250 (green above, red below). Status refreshes about every 15 min.
           </div>
         </>
       )}
