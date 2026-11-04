@@ -259,7 +259,8 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
     #   1. 今日 Low 跌穿 pivot low  → pivot 唔再係窗口唯一最低 → 訊號消失
     #   2. 今日 Close 收高過 C[n-60]×0.95 → rU60 升穿 −5% → 變 small → 唔入場
     # ext 唔會變（用 pivot 當日嘅 m1/w1），冷卻同左邊三棒亦已封。
-    if not in_pos and entry_tier == "big" and n - RU_LEN - 1 >= 0:
+    # 港股（entry_tier="all"）都出 forming，但冇 rU60 big 濾網 → 冇 kill_close / tier_gap
+    if not in_pos and (entry_tier == "big" or market == "HK") and n - RU_LEN - 1 >= 0:
         pf = n - PIVOT_LEN
         if pf >= WARMUP and np.isfinite(w1[pf]) and w1[pf] > 0:
             plv, left, right = low_v[pf], low_v[pf - PIVOT_LEN:pf], low_v[pf + 1:n]
@@ -271,14 +272,15 @@ def scan_symbol(df, sym, market, entry_tier="big", return_trades=False):
                     # tier_ok：以最後收市價計，rU60 而家已經合格。
                     # 唔合格嘅要今日跌 tier_gap_pct 先入到 big —— 見過要跌
                     # 20% 嘅（AMD rU60 +34%），擺出嚟純粹係雜訊。
+                    hk = market == "HK"
                     events.append({
                         "kind": "FORMING",
                         "ext": float(ext_f),
                         "pivot_date": idx[pf].date(),
                         "kill_low": float(plv),          # 今日 Low ≤ 呢個 → pivot 破，作廢
-                        "kill_close": kc,                # 今日 Close > 呢個 → 變 small，唔入場
-                        "tier_ok": bool(close[n - 1] <= kc),
-                        "tier_gap_pct": float((kc / close[n - 1] - 1) * 100),
+                        "kill_close": None if hk else kc,   # 今日 Close > 呢個 → 變 small，唔入場（港股冇呢條）
+                        "tier_ok": True if hk else bool(close[n - 1] <= kc),
+                        "tier_gap_pct": None if hk else float((kc / close[n - 1] - 1) * 100),
                     })
 
     if in_pos:                       # 收盤仲揸住
@@ -727,6 +729,7 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
     """
     earnings_veto = earnings_veto or {}
     confirmed, forming, candidates, exits, observe = [], [], [], [], []
+    forming_hk = []                  # 港股形成中（只觀察，唔入 US 嘅 forming 統計）
     all_trades, errs = [], 0
 
     for wl, mkt in ((watchlist_us, "US"), (watchlist_hk, "HK")):
@@ -745,7 +748,9 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
                 r = dict(r)
                 r["veto_days"] = earnings_veto.get(sym)
                 if not tradeable:
-                    if r["kind"] in ("ENTRY", "FORMING"):
+                    if r["kind"] == "FORMING":
+                        forming_hk.append(r)
+                    elif r["kind"] == "ENTRY":
                         observe.append(r)
                     continue
                 {"ENTRY": confirmed, "FORMING": forming, "HOLD": candidates,
@@ -775,8 +780,9 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
                 o[k] = bool(v)
         return o
 
+    forming_hk.sort(key=lambda r: -r.get("ext", 0))
     tickers = sorted({r["symbol"] for grp in
-                      (confirmed, forming, candidates, exits, observe)
+                      (confirmed, forming, candidates, exits, observe, forming_hk)
                       for r in grp})
     return {
         "scanned_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -800,6 +806,9 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
                                        if r.get("tier_gap_pct", 0) > FORMING_TOL),
                    "candidates": len(candidates), "candidates_capped": n_capped,
                    "exits": len(exits), "observe": len(observe),
+                   "forming_hk": len(forming_hk),
+                   "hk_entry": sum(1 for r in observe if r.get("market") == "HK"),
+                   "hk_universe": len(watchlist_hk),
                    "universe": len(watchlist_us) + len(watchlist_hk),
                    "errors": errs},
         "confirmed": [js(r) for r in confirmed],
@@ -807,5 +816,6 @@ def compute_band_radar(watchlist_us, watchlist_hk, fetch_df, earnings_veto=None)
         "candidates": [js(r) for r in candidates],
         "exits": [js(r) for r in exits],
         "observe": [js(r) for r in observe],
+        "forming_hk": [js(r) for r in forming_hk],
         "tickers": tickers,
     }
