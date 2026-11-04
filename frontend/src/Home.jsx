@@ -275,15 +275,15 @@ function BandSection({ band, bq, T }) {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
                           <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{r.last != null ? fmt(r.last) : "N/A"}</span>
-                          {r.chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(r.chg), color: "#06201a" }}>{pf(r.chg)}</span>}
+                          {r.chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(r.chg), color: "#fff" }}>{pf(r.chg)}</span>}
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
-                        <div style={{ fontFamily: M, fontSize: 11, color: T.dim, whiteSpace: "nowrap" }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"} · kill close ${fmt(r.kill_close)}`}>
+                        <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap" }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"} · kill close ${fmt(r.kill_close)}`}>
                           <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 7px", fontSize: 10, marginRight: 6 }}>{r.st}</span>
                           <span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}
                         </div>
-                        {r.ext != null && <div style={{ fontFamily: M, fontSize: 11, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {r.ext != null && <div style={{ fontFamily: M, fontSize: 13, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
                           <span style={{ color: T.mute }}>{g.sess}</span> {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span></div>}
                       </div>
                     </div>
