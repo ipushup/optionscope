@@ -212,6 +212,9 @@ const hkTime = (iso) => {
 function BandSection({ band, bq, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
+  const [mkt, setMkt] = useState(() => { try { return localStorage.getItem("os_band_mkt") === "HK" ? "HK" : "US"; } catch { return "US"; } });
+  const pickMkt = (m) => { setMkt(m); try { localStorage.setItem("os_band_mkt", m); } catch { /* */ } };
+  const isHK = mkt === "HK";
   const [sigAt, setSigAt] = useState(null);
   const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
   const [dly, setDly] = useState({});    // daily.json: sym -> row (EMA stack)
@@ -228,11 +231,11 @@ function BandSection({ band, bq, T }) {
     };
     pull(); const id = setInterval(pull, 15000); return () => clearInterval(id);
   }, []);
-  const rows = groupRows(band?.forming || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map((r) => {
+  const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map((r) => {
     const q = quotes[r.symbol] || {};
     const px = q.price ?? null, low = q.day_low ?? null;
     let st = "—";
-    if (px != null && low != null) st = low <= r.kill_low ? "BROKE" : px > r.kill_close ? "TIER" : "HOLD";
+    if (px != null && low != null) st = low <= r.kill_low ? "BROKE" : r.kill_close != null && px > r.kill_close ? "TIER" : "HOLD";
     const g = sig[r.symbol], lb = g && g.reg > 0 && g.pc > 0;
     const last = lb ? g.reg : px;
     const chg = lb ? (g.reg / g.pc - 1) * 100 : (q.chg_pct ?? null);
@@ -240,29 +243,45 @@ function BandSection({ band, bq, T }) {
     const dd = dly[r.symbol] || {};
     return { ...r, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: dd.ema };
   });
+  const hkEntries = isHK ? (band?.observe || []).filter((r) => r.market === "HK").map((r) => ({ ...r, last: (quotes[r.symbol] || {}).price ?? r.price })) : [];
   const pill = { HOLD: T.up, BROKE: T.dn, TIER: T.acc, "—": T.mute };
   const th = { textAlign: "left", fontFamily: M, fontSize: 10, letterSpacing: "0.1em", color: T.mute, fontWeight: 400, padding: "8px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
   const td = { fontFamily: M, fontSize: 12, padding: "9px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
   return (
     <section aria-labelledby="s2">
-      <div id="s2" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
-        <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.12em", color: T.mute, whiteSpace: "nowrap" }}>02 / TRIPLE BAND</div>
-        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>bar {band?.bar_date || "—"} · prices {bq?.quoted_at ? ageText(bq.quoted_at) : "—"}</div>
+      <div id="s2" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px 8px", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>02 / TRIPLE BAND</div>
+          <div role="tablist" aria-label="Market" style={{ display: "flex", border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden" }}>
+            {["US", "HK"].map((m) => (
+              <button key={m} role="tab" aria-selected={mkt === m} onClick={() => pickMkt(m)}
+                style={{ fontFamily: M, fontSize: 11, fontWeight: 600, padding: "3px 10px", border: 0, cursor: "pointer", background: mkt === m ? T.soft : "transparent", color: mkt === m ? T.txt : T.mute }}>{m}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>bar {(band?.bar_date || "—").slice(5)} · prices {bq?.quoted_at ? ageText(bq.quoted_at) : "—"}</div>
       </div>
       {!band ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>band.json not available.</div>
       ) : (
         <>
           <div className="os-grid">
-            <Tile label="CONFIRMED" value={c.confirmed} sub="entries confirmed" color={T.up} T={T} />
-            <Tile label="FORMING" value={c.forming_live ?? c.forming} sub={`${c.forming ?? "—"} formed today · ${rows.length} listed`} color={T.acc} T={T} />
-            <Tile label="EXITS" value={c.exits} sub="exit signals" color={T.dn} T={T} />
-            <Tile label="CANDIDATES" value={c.candidates} sub={`of ${c.universe ?? "—"} scanned`} T={T} />
+            {isHK ? <>
+              <Tile label="CONFIRMED" value={c.hk_entry ?? hkEntries.length} sub="observe only" color={T.up} T={T} />
+              <Tile label="FORMING" value={c.forming_hk ?? rows.length} sub={`${rows.length} listed`} color={T.acc} T={T} />
+              <Tile label="EXITS" value="—" sub="not tracked for HK" color={T.dn} T={T} />
+              <Tile label="CANDIDATES" value="—" sub={`of ${c.hk_universe ?? "—"} HK scanned`} T={T} />
+            </> : <>
+              <Tile label="CONFIRMED" value={c.confirmed} sub="entries confirmed" color={T.up} T={T} />
+              <Tile label="FORMING" value={c.forming_live ?? c.forming} sub={`${c.forming ?? "—"} formed today · ${rows.length} listed`} color={T.acc} T={T} />
+              <Tile label="EXITS" value={c.exits} sub="exit signals" color={T.dn} T={T} />
+              <Tile label="CANDIDATES" value={c.candidates} sub={`of ${c.universe ?? "—"} scanned`} T={T} />
+            </>}
           </div>
           <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals</span> <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt ? <>{hkTime(sigAt)} HKT <span style={{ color: T.up }}>● live</span></> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span></div>
+            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt && !isHK ? <>{hkTime(sigAt)} HKT <span style={{ color: T.up }}>● live</span></> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span></div>
             {rows.length === 0 ? (
-              <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>No forming signals.</div>
+              <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>{isHK ? (band?.forming_hk ? "No HK forming signals." : "HK forming not scanned yet — appears after the next full Triple Band scan.") : "No forming signals."}</div>
             ) : (
               <div>
                 {rows.map((r) => {
@@ -275,7 +294,7 @@ function BandSection({ band, bq, T }) {
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
-                          <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{r.symbol}</span>
+                          <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}</span>
                                                     {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
                           </span>}
@@ -286,7 +305,7 @@ function BandSection({ band, bq, T }) {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
-                        <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap" }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"} · kill close ${fmt(r.kill_close)}`}>
+                        <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap" }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
                           <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 7px", fontSize: 10, marginRight: 6 }}>{r.st}</span>
                           <span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}
                         </div>
@@ -299,8 +318,20 @@ function BandSection({ band, bq, T }) {
               </div>
             )}
           </div>
+          {isHK && hkEntries.length > 0 && (
+            <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700 }}>Confirmed · HK <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>observe only</span></div>
+              {hkEntries.map((r) => (
+                <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 500, fontSize: 16 }}>{r.symbol.replace(/\.HK$/, "")}</span>
+                  <span style={{ fontFamily: M, fontSize: 13, color: T.dim }}>ext {r.ext != null ? r.ext.toFixed(2) : "—"} · {r.last != null ? fmt(r.last) : "N/A"}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). TIER: price above kill close. Price, CHG% and pre/post EXT% from Longbridge realtime; EMA 10/20/50/89/250 (green above, red below). HOLD/BROKE/TIER refreshes about every 15 min.
+            {isHK ? "HK is observe-only (no validated config). HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). Prices from Yahoo, about 15 min delayed; HK CHG%, EMA and live feed not connected yet." : null}
+            {isHK ? null : <>HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). TIER: price above kill close. Price, CHG% and pre/post EXT% from Longbridge realtime; EMA 10/20/50/89/250 (green above, red below). HOLD/BROKE/TIER refreshes about every 15 min.</>}
           </div>
         </>
       )}
