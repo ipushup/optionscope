@@ -202,15 +202,24 @@ function Tile({ label, value, sub, color, T }) {
   );
 }
 
+const hkTime = (iso) => {
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+    return `${p.hour}:${p.minute}:${p.second}`;
+  } catch { return "—"; }
+};
+
 function BandSection({ band, bq, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
+  const [sigAt, setSigAt] = useState(null);
   const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
   const [dly, setDly] = useState({});    // daily.json: sym -> row (EMA stack)
   useEffect(() => {
     const pull = () => {
       fetch("/signals.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
-        if (!d || Date.now() - new Date(d.updated).getTime() > 300000) { setSig({}); return; }
+        if (!d || Date.now() - new Date(d.updated).getTime() > 300000) { setSig({}); setSigAt(null); return; }
+        setSigAt(d.updated);
         const m = {}; for (const r of d.rows || []) m[r.sym] = r; setSig(m);
       }).catch(() => {});
       fetch("/daily.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -251,7 +260,7 @@ function BandSection({ band, bq, T }) {
             <Tile label="CANDIDATES" value={c.candidates} sub={`of ${c.universe ?? "—"} scanned`} T={T} />
           </div>
           <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700 }}>Forming signals <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>· live kill check</span></div>
+            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700 }}>Forming signals <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>· {sigAt ? <>updated {hkTime(sigAt)} HKT <span style={{ color: T.up }}>● Longbridge</span></> : bq?.quoted_at ? `updated ${hkTime(bq.quoted_at)} HKT` : "—"}</span></div>
             {rows.length === 0 ? (
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>No forming signals.</div>
             ) : (
