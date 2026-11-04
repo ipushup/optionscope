@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PARENTS } from "./parents";
+import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
 
 /**
@@ -205,7 +205,7 @@ function Tile({ label, value, sub, color, T }) {
 function BandSection({ band, bq, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
-  const rows = (band?.forming || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map((r) => {
+  const rows = groupRows(band?.forming || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map((r) => {
     const q = quotes[r.symbol] || {};
     const px = q.price ?? null, low = q.day_low ?? null;
     let st = "—";

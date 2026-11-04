@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PARENTS } from "./parents";
+import { PARENTS, groupRows } from "./parents";
 
 /**
  * Band.jsx — Triple Band radar
@@ -131,11 +131,11 @@ export default function BandView({ isMobile, light }) {
 
       {stale && <Stale bar={band.bar_date} exec={exec} isMobile={isMobile} />}
 
-      {tab === "forming" && <Forming {...P_} rows={band.forming} />}
-      {tab === "confirmed" && <Confirmed {...P_} rows={band.confirmed} />}
-      {tab === "candidates" && <Candidates {...P_} rows={band.candidates} />}
-      {tab === "exits" && <Exits {...P_} rows={band.exits} />}
-      {tab === "observe" && <Observe {...P_} rows={band.observe} />}
+      {tab === "forming" && <Forming {...P_} rows={groupRows(band.forming)} />}
+      {tab === "confirmed" && <Confirmed {...P_} rows={groupRows(band.confirmed)} />}
+      {tab === "candidates" && <Candidates {...P_} rows={groupRows(band.candidates)} />}
+      {tab === "exits" && <Exits {...P_} rows={groupRows(band.exits)} />}
+      {tab === "observe" && <Observe {...P_} rows={groupRows(band.observe)} />}
     </div>
   );
 }
