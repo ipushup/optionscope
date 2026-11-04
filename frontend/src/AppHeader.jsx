@@ -19,6 +19,7 @@ const TH = {
 export const PAGES = [
   { id: "home", label: "Home", tab: true },
   { id: "signals", label: "Signal Board", tab: true },
+  { id: "daily", label: "Daily Table", tab: true },
   { id: "band", label: "Triple Band", tab: true },
   { id: "watchlist", label: "Watchlist", tab: true },
   { id: "radar", label: "Radar", tab: true },

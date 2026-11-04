@@ -104,7 +104,7 @@ async function handleLogin(req, env) {
 // ── 高頻檔（signals.json / market.json）改放 Durable Object，唔用 KV ──
 // Cloudflare 免費版 KV 每日只可寫 1,000 次；循環 job 每 30–60 秒寫一次會用爆，
 // 之後連每日掃描嘅上傳都 500（error 1101）。DO（SQLite）免費版每日 10 萬次寫入，夠晒。
-const LIVE_NAMES = new Set(["signals.json", "signals2.json", "market.json"]);
+const LIVE_NAMES = new Set(["signals.json", "signals2.json", "daily.json", "market.json"]);
 const liveStub = (env) => env.LIVE.get(env.LIVE.idFromName("live"));
 
 export class LiveStore {
@@ -239,7 +239,7 @@ async function handleQuotes(req, env, url) {
 //    循環 job 每個跑 ~55 分鐘；快完（>40 分鐘）而又未有人排緊隊，就預先排一個接力（concurrency 唔取消，會排隊）。
 const GH_REPO = "ipushup/optionscope";
 // after = 最新一個 run 跑咗幾多分鐘就開下一個接力。signal_stream 熱身要 ~5 分鐘，所以早啲（無 concurrency，新舊重疊）。
-const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }];
+const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }, { wf: "daily_table.yml", after: 40 }];
 
 async function keepLoopsAlive(env) {
   if (!env.GH_DISPATCH_TOKEN) { console.log("GH_DISPATCH_TOKEN 未設，跳過"); return; }
