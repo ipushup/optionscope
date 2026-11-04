@@ -12,7 +12,7 @@ const THEMES = {
   dark: { bg: "#16181b", card: "#202327", line: "#33383f", soft: "#2b2f35", txt: "#e6e9ec", sub: "#b4bcc4", dim: "#9aa4ad", mute: "#7d868f", up: "#00d4aa", dn: "#ff5c5c", warn: "#f5a623", acc: "#3b9eff", yel: "#e8c34a" },
   light: { bg: "#f3f4f6", card: "#ffffff", line: "#d9dde2", soft: "#e8ebef", txt: "#1b1f24", sub: "#3c444d", dim: "#56606b", mute: "#6b7580", up: "#00875a", dn: "#c81e3f", warn: "#a55a00", acc: "#0b6bcb", yel: "#9a7400" },
 };
-const M = "'DM Mono',ui-monospace,monospace";
+const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
 const MIN = { "5m": 5, "15m": 15 };
 

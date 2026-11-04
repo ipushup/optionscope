@@ -49,7 +49,7 @@ async function logout() {
   try { await fetch("/api/logout", { method: "POST" }); } catch { /* 離線都照 reload */ }
   window.location.reload();
 }
-const M = "'DM Mono',ui-monospace,monospace";
+const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 
 const NAV = [
   { id: "home", label: "Home", tag: "now", icon: "M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V11z" },
