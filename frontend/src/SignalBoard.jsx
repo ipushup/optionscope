@@ -9,7 +9,7 @@ import { PARENTS } from "./parents";
  */
 const URL_ = (typeof window !== "undefined" && /[?&]src=2/.test(window.location.search)) ? "/signals2.json" : "/signals.json";   // ?src=2 = 推送版試跑
 const THEMES = {
-  dark: { bg: "#16181b", card: "#202327", line: "#33383f", soft: "#2b2f35", txt: "#e6e9ec", sub: "#b4bcc4", dim: "#9aa4ad", mute: "#7d868f", up: "#00d4aa", dn: "#ff5c5c", warn: "#f5a623", acc: "#3b9eff", yel: "#e8c34a" },
+  dark: { bg: "#0f1112", card: "#151718", line: "#26292c", soft: "#1d1f21", txt: "#e3e4e5", sub: "#b9babd", dim: "#9b9b9e", mute: "#75777a", up: "#14ac9c", dn: "#f23c75", warn: "#f5a623", acc: "#3b9eff", yel: "#e8c34a" },
   light: { bg: "#f3f4f6", card: "#ffffff", line: "#d9dde2", soft: "#e8ebef", txt: "#1b1f24", sub: "#3c444d", dim: "#56606b", mute: "#6b7580", up: "#00875a", dn: "#c81e3f", warn: "#a55a00", acc: "#0b6bcb", yel: "#9a7400" },
 };
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums

@@ -29,10 +29,10 @@ const LIVE_EVERY_MS = 5000;
 
 const THEMES = {
   dark: {
-    bg: "#16181b", side: "#111316", card: "#202327", line: "#33383f", soft: "#2b2f35",
-    txt: "#e6e9ec", sub: "#b4bcc4", dim: "#9aa4ad", mute: "#7d868f",
-    up: "#00d4aa", dn: "#ff5c5c", warn: "#f5a623", acc: "#3b9eff",
-    navOn: "#2b3340", navOnLine: "#3a4a63", logo: "#1f4f8f", okBg: "#17241f", okLine: "#25423a",
+    bg: "#0f1112", side: "#0f1112", card: "#151718", line: "#26292c", soft: "#1d1f21",
+    txt: "#e3e4e5", sub: "#b9babd", dim: "#9b9b9e", mute: "#75777a",
+    up: "#14ac9c", dn: "#f23c75", warn: "#f5a623", acc: "#3b9eff",
+    navOn: "#1d1f21", navOnLine: "#2d3033", logo: "#1f4f8f", okBg: "#17241f", okLine: "#25423a",
   },
   light: {
     bg: "#f3f4f6", side: "#ffffff", card: "#ffffff", line: "#d9dde2", soft: "#e8ebef",

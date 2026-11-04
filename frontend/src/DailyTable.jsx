@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
  */
 const URL_ = "/daily.json";
 const THEMES = {
-  dark: { bg: "#16181b", card: "#202327", line: "#33383f", soft: "#2b2f35", txt: "#e6e9ec", dim: "#9aa4ad", mute: "#7d868f", up: "#00d4aa", dn: "#ff5c5c", warn: "#f5a623", acc: "#3b9eff", upBg: "rgba(0,212,170,.12)", dnBg: "rgba(255,92,92,.12)" },
+  dark: { bg: "#0f1112", card: "#151718", line: "#26292c", soft: "#1d1f21", txt: "#e3e4e5", dim: "#9b9b9e", mute: "#75777a", up: "#14ac9c", dn: "#f23c75", warn: "#f5a623", acc: "#3b9eff", upBg: "rgba(20,172,156,.16)", dnBg: "rgba(242,60,117,.16)" },
   light: { bg: "#f3f4f6", card: "#ffffff", line: "#d9dde2", soft: "#e8ebef", txt: "#1b1f24", dim: "#56606b", mute: "#6b7580", up: "#00875a", dn: "#c81e3f", warn: "#a55a00", acc: "#0b6bcb", upBg: "rgba(0,135,90,.10)", dnBg: "rgba(200,30,63,.09)" },
 };
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
