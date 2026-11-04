@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PARENTS } from "./parents";
 
 /**
  * SignalBoard.jsx — 同 TradingView 並排用嘅短線信號板。
@@ -59,6 +60,15 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       .then(j => { if (alive) { setData(j); setErr(null); } })
       .catch(e => alive && setErr(String(e.message || e)));
     pull(); const id = setInterval(pull, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+
+  const [ema, setEma] = useState({});          // daily.json → sym -> [{p,above,valid}]（今日棒用即時價，盤中會變）
+  useEffect(() => {
+    let alive = true;
+    const pull = () => fetch("/daily.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
+      .then(j => { if (!alive || !j) return; const m = {}; for (const r of j.rows || []) m[r.sym] = r.ema; setEma(m); }).catch(() => {});
+    pull(); const id = setInterval(pull, 30000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
@@ -156,6 +166,55 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
+  const tag = (e) => {
+    const bull = BULL.has(e.k), skip = e.k === "TBskip";
+    let col = skip ? T.mute : bull ? T.up : T.dn;
+    if (e.k === "TB" && e.tier === "weak") col = T.yel;
+    if (e.k === "TS" && e.tier === "weak") col = T.warn;
+    const label = e.k === "UTB" ? "UT B" : e.k === "UTS" ? "UT S" : skip ? "skip" : e.k + (e.tier === "strong" ? "★" : "");
+    return { label, col, fresh: e.ago <= near };
+  };
+  const Card = ({ r }) => {
+    const lb = r.reg > 0 && r.pc > 0;
+    const last = lb ? r.reg : r.px;
+    const chg = lb ? (r.reg / r.pc - 1) * 100 : r.chg;
+    const ext = lb && r.sess && r.sess !== "盤中" && r.px > 0 ? (r.px / r.reg - 1) * 100 : null;
+    const pf = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`;
+    const cc = v => (v >= 0 ? T.up : T.dn);
+    const evs = ["TB", "UT", "HEAVY"].map(g => r.d.ev.filter(x => GROUP[x.k] === g).sort((a, b) => a.ago - b.ago)[0]).filter(Boolean);
+    const par = PARENTS[r.sym];
+    const em = ema[r.sym];
+    return (
+      <div onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=${MIN[tf]}`, "_blank", "noopener")}
+        style={{ padding: "9px 12px 8px", borderBottom: `1px solid ${T.soft}`, cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
+            {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 600, flexShrink: 0 }}>{par} ›</span>}
+            <span style={{ fontWeight: 800, fontSize: 16, flexShrink: 0 }}>{r.sym}</span>
+            {!par && <span style={{ fontSize: 10, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{(r.section || "").replace(/^[\d.]+-/, "")}</span>}
+            {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
+              {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
+            </span>}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
+            <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{last?.toFixed(2)}</span>
+            {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: light ? "#fff" : "#06201a" }}>{pf(chg)}</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
+          <div style={{ display: "flex", gap: 5, minWidth: 0, flexWrap: "nowrap", overflow: "hidden" }}>
+            {evs.length ? evs.map(e => { const t = tag(e); return (
+              <span key={e.k} style={{ fontFamily: M, fontSize: 11, fontWeight: 700, padding: "1px 5px", borderRadius: 4, whiteSpace: "nowrap", background: t.col + "22", color: t.col, opacity: t.fresh ? 1 : 0.5 }}
+                title={`${e.k} ${e.t} UTC${e.tier ? " · " + e.tier : ""}${e.val ? " · Δ" + e.val : ""}`}>
+                {t.label} {ago(e.ago, tf)}</span>); }) : <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>–</span>}
+          </div>
+          {ext != null && <div style={{ fontFamily: M, fontSize: 11, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
+            <span style={{ color: T.mute }}>{r.sess}</span> {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span></div>}
+        </div>
+      </div>
+    );
+  };
+
   const th = { textAlign: "left", padding: isMobile ? "8px 6px" : "8px 10px", color: T.mute, fontWeight: 500, fontSize: 11, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.card };
   const td = { padding: isMobile ? "9px 6px" : "9px 10px", borderBottom: `1px solid ${T.soft}`, fontSize: isMobile ? 12 : 13, fontFamily: M };
 
@@ -191,7 +250,13 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 0 : 520 }}>
+        {isMobile ? (
+          <div>
+            {shown.map(r => <Card key={r.sym} r={r} />)}
+            {data && !shown.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
+          </div>
+        ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
           <thead><tr>
             <th style={th}>股票</th><th style={th}>TB / TS</th>
             <th style={th}>UT</th><th style={th}>Heavy</th>
@@ -218,6 +283,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
             {data && !shown.length && <tr><td colSpan={5} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );
