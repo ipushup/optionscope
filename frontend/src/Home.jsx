@@ -239,10 +239,11 @@ function BandSection({ band, bq, T }) {
     else if (px != null && low != null) st = low <= r.kill_low ? "BROKE" : r.kill_close != null && px > r.kill_close ? "TIER" : "HOLD";
     const g = sig[r.symbol], lb = g && g.reg > 0 && g.pc > 0;
     const last = lb ? g.reg : px;
-    const chg = lb ? (g.reg / g.pc - 1) * 100 : (q.chg_pct ?? null);
+    const isHKrow = r.symbol.endsWith(".HK");
+    const chg = lb ? (g.reg / g.pc - 1) * 100 : isHKrow ? (q.prev_close > 0 && px != null ? (px / q.prev_close - 1) * 100 : null) : (q.chg_pct ?? null);
     const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
     const dd = dly[r.symbol] || {};
-    return { ...r, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: dd.ema };
+    return { ...r, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
   };
   const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map(enrich);
   const hkEntries = isHK ? (band?.observe || []).filter((r) => r.market === "HK") : [];
@@ -329,7 +330,7 @@ function BandSection({ band, bq, T }) {
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            {isHK ? "HK is observe-only (no validated config). HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). Prices from Yahoo, about 15 min delayed; HK CHG%, EMA and live feed not connected yet." : null}
+            {isHK ? "HK is observe-only (no validated config). HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). Prices from Yahoo, about 15 min delayed; CHG% vs previous close, EMA from daily bars (Longbridge live feed not connected for HK yet)." : null}
             {isHK ? null : <>HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). TIER: price above kill close. Price, CHG% and pre/post EXT% from Longbridge realtime; EMA 10/20/50/89/250 (green above, red below). HOLD/BROKE/TIER refreshes about every 15 min.</>}
           </div>
         </>
