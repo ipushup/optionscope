@@ -39,7 +39,7 @@ const THEMES = {
 };
 let C = THEMES.dark;
 const F = "'Syne',system-ui,sans-serif";
-const M = "'DM Mono',ui-monospace,monospace";
+const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 
 const N = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : v.toFixed(d));
 const P = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(d)}%`);
