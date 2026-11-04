@@ -23,8 +23,8 @@ const sigRank = r => (r.sig === "BUY" ? 0 : r.sig === "SELL" ? 1 : 2);
 const emaScore = r => r.ema.filter(e => e.valid && e.above).length;
 const whaleScore = r => r.whale.reduce((s, w) => s + (w.type === "P" ? w.val : w.type === "U" ? -w.val : 0), 0);
 const KEYS = {
-  sym: r => r.sym, px: r => r.chg ?? -999, sig: r => sigRank(r), st: r => (r.st.t === "Up" ? 1 : -1) * r.st.days,
-  ut: r => (r.ut.pos === "L" ? 1 : -1), ema: emaScore, whale: whaleScore, vol: r => r.vol.ratio ?? 0, rsi: r => r.rsi.val ?? 0, atr: r => r.atr ?? 0,
+  sym: r => r.sym, px: r => r.chg ?? -999, sig: r => sigRank(r), st: r => (r.st.t === "Up" ? 1 : -1) * (1000 - r.st.days),
+  ut: r => (r.ut.pos === "L" ? 1 : -1) * (1000 - (r.ut.days ?? 999)), ema: emaScore, whale: whaleScore, vol: r => r.vol.ratio ?? 0, rsi: r => r.rsi.val ?? 0, atr: r => r.atr ?? 0,
 };
 
 export default function DailyTable({ isMobile, light }) {
@@ -76,7 +76,7 @@ export default function DailyTable({ isMobile, light }) {
   const chip = (on, extra) => ({ background: on ? T.soft : "transparent", color: on ? T.txt : T.dim, border: `1px solid ${on ? T.line : "transparent"}`, borderRadius: 7, padding: isMobile ? "5px 7px" : "5px 10px", fontFamily: M, fontSize: 12, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap", ...extra });
   const th = { textAlign: "left", padding: "9px 10px", color: T.mute, fontWeight: 500, fontSize: 11, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.card, whiteSpace: "nowrap", zIndex: 2, fontFamily: SANS };
   const td = { padding: "9px 10px", borderBottom: `1px solid ${T.soft}`, fontSize: 12.5, fontFamily: M, whiteSpace: "nowrap", verticalAlign: "middle" };
-  const COLS = [["sym", "Symbol"], ["px", "現價 / %Chg"], ["sig", "Signal"], ["st", "ST"], ["ut", "UT 止蝕"], ["ema", "EMA 10/20/50/89/250"], ["whale", "Whale（近 5 日）"], ["vol", "量能"], ["rsi", "RSI"], ["atr", "ATR"]];
+  const COLS = [["sym", "Symbol"], ["px", "現價 / %Chg"], ["sig", "Signal"], ["st", "ST"], ["ut", "UT"], ["ema", "EMA 10/20/50/89/250"], ["whale", "Whale（近 5 日）"], ["vol", "量能"], ["rsi", "RSI"], ["atr", "ATR"]];
   const sortBy = k => { if (sk === k) setSd(-sd); else { setSk(k); setSd(k === "sym" || k === "sig" ? 1 : -1); } };
   const pill = (bg, col) => ({ display: "inline-block", fontFamily: M, fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 5, background: bg, color: col });
   const tile = (label, val, col) => (
@@ -108,7 +108,7 @@ export default function DailyTable({ isMobile, light }) {
       </div>
 
       <div style={{ fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute, marginBottom: 10 }}>
-        Signal = 今日 ST 翻轉或 UT 觸發 · Ideal ★ = BUY＋放量＋RSI 45–72＋ATR ≤ 2x · 虛線「未收線」= 今日日線未完，收市前可能改變 · EMA 綠＝價在線上、紅＝線下、灰＝歷史不足 · Whale：P 拉升、U 洗出、W 弱（由舊到新）
+        ST／UT：B/S(Nd) = 現時狀態同維持咗幾多日（今日剛轉 = 0d）· Signal = 今日 ST 翻轉或 UT 觸發 · Ideal ★ = BUY＋放量＋RSI 45–72＋ATR ≤ 2x · 虛線「未收線」= 今日日線未完，收市前可能改變 · EMA 綠＝價在線上、紅＝線下、灰＝歷史不足 · Whale：P 拉升、U 洗出、W 弱（由舊到新）
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 300px)" }}>
@@ -134,8 +134,8 @@ export default function DailyTable({ isMobile, light }) {
                     {r.sig ? <span style={pill(r.sig === "BUY" ? T.upBg : T.dnBg, r.sig === "BUY" ? T.up : T.dn)}>{r.sig}</span> : <span style={{ color: T.mute }}>—</span>}
                     {r.sig && r.live && <span style={{ marginLeft: 5, border: `1px dashed ${T.mute}`, color: T.mute, borderRadius: 4, padding: "0 4px", fontSize: 9, verticalAlign: "middle" }}>未收線</span>}
                   </td>
-                  <td style={{ ...td, color: r.st.t === "Up" ? T.up : T.dn }}>{r.st.t} {r.st.days}d{r.st.flip ? " ⚑" : ""}</td>
-                  <td style={td}><span style={{ color: r.ut.pos === "L" ? T.up : T.dn, fontWeight: 600 }}>{r.ut.pos === "L" ? "B" : "S"}</span> <span style={{ color: T.mute }}>{r.ut.stop != null ? r.ut.stop.toFixed(2) : ""}</span>{r.ut.cross ? " ⚑" : ""}</td>
+                  <td style={{ ...td, color: r.st.t === "Up" ? T.up : T.dn }}>{r.st.t === "Up" ? "B" : "S"}<span style={{ color: T.mute }}>({r.st.days}d)</span></td>
+                  <td style={td} title={r.ut.stop != null ? `UT 止蝕位 ${r.ut.stop.toFixed(2)}` : ""}><span style={{ color: r.ut.pos === "L" ? T.up : T.dn }}>{r.ut.pos === "L" ? "B" : "S"}</span><span style={{ color: T.mute }}>{r.ut.days != null ? `(${r.ut.days}d)` : ""}</span></td>
                   <td style={td}><span style={{ display: "inline-flex", gap: 3 }}>
                     {r.ema.map(e => <span key={e.p} style={{ fontSize: 10, padding: "1px 5px", borderRadius: 4, background: !e.valid ? T.soft : e.above ? T.upBg : T.dnBg, color: !e.valid ? T.mute : e.above ? T.up : T.dn, opacity: e.valid ? 1 : 0.6 }}>{e.p}</span>)}
                   </span></td>

@@ -69,6 +69,39 @@ def st_series(df):
     return trend
 
 
+def ut_pos_series(df):
+    """同 daily_calc.compute_ut_bot 一樣嘅迴圈，返回成條 pos（+1 long / -1 short），計 UT 狀態維持咗幾多日"""
+    hl = df['High'] - df['Low']
+    hc = abs(df['High'] - df['Close'].shift(1)); lc = abs(df['Low'] - df['Close'].shift(1))
+    tr = pd.concat([hl, hc, lc], axis=1).max(axis=1)
+    atr = tr.ewm(alpha=1.0 / C.UT_ATR_PERIOD, adjust=False).mean()
+    src = df['Close'].values; loss = (C.UT_KEY_VALUE * atr).values; n = len(src)
+    trail = np.zeros(n)
+    for i in range(1, n):
+        ps = src[i-1]; pt = trail[i-1]; cs = src[i]; lo = loss[i]
+        if not np.isfinite(lo) or not np.isfinite(cs):
+            trail[i] = pt; continue
+        if   cs > pt and ps > pt: trail[i] = max(pt, cs - lo)
+        elif cs < pt and ps < pt: trail[i] = min(pt, cs + lo)
+        elif cs > pt:             trail[i] = cs - lo
+        else:                     trail[i] = cs + lo
+    pos = np.zeros(n, dtype=int)
+    for i in range(1, n):
+        if   src[i-1] < trail[i-1] and src[i] > trail[i-1]: pos[i] = 1
+        elif src[i-1] > trail[i-1] and src[i] < trail[i-1]: pos[i] = -1
+        else:                                                pos[i] = pos[i-1]
+    return pos
+
+
+def run_days(arr):
+    """最新狀態維持咗幾多日（今日剛轉 = 0）"""
+    last = arr[-1]; d = 0
+    for v in arr[-2::-1]:
+        if v == last: d += 1
+        else: break
+    return d
+
+
 def with_today(df, q):
     """用 quote 嘅今日 OHLCV 覆蓋／補上最新一棒（regular session）"""
     if q is None:
@@ -94,10 +127,9 @@ def analyse_daily(df, live):
     px = float(cl.iloc[-1]); prev = float(cl.iloc[-2])
     tr = st_series(df)
     t, p = int(tr[-1]), int(tr[-2])
-    days = 1
-    for v in tr[-2::-1]:
-        if v == t: days += 1
-        else: break
+    days = run_days(tr)
+    up = ut_pos_series(df)
+    ut_days = run_days(up) if up[-1] != 0 else None
     st_flip = "BUY" if (t == 1 and p == -1) else "SELL" if (t == -1 and p == 1) else None
     ut_cross, ut_pos, ut_stop = C.compute_ut_bot(df)
     ema = C.compute_ema_status(df)
@@ -114,7 +146,7 @@ def analyse_daily(df, live):
         "px": round(px, 4), "chg": round((px / prev - 1) * 100, 2) if prev else None, "live": bool(live),
         "bar": str(df.index[-1].date()),
         "st": {"t": "Up" if t == 1 else "Down", "days": days, "flip": st_flip},
-        "ut": {"pos": ut_pos, "stop": ut_stop, "cross": ut_cross},
+        "ut": {"pos": ut_pos, "stop": ut_stop, "cross": ut_cross, "days": ut_days},
         "sig": sig,
         "ema": [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in ema["pills"]],
         "whale": whale,
