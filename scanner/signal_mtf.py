@@ -141,6 +141,7 @@ def main():
         rows[s] = compute_symbol(f, S)
         got = sum(1 for v in rows[s].values() if v)
         print(f"{s}: {got}/{len(TFS)} timeframes", flush=True)
+        print("  " + json.dumps(rows[s], separators=(",", ":")), flush=True)
 
     payload = {"updated": datetime.now(timezone.utc).isoformat(), "tfs": TFS, "rows": rows}
     OUT.parent.mkdir(parents=True, exist_ok=True)
