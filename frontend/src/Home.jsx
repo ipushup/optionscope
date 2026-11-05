@@ -186,7 +186,8 @@ function IndexCard({ card, T, mode, daily, light }) {
           <span style={{ color: T.txt }}>{etf ? fmt(etf.last) : "N/A"}</span>
           <span style={{ color: etfCol }}>{etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}</span>
         </div>
-        {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5 }}>{stamp(etf)}</div>}
+        {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5 }}>
+          {{ pre: "盤前", post: "盤後", overnight: "夜盤" }[etf.session] && <span style={{ color: T.sub, marginRight: 4 }}>{{ pre: "盤前", post: "盤後", overnight: "夜盤" }[etf.session]}</span>}{stamp(etf)}</div>}
       </div>
     </div>
   );
