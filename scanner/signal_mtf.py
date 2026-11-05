@@ -32,7 +32,7 @@ DEFAULT_SYMS = "NVDA,TSLA,MU,GOOGL,META,AMD,PLTR,AAPL,MSFT,AMZN"
 OUT = Path(os.getenv("MTF_OUT") or Path(__file__).resolve().parent.parent / "frontend" / "public" / "mtf.json")
 MIN_BARS = 120
 HV_REPLAY = 300  # Heavy 重放只用最近咁多棒（夠長，慳 CPU）
-HV_FRESH = 25   # Heavy 標記超過幾多棒就當冇（窗口邊緣嘅舊標記唔算「出現」）
+HV_FRESH = 50   # Heavy 標記只認最近 50 棒（窗口 100 棒嘅後半）；更舊嘅當冇
 ET = ZoneInfo("America/New_York")
 
 
