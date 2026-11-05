@@ -29,6 +29,12 @@ const SESSION_BADGE = {
   closed:  { t: "CLS",  c: c("#3a5060") },
 };
 
+// Pre / Post 用 Longbridge 式斜體灰色徽章；LIVE / CLS 保持原本狀態標籤
+const SessTag = ({ sb }) => (sb.t === "PRE" || sb.t === "POST")
+  ? <span title={sb.t === "PRE" ? "盤前 Pre-market" : "盤後 Post-market"} style={{ display: "inline-block", transform: "skewX(-12deg)", background: c("#1a2e40"), color: c("#9bb3c6"),
+      fontSize: 9, fontWeight: 700, fontStyle: "italic", fontFamily: "DM Mono,monospace", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3 }}>{sb.t === "PRE" ? "Pre" : "Post"}</span>
+  : <span style={{ fontSize: 8, fontWeight: 800, fontFamily: "DM Mono,monospace", color: sb.c, border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>;
+
 const mono = "DM Mono,monospace";
 const syne = "'Syne',sans-serif";
 
@@ -96,8 +102,7 @@ function RadarListCard({ card, quote, onClick }) {
         <span style={{ fontSize: 14, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
         <span style={{ fontSize: 11, fontWeight: 700, fontFamily: mono,
                        color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
-        <span style={{ fontSize: 8, fontWeight: 800, fontFamily: mono, color: sb.c,
-                       border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>
+        <SessTag sb={sb} />
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 9, fontWeight: 800, fontFamily: mono, color: sc.c,
                        background: sc.bg, borderRadius: 5, padding: "2px 6px" }}>{card.scen}</span>
@@ -191,8 +196,7 @@ function RadarDetail({ card, quote, onClose }) {
           <span style={{ fontSize: 16, fontWeight: 700, color: c("#aaccee"), fontFamily: mono }}>{f2(d.live)}</span>
           <span style={{ fontSize: 12, fontWeight: 700, fontFamily: mono,
                          color: d.vsClose >= 0 ? c("#00d4aa") : c("#ff5c5c") }}>{pctTxt(d.vsClose)}</span>
-          <span style={{ fontSize: 8, fontWeight: 800, fontFamily: mono, color: sb.c,
-                         border: `1px solid ${sb.c}55`, borderRadius: 4, padding: "1px 4px" }}>{sb.t}</span>
+          <SessTag sb={sb} />
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 9, fontWeight: 800, color: sc.c, background: sc.bg,
                          borderRadius: 6, padding: "3px 8px", fontFamily: mono }}>{card.scen_name}</span>
