@@ -5,7 +5,7 @@ signal_mtf.py — Signal Board「交通燈」矩陣數據：少量股票 × 6 �
 
 每個格輸出「持倉狀態」（+1 買方向 / -1 賣方向 / 0 冇）：
   TB  最近一個 TB（唔計被 rU60 濾走嘅 TBskip）同最近一個 TS 邊個新：TB 新 = +1，TS 新 = -1
-  HV  Heavy（同 Signal Board / Daily Table 同一套 heavy_now）最近嘅係 HB = +1、HS = -1；
+  HV  Heavy（同 Signal Board / Daily Table 同一套 heavy_now）最近出現嘅係 HB = +1、HS = -1（逐棒重放，同 Signal Board 一致）；
       標記距今超過 HV_FRESH 棒（通常係窗口邊緣嘅舊標記）當冇 = 0
   UT  UT Bot 現時持倉方向（long = +1 / short = -1）
 同時附 ago（距今幾多棒）俾前端 tooltip。
@@ -31,6 +31,7 @@ TFS = ["5m", "15m", "1h", "2h", "4h", "1D"]
 DEFAULT_SYMS = "NVDA,TSLA,MU,GOOGL,META,AMD,PLTR,AAPL,MSFT,AMZN"
 OUT = Path(os.getenv("MTF_OUT") or Path(__file__).resolve().parent.parent / "frontend" / "public" / "mtf.json")
 MIN_BARS = 120
+HV_REPLAY = 300  # Heavy 重放只用最近咁多棒（夠長，慳 CPU）
 HV_FRESH = 25   # Heavy 標記超過幾多棒就當冇（窗口邊緣嘅舊標記唔算「出現」）
 ET = ZoneInfo("America/New_York")
 
@@ -69,13 +70,20 @@ def states(df, S):
         tb_s, tb_ago = 1, n - 1 - tb_i
     else:
         tb_s, tb_ago = -1, n - 1 - ts_i
-    bi, _bv, si, _sv = S.heavy_now(df)
+    # Heavy：逐棒重放（同 Signal Board 一致，標記一旦出現就記低，之後被洗走都仍然算「出現過」）
+    hd = df.iloc[-HV_REPLAY:]
+    hn = len(hd)
+    hev = S.heavy_events(hd)
+    hb = [e["i"] for e in hev if e["kind"] == "HB"]
+    hs = [e["i"] for e in hev if e["kind"] == "HS"]
+    bi = max(hb) if hb else None
+    si = max(hs) if hs else None
     if bi is None and si is None:
         hv_s, hv_ago = 0, None
     elif si is None or (bi is not None and bi >= si):
-        hv_s, hv_ago = 1, n - 1 - bi
+        hv_s, hv_ago = 1, hn - 1 - bi
     else:
-        hv_s, hv_ago = -1, n - 1 - si
+        hv_s, hv_ago = -1, hn - 1 - si
     if hv_ago is not None and hv_ago > HV_FRESH:
         hv_s, hv_ago = 0, None
     pos = S.ut_bot(df)[1]
