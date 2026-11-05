@@ -242,7 +242,7 @@ async function handleQuotes(req, env, url) {
 //    循環 job 每個跑 ~55 分鐘；快完（>40 分鐘）而又未有人排緊隊，就預先排一個接力（concurrency 唔取消，會排隊）。
 const GH_REPO = "ipushup/optionscope";
 // after = 最新一個 run 跑咗幾多分鐘就開下一個接力。signal_stream 熱身要 ~5 分鐘，所以早啲（無 concurrency，新舊重疊）。
-const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }, { wf: "daily_table.yml", after: 40 }];
+const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }, { wf: "daily_table.yml", after: 40 }, { wf: "signal_mtf.yml", after: 40 }];
 
 async function keepLoopsAlive(env) {
   if (!env.GH_DISPATCH_TOKEN) { console.log("GH_DISPATCH_TOKEN 未設，跳過"); return; }

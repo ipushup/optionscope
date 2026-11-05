@@ -17,6 +17,7 @@ signal_mtf.py — Signal Board「交通燈」矩陣數據：少量股票 × 6 �
   SB_MTF_SYMS   股票（逗號分隔）；留空 = Signal Board 全部股票（Watchlists.txt 美股）
   MTF_RATE      每秒最多幾個 candlestick call（預設 6）  MTF_THREADS 並行數（預設 4）
   MTF_OUT       輸出檔，預設 frontend/public/mtf.json
+  MTF_LOOP_SECS 循環跑幾耐（秒）；0 = 跑一次。循環模式每輪完成就推去 gateway（要 GATEWAY_URL / INGEST_TOKEN / SB_INGEST_NAME=mtf.json）
 """
 import os, sys, json, time
 from datetime import datetime, timezone
@@ -143,35 +144,52 @@ def main():
     def one(s):
         try:
             f = {}
-            f["5m"] = pull(s, Period.Min_5, 1000, AdjustType.NoAdjust, TradeSessions.All)
-            f["15m"] = pull(s, Period.Min_15, 1000, AdjustType.NoAdjust, TradeSessions.All)
-            h1 = pull(s, Period.Min_60, 1000, AdjustType.NoAdjust, TradeSessions.Intraday)
+            f["5m"] = pull(s, Period.Min_5, 600, AdjustType.NoAdjust, TradeSessions.All)
+            f["15m"] = pull(s, Period.Min_15, 600, AdjustType.NoAdjust, TradeSessions.All)
+            h1 = pull(s, Period.Min_60, 700, AdjustType.NoAdjust, TradeSessions.Intraday)
             f["1h"] = h1
             f["2h"] = aggregate(h1, 2) if h1 is not None else None
             f["4h"] = aggregate(h1, 4) if h1 is not None else None
-            f["1D"] = pull(s, Period.Day, 400, AdjustType.ForwardAdjust, TradeSessions.Intraday)
+            f["1D"] = pull(s, Period.Day, 300, AdjustType.ForwardAdjust, TradeSessions.Intraday)
             return s, compute_symbol(f, S)
         except Exception as e:  # noqa: BLE001
             print(f"::warning::{s}: {e}", flush=True)
             return s, None
 
-    rows, t0, bad = {}, time.time(), 0
-    with ThreadPoolExecutor(int(os.getenv("MTF_THREADS", "4"))) as ex:
-        for i, (s, r) in enumerate(ex.map(one, syms), 1):
-            if r is None or not any(r.values()):
-                bad += 1
-                continue
-            rows[s] = r
-            if i % 50 == 0 or i == len(syms):
-                print(f"{i}/{len(syms)} done, {time.time()-t0:.0f}s", flush=True)
-    print(f"ok {len(rows)}, empty {bad}", flush=True)
-    if not rows:
-        raise SystemExit("no rows")
+    def run_once():
+        rows, t0, bad = {}, time.time(), 0
+        with ThreadPoolExecutor(int(os.getenv("MTF_THREADS", "5"))) as ex:
+            for i, (s, r) in enumerate(ex.map(one, syms), 1):
+                if r is None or not any(r.values()):
+                    bad += 1
+                    continue
+                rows[s] = r
+                if i % 100 == 0 or i == len(syms):
+                    print(f"{i}/{len(syms)} done, {time.time()-t0:.0f}s", flush=True)
+        print(f"ok {len(rows)}, empty {bad}, round {time.time()-t0:.0f}s", flush=True)
+        if not rows:
+            raise RuntimeError("no rows")
+        payload = {"updated": datetime.now(timezone.utc).isoformat(), "tfs": TFS, "rows": rows}
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(payload, separators=(",", ":")))
+        print(f"✓ {OUT}", flush=True)
 
-    payload = {"updated": datetime.now(timezone.utc).isoformat(), "tfs": TFS, "rows": rows}
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload, separators=(",", ":")))
-    print(f"✓ {OUT}", flush=True)
+    loop_s = float(os.getenv("MTF_LOOP_SECS", "0") or 0)
+    end = time.time() + loop_s
+    while True:
+        t0 = time.time()
+        try:
+            run_once()
+            if loop_s:
+                sb._LAST_PUSH[0] = 0      # 每輪都推（KV 模式 sb.push 預設 5 分鐘先推一次；一輪 >= 幾分鐘）
+                sb.push(OUT)
+        except Exception as e:  # noqa: BLE001  一輪失敗唔好搞死成個循環
+            print(f"::warning::round failed: {e}", flush=True)
+            if not loop_s:
+                raise
+        if not loop_s or time.time() + 60 >= end:
+            break
+        time.sleep(max(1.0, 60 - (time.time() - t0)))
 
 
 if __name__ == "__main__":
