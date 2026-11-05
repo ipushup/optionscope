@@ -21,10 +21,10 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install yfinance pandas numpy
-      - name: Build daily.json
+      - name: Build index_daily.json
         run: python scanner/index_daily.py
       - name: Publish to private gateway
         env:
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
-        run: bash scanner/push_private.sh frontend/public/daily.json
+        run: bash scanner/push_private.sh frontend/public/index_daily.json
