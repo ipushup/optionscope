@@ -24,7 +24,7 @@ jobs:
         with: {ref: main}
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
-      - run: pip install pandas numpy longbridge
+      - run: pip install pandas numpy yfinance longbridge
       - name: Compute MTF states
         env:
           LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
