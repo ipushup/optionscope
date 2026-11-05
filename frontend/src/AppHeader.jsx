@@ -59,6 +59,9 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
           </svg>
         </button>
         <div style={{ fontWeight: 800, fontSize: 22, letterSpacing: "-0.5px", color: T.txt, flex: 1, minWidth: 0, marginLeft: 6 }}>xMarket</div>
+        <button type="button" onClick={() => window.location.reload()} aria-label="重新整理頁面" title="Refresh" style={{ ...iconBtn, color: T.sub }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v4.5h-4.5" /></svg>
+        </button>
         <button type="button" onClick={onToggleLight} aria-label="切換深／淺色" style={{ ...iconBtn, color: T.sub }}>
           {light
             ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
