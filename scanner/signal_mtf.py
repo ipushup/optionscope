@@ -31,6 +31,7 @@ TFS = ["5m", "15m", "1h", "2h", "4h", "1D"]
 DEFAULT_SYMS = "NVDA,TSLA,MU,GOOGL,META,AMD,PLTR,AAPL,MSFT,AMZN"
 OUT = Path(os.getenv("MTF_OUT") or Path(__file__).resolve().parent.parent / "frontend" / "public" / "mtf.json")
 MIN_BARS = 120
+HV_GRACE = 3     # 標記消失後仍保留幾多棒
 HV_REPLAY = 300  # Heavy 重放只用最近咁多棒（夠長，慳 CPU）
 HV_FRESH = 50   # Heavy 標記只認最近 50 棒（窗口 100 棒嘅後半）；更舊嘅當冇
 ET = ZoneInfo("America/New_York")
@@ -70,14 +71,21 @@ def states(df, S):
         tb_s, tb_ago = 1, n - 1 - tb_i
     else:
         tb_s, tb_ago = -1, n - 1 - ts_i
-    # Heavy：逐棒重放（同 Signal Board 一致，標記一旦出現就記低，之後被洗走都仍然算「出現過」）
+    # Heavy：以「而家最後一棒睇到嘅標記」(heavy_now，即圖上顯示嘅) 為準；
+    # 剛剛（<= HV_GRACE 棒內）先消失嘅標記仍然算（成交量來源有少少差異時，邊緣標記會跳）
+    n_ = len(df)
+    bi, _bv, si, _sv = S.heavy_now(df)
     hd = df.iloc[-HV_REPLAY:]
     hn = len(hd)
     hev = S.heavy_events(hd)
-    hb = [e["i"] for e in hev if e["kind"] == "HB"]
-    hs = [e["i"] for e in hev if e["kind"] == "HS"]
-    bi = max(hb) if hb else None
-    si = max(hs) if hs else None
+    off = n_ - hn
+    hb = [e["i"] + off for e in hev if e["kind"] == "HB"]
+    hs = [e["i"] + off for e in hev if e["kind"] == "HS"]
+    if bi is None and hb and n_ - 1 - max(hb) <= HV_GRACE:
+        bi = max(hb)
+    if si is None and hs and n_ - 1 - max(hs) <= HV_GRACE:
+        si = max(hs)
+    hn = n_
     if bi is None and si is None:
         hv_s, hv_ago = 0, None
     elif si is None or (bi is not None and bi >= si):
