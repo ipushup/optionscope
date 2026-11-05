@@ -18,7 +18,7 @@ import AppHeader from "./AppHeader";
 
 const BASE = process.env.PUBLIC_URL || "";
 const MARKET_URL = `${BASE}/market.json`;
-const DAILY_URL = `${BASE}/daily.json`;
+const DAILY_URL = `${BASE}/index_daily.json`;
 const SUMMARY_URL = `${BASE}/summary.json`;
 const BAND_URL = `${BASE}/band.json`;
 const BQ_URL = `${BASE}/band_quotes.json`;

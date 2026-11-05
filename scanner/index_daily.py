@@ -3,7 +3,7 @@ index_daily.py — Home 01 Market Snapshot「Daily」模式嘅數據
 
 8 個指數／價格（Yahoo 日線）→ 蠟燭 + EMA10/20/50 + SuperTrend(10,3) + UT Bot(KV=2, ATR=1)，
 演算法同 After-market-brief/market_charts.py（daily brief）一模一樣，所以信號同 brief 一致。
-寫 frontend/public/daily.json；每個 symbol 失敗就該欄 null，唔估值。
+寫 frontend/public/index_daily.json；每個 symbol 失敗就該欄 null，唔估值。
 """
 import json
 import os
@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-OUT_PATH = os.environ.get("DAILY_OUT", "frontend/public/daily.json")
+OUT_PATH = os.environ.get("DAILY_OUT", "frontend/public/index_daily.json")
 BARS = 70
 IDS = [("spx", "^GSPC"), ("ndx", "^IXIC"), ("dji", "^DJI"), ("vix", "^VIX"),
        ("hsi", "^HSI"), ("btc", "BTC-USD"), ("brent", "BZ=F"), ("us10y", "^TNX")]
