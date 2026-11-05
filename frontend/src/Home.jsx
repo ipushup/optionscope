@@ -248,7 +248,7 @@ function BandSection({ band, bq, T }) {
   const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map(enrich);
   const hkEntries = isHK ? (band?.observe || []).filter((r) => r.market === "HK") : [];
   const confRows = groupRows(isHK ? hkEntries : band?.confirmed || []).map(enrich);
-  const pill = { ENTRY: T.up, HOLD: T.up, BROKE: T.dn, TIER: T.acc, "—": T.mute };
+  const pill = { ENTRY: T.up, HOLD: T.acc, BROKE: T.dn, TIER: T.warn, "—": T.mute };
   const th = { textAlign: "left", fontFamily: M, fontSize: 10, letterSpacing: "0.1em", color: T.mute, fontWeight: 400, padding: "8px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
   const td = { fontFamily: M, fontSize: 12, padding: "9px 10px", borderBottom: `1px solid ${T.line}`, whiteSpace: "nowrap" };
   const renderCard = (r) => {
