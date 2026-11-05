@@ -251,6 +251,21 @@ function BandSection({ band, bq, T }) {
     };
     pull(); const id = setInterval(pull, 15000); return () => clearInterval(id);
   }, []);
+  // 最近 5 日訊號 tag：1 = 最新一根日棒（今日 / bar_date），5 = 五日前
+  const busDiff = (a, b) => { // a→b 之間嘅交易日數（週一至五）
+    let n = 0; const d = new Date(a + "T00:00:00Z"), e = new Date(b + "T00:00:00Z");
+    while (d < e) { d.setUTCDate(d.getUTCDate() + 1); const w = d.getUTCDay(); if (w !== 0 && w !== 6) n++; }
+    return n;
+  };
+  const tbMap = (() => {
+    const m = {}, bd = band?.bar_date;
+    if (!bd) return m;
+    const put = (sym, from) => { if (!from) return; const n = busDiff(from, bd) + 1; if (n >= 1 && n <= 5 && (m[sym] == null || n < m[sym])) m[sym] = n; };
+    for (const r of band.confirmed || []) put(r.symbol, r.date);
+    for (const r of band.candidates || []) put(r.symbol, r.entry_date);
+    for (const r of band.observe || []) put(r.symbol, r.date);
+    return m;
+  })();
   const enrich = (r) => {
     const q = quotes[r.symbol] || {};
     const px = q.price ?? null, low = q.day_low ?? null;
@@ -263,7 +278,11 @@ function BandSection({ band, bq, T }) {
     const chg = lb ? (g.reg / g.pc - 1) * 100 : isHKrow ? (q.prev_close > 0 && px != null ? (px / q.prev_close - 1) * 100 : null) : (q.chg_pct ?? null);
     const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
     const dd = dly[r.symbol] || {};
-    return { ...r, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
+    const tags = [];
+    if (tbMap[r.symbol] != null) tags.push({ t: `TB${tbMap[r.symbol]}`, c: T.up });
+    if (dd.ut && dd.ut.days != null && dd.ut.days <= 5 && dd.ut.pos) tags.push({ t: `${dd.ut.pos > 0 ? "B" : "S"}${dd.ut.days}`, c: dd.ut.pos > 0 ? T.up : T.dn });
+    if (dd.heavy && dd.heavy.days != null && dd.heavy.days + 1 <= 5) tags.push({ t: `${dd.heavy.k}${dd.heavy.days + 1}`, c: dd.heavy.k === "HB" ? T.up : T.dn });
+    return { ...r, tags, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
   };
   const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map(enrich);
   const hkEntries = isHK ? (band?.observe || []).filter((r) => r.market === "HK") : [];
@@ -293,9 +312,12 @@ function BandSection({ band, bq, T }) {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
-                        <div style={{ display: "flex", minWidth: 0 }}>
-                          {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 0 }}>
-                            {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
+                        <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+                          {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0, marginLeft: 0 }}>
+                            {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
+                          </span>}
+                          {r.tags && r.tags.length > 0 && <span style={{ display: "flex", gap: 4, flexShrink: 0, marginLeft: 6 }}>
+                            {r.tags.map((x) => <span key={x.t} style={{ fontFamily: M, fontSize: 10, fontWeight: 600, color: x.c, whiteSpace: "nowrap" }}>{x.t}</span>)}
                           </span>}
                         </div>
                         {r.ext != null && <div style={{ fontFamily: M, fontSize: 13, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
