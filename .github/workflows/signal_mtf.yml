@@ -1,40 +1,42 @@
 name: Signal MTF
 
 # Signal Board 交通燈矩陣（全部股票 × 5m/15m/1h/2h/4h/1D × TB/HV/UT）
-# 每 10 分鐘算一次，上傳 mtf.json 去私人 gateway。只跑指定股票：手動 dispatch 填 syms。
+# 循環 job：跑 ~55 分鐘，每輪（約 8–10 分鐘）完成就推 mtf.json 去私人 gateway。
+# GitHub 自己嘅 cron 唔準時，所以由 Cloudflare Worker 嘅排程接力 dispatch（見 worker/src/index.js LOOP_WORKFLOWS）。
+# 只跑指定股票：手動 dispatch 填 syms（loop 填 0 = 跑一次）。
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
     inputs:
       syms:
         description: 'Override symbols (comma separated)'
         default: ''
+      loop:
+        description: 'Loop seconds (0 = once)'
+        default: '3300'
 
 concurrency:
   group: signal-mtf
-  cancel-in-progress: false
+  cancel-in-progress: false   # 新一輪排隊等舊一輪完（Worker 提早 dispatch 做接力），唔取消
 
 jobs:
   mtf:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 58
     steps:
       - uses: actions/checkout@v4
         with: {ref: main}
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
       - run: pip install pandas numpy yfinance longbridge
-      - name: Compute MTF states
+      - name: Compute MTF states (loop)
         env:
           LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
           LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
           LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
           LONGBRIDGE_ENABLE_OVERNIGHT: "true"
           SB_MTF_SYMS: ${{ inputs.syms }}
-        run: python scanner/signal_mtf.py
-      - name: Publish to private gateway
-        env:
+          MTF_LOOP_SECS: ${{ inputs.loop || '3300' }}
+          SB_INGEST_NAME: mtf.json
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
-        run: bash scanner/push_private.sh frontend/public/mtf.json
+        run: python scanner/signal_mtf.py
