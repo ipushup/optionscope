@@ -189,6 +189,11 @@ def fetch_df(ticker, interval="1d", period="2y", retries=2):
             if df is not None and not df.empty:
                 if isinstance(df.columns, pd.MultiIndex):
                     df.columns = df.columns.get_level_values(0)
+                # Yahoo 有時收市後出一支 Close=NaN 嘅尾棒 → price/tier_gap 全變 null，
+                # forming_live 變 0 但前端表仍然列出（?? 0）。先掉走 NaN 棒。
+                df = df.dropna(subset=["Close"])
+                if df.empty:
+                    continue
                 df = drop_forming(df, ticker)
                 _cache[key] = df
                 return df
