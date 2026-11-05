@@ -1,0 +1,40 @@
+name: Signal MTF
+
+# Signal Board 交通燈矩陣（少量測試股票 × 5m/15m/1h/2h/4h/1D × TB/HV/UT）
+# 每 10 分鐘算一次，上傳 mtf.json 去私人 gateway。測試股票改 SB_MTF_SYMS（見 scanner/signal_mtf.py）。
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      syms:
+        description: 'Override symbols (comma separated)'
+        default: ''
+
+concurrency:
+  group: signal-mtf
+  cancel-in-progress: false
+
+jobs:
+  mtf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy longbridge
+      - name: Compute MTF states
+        env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          LONGBRIDGE_ENABLE_OVERNIGHT: "true"
+          SB_MTF_SYMS: ${{ inputs.syms }}
+        run: python scanner/signal_mtf.py
+      - name: Publish to private gateway
+        env:
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: bash scanner/push_private.sh frontend/public/mtf.json

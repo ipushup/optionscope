@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { PARENTS } from "./parents";
 
 /**
@@ -60,6 +60,15 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       .then(j => { if (alive) { setData(j); setErr(null); } })
       .catch(e => alive && setErr(String(e.message || e)));
     pull(); const id = setInterval(pull, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+
+  const [mtf, setMtf] = useState(null);       // mtf.json → { tfs, rows: { SYM: { "5m": {tb,hv,ut,*_ago}, ... } } }（少量測試股票）
+  useEffect(() => {
+    let alive = true;
+    const pull = () => fetch("/mtf.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
+      .then(j => { if (alive && j && j.rows) setMtf(j); }).catch(() => {});
+    pull(); const id = setInterval(pull, 60000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
@@ -150,6 +159,37 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         fontSize: 9.5, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
   };
 
+  // 交通燈矩陣：3 行（TB / HV / UT）× 6 個時間級別；綠 = 買方向持倉、紅 = 賣方向、灰 = 冇
+  const MTF_ROWS = [["tb", "TB", "Triple Band（唔計 skip）"], ["hv", "HV", "Heavy Buy/Sell"], ["ut", "UT", "UT Bot 持倉方向"]];
+  const MTF_COL = 30, MTF_LBL = 20;
+  const dotCol = v => (v === 1 ? T.up : v === -1 ? T.dn : T.line);
+  const Matrix = ({ sym, head }) => {
+    const m = mtf?.rows?.[sym];
+    if (!m) return null;
+    const tfsM = mtf.tfs || ["5m", "15m", "1h", "2h", "4h", "1D"];
+    return (
+      <div style={{ marginTop: 5, display: "inline-grid", gridTemplateColumns: `${MTF_LBL}px repeat(${tfsM.length}, ${MTF_COL}px)`, rowGap: 3, alignItems: "center" }}>
+        {head && <><span />{tfsM.map(t => <span key={t} style={{ fontFamily: M, fontSize: 8.5, color: T.mute, textAlign: "center" }}>{t}</span>)}</>}
+        {MTF_ROWS.map(([k, lbl, full]) => (
+          <Fragment key={k}>
+            <span style={{ fontFamily: M, fontSize: 8.5, fontWeight: 600, color: T.mute }} title={full}>{lbl}</span>
+            {tfsM.map(tf => {
+              const st = m[tf];
+              const v = st ? st[k] : null;
+              const ago = st ? st[k + "_ago"] : null;
+              return (
+                <span key={tf} style={{ display: "flex", justifyContent: "center" }}
+                  title={st ? `${tf} ${lbl} ${v === 1 ? "買方向" : v === -1 ? "賣方向" : "冇"}${ago != null ? ` · ${ago} 棒前` : ""}` : `${tf} 數據不足`}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: st ? dotCol(v) : "transparent", border: st ? "none" : `1px solid ${T.line}`, boxSizing: "border-box" }} />
+                </span>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+    );
+  };
+
   const Cell = ({ r, grp }) => {
     const e = r.d.ev.filter(x => GROUP[x.k] === grp).sort((a, b) => a.ago - b.ago)[0];
     if (!e) return <span style={{ color: T.mute }}>–</span>;
@@ -193,7 +233,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
             {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
             <span style={{ fontWeight: 500, fontSize: 16, flexShrink: 0 }}>{r.sym}</span>
-            {!par && <span style={{ fontSize: 10, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{(r.section || "").replace(/^[\d.]+-/, "")}</span>}
             {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
               {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
             </span>}
@@ -203,6 +242,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
             {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: "#fff" }}>{pf(chg)}</span>}
           </div>
         </div>
+        <Matrix sym={r.sym} head />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
           <div style={{ display: "flex", gap: 5, minWidth: 0, flexWrap: "nowrap", overflow: "hidden" }}>
             {evs.length ? evs.map(e => { const t = tag(e); return (
@@ -273,6 +313,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                     {r.sym}
                     <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
                     <SessBadge s={r.sess} />
+                    {mtf?.rows?.[r.sym] && <div><Matrix sym={r.sym} head /></div>}
                     {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
                   </td>
                   <td style={td}><Cell r={r} grp="TB" /></td>
