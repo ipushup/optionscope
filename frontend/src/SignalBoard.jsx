@@ -141,11 +141,13 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     </>
   );
 
-  const SessBadge = ({ s }) => {
-    const t = { 夜盤: "24h", 盤前: "pre", 盤後: "post" }[s];
+  // Longbridge 式斜體灰色徽章（同 Home 一致）
+  const SessBadge = ({ s, ml = 5 }) => {
+    const t = { 夜盤: "24h", 盤前: "Pre", 盤後: "Post" }[s];
     if (!t) return null;
-    return <span title={s} style={{ marginLeft: 5, padding: "1px 4px", border: `1px solid ${T.line}`, borderRadius: 4,
-      fontFamily: M, fontSize: 9, fontWeight: 500, color: T.dim, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
+    return <span title={{ "24h": "夜盤 24h overnight", Pre: "盤前 Pre-market", Post: "盤後 Post-market" }[t]}
+      style={{ display: "inline-block", transform: "skewX(-12deg)", marginLeft: ml, background: T.line, color: T.sub, fontFamily: M,
+        fontSize: 9.5, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
   };
 
   const Cell = ({ r, grp }) => {
@@ -209,7 +211,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                 {t.label} {ago(e.ago, tf)}</span>); }) : <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>–</span>}
           </div>
           {ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
-            <span style={{ color: T.mute }}>{r.sess}</span> {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span></div>}
+            {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>}
         </div>
       </div>
     );
