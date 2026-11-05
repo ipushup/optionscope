@@ -139,6 +139,16 @@ def main():
         f["4h"] = aggregate(h1, 4) if h1 is not None else None
         f["1D"] = pull(s, Period.Day, 400, AdjustType.ForwardAdjust, TradeSessions.Intraday)
         rows[s] = compute_symbol(f, S)
+        if os.getenv("MTF_DEBUG") and s == os.getenv("MTF_DEBUG"):
+            for tf, df in f.items():
+                if df is None or df.empty:
+                    continue
+                n = len(df); bi, bv, si, sv = S.heavy_now(df)
+                ev = S.heavy_events(df.iloc[-HV_REPLAY:])
+                hb = [e["i"] for e in ev if e["kind"] == "HB"]; hs = [e["i"] for e in ev if e["kind"] == "HS"]
+                m = min(HV_REPLAY, n)
+                print(f"  DBG {tf} n={n} first={df.index[0]} last={df.index[-1]} now:HBago={None if bi is None else n-1-bi} HSago={None if si is None else n-1-si} "
+                      f"replay:HBago={m-1-max(hb) if hb else None} HSago={m-1-max(hs) if hs else None} lastvol={list(df['Volume'].tail(4))}", flush=True)
         got = sum(1 for v in rows[s].values() if v)
         print(f"{s}: {got}/{len(TFS)} timeframes", flush=True)
         print("  " + json.dumps(rows[s], separators=(",", ":")), flush=True)
