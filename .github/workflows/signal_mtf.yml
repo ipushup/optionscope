@@ -1,7 +1,7 @@
 name: Signal MTF
 
-# Signal Board 交通燈矩陣（少量測試股票 × 5m/15m/1h/2h/4h/1D × TB/HV/UT）
-# 每 10 分鐘算一次，上傳 mtf.json 去私人 gateway。測試股票改 SB_MTF_SYMS（見 scanner/signal_mtf.py）。
+# Signal Board 交通燈矩陣（全部股票 × 5m/15m/1h/2h/4h/1D × TB/HV/UT）
+# 每 10 分鐘算一次，上傳 mtf.json 去私人 gateway。只跑指定股票：手動 dispatch 填 syms。
 on:
   schedule:
     - cron: '*/10 * * * *'
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   mtf:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with: {ref: main}

@@ -14,7 +14,8 @@ signal_mtf.py — Signal Board「交通燈」矩陣數據：少量股票 × 6 �
 2h / 4h 由 1h 按美東交易日合併（9:30 起算：2h = 2 棒、4h = 4 棒，最後一組可能較短）、1D（日線）。
 
 環境變數
-  SB_MTF_SYMS   股票（逗號分隔），預設 10 隻測試股票
+  SB_MTF_SYMS   股票（逗號分隔）；留空 = Signal Board 全部股票（Watchlists.txt 美股）
+  MTF_RATE      每秒最多幾個 candlestick call（預設 6）  MTF_THREADS 並行數（預設 4）
   MTF_OUT       輸出檔，預設 frontend/public/mtf.json
 """
 import os, sys, json, time
@@ -28,7 +29,6 @@ import numpy as np
 import pandas as pd
 
 TFS = ["5m", "15m", "1h", "2h", "4h", "1D"]
-DEFAULT_SYMS = "NVDA,TSLA,MU,GOOGL,META,AMD,PLTR,AAPL,MSFT,AMZN"
 OUT = Path(os.getenv("MTF_OUT") or Path(__file__).resolve().parent.parent / "frontend" / "public" / "mtf.json")
 MIN_BARS = 120
 HV_GRACE = 3     # 標記消失後仍保留幾多棒
@@ -119,7 +119,11 @@ def main():
     import signal_board as sb
     import intraday_signals as S
 
-    syms = [x.strip().upper() for x in (os.getenv("SB_MTF_SYMS") or DEFAULT_SYMS).split(",") if x.strip()]
+    from concurrent.futures import ThreadPoolExecutor
+    sb.RATE = float(os.getenv("MTF_RATE", "6"))
+    only = [x.strip().upper() for x in (os.getenv("SB_MTF_SYMS") or "").split(",") if x.strip()]
+    syms = only or [u["sym"] for u in sb.universe()]
+    print(f"{len(syms)} symbols", flush=True)
     ctx = QuoteContext(Config.from_apikey_env())
 
     def pull(sym, period, count, adj, sess):
@@ -136,30 +140,33 @@ def main():
         print(f"::warning::{sym} {period}: {err}", flush=True)
         return None
 
-    rows = {}
-    for s in syms:
-        f = {}
-        f["5m"] = pull(s, Period.Min_5, 1000, AdjustType.NoAdjust, TradeSessions.All)
-        f["15m"] = pull(s, Period.Min_15, 1000, AdjustType.NoAdjust, TradeSessions.All)
-        h1 = pull(s, Period.Min_60, 1000, AdjustType.NoAdjust, TradeSessions.Intraday)
-        f["1h"] = h1
-        f["2h"] = aggregate(h1, 2) if h1 is not None else None
-        f["4h"] = aggregate(h1, 4) if h1 is not None else None
-        f["1D"] = pull(s, Period.Day, 400, AdjustType.ForwardAdjust, TradeSessions.Intraday)
-        rows[s] = compute_symbol(f, S)
-        if os.getenv("MTF_DEBUG") and s == os.getenv("MTF_DEBUG"):
-            for tf, df in f.items():
-                if df is None or df.empty:
-                    continue
-                n = len(df); bi, bv, si, sv = S.heavy_now(df)
-                ev = S.heavy_events(df.iloc[-HV_REPLAY:])
-                hb = [e["i"] for e in ev if e["kind"] == "HB"]; hs = [e["i"] for e in ev if e["kind"] == "HS"]
-                m = min(HV_REPLAY, n)
-                print(f"  DBG {tf} n={n} first={df.index[0]} last={df.index[-1]} now:HBago={None if bi is None else n-1-bi} HSago={None if si is None else n-1-si} "
-                      f"replay:HBago={m-1-max(hb) if hb else None} HSago={m-1-max(hs) if hs else None} lastvol={list(df['Volume'].tail(4))}", flush=True)
-        got = sum(1 for v in rows[s].values() if v)
-        print(f"{s}: {got}/{len(TFS)} timeframes", flush=True)
-        print("  " + json.dumps(rows[s], separators=(",", ":")), flush=True)
+    def one(s):
+        try:
+            f = {}
+            f["5m"] = pull(s, Period.Min_5, 1000, AdjustType.NoAdjust, TradeSessions.All)
+            f["15m"] = pull(s, Period.Min_15, 1000, AdjustType.NoAdjust, TradeSessions.All)
+            h1 = pull(s, Period.Min_60, 1000, AdjustType.NoAdjust, TradeSessions.Intraday)
+            f["1h"] = h1
+            f["2h"] = aggregate(h1, 2) if h1 is not None else None
+            f["4h"] = aggregate(h1, 4) if h1 is not None else None
+            f["1D"] = pull(s, Period.Day, 400, AdjustType.ForwardAdjust, TradeSessions.Intraday)
+            return s, compute_symbol(f, S)
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning::{s}: {e}", flush=True)
+            return s, None
+
+    rows, t0, bad = {}, time.time(), 0
+    with ThreadPoolExecutor(int(os.getenv("MTF_THREADS", "4"))) as ex:
+        for i, (s, r) in enumerate(ex.map(one, syms), 1):
+            if r is None or not any(r.values()):
+                bad += 1
+                continue
+            rows[s] = r
+            if i % 50 == 0 or i == len(syms):
+                print(f"{i}/{len(syms)} done, {time.time()-t0:.0f}s", flush=True)
+    print(f"ok {len(rows)}, empty {bad}", flush=True)
+    if not rows:
+        raise SystemExit("no rows")
 
     payload = {"updated": datetime.now(timezone.utc).isoformat(), "tfs": TFS, "rows": rows}
     OUT.parent.mkdir(parents=True, exist_ok=True)

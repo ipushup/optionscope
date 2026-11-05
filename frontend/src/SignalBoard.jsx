@@ -63,7 +63,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  const [mtf, setMtf] = useState(null);       // mtf.json → { tfs, rows: { SYM: { "5m": {tb,hv,ut,*_ago}, ... } } }（少量測試股票）
+  const [mtf, setMtf] = useState(null);       // mtf.json → { tfs, rows: { SYM: { "5m": {tb,hv,ut,*_ago}, ... } } }（全部股票）
   useEffect(() => {
     let alive = true;
     const pull = () => fetch("/mtf.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
