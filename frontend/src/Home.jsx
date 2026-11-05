@@ -304,11 +304,11 @@ function BandSection({ band, bq, T }) {
                   return (
                     <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 4, overflow: "hidden" }}>
+                        <div style={{ display: "flex", alignItems: "center", minWidth: 0, gap: 4, overflow: "hidden", padding: "3px 1px" }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
                           <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}{marginSup(r.symbol)}</span>
                         <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 3 }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
-                          <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 6px", fontSize: 10, marginRight: 4 }}>{r.st}</span>
+                          <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 6px", fontSize: 10, lineHeight: 1.3, display: "inline-block", marginRight: 4 }}>{r.st}</span>
                           {r.st === "ENTRY" ? <><span style={{ color: T.mute }}>ext</span> {r.bandExt != null ? r.bandExt.toFixed(2) : "—"}</> : <><span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}</>}
                         </div>
                         </div>
