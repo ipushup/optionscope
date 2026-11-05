@@ -233,11 +233,11 @@ export default function SignalBoard({ isMobile, light, onBack }) {
             {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: "#fff" }}>{pf(chg)}</span>}
           </div>
         </div>
-        <Matrix sym={r.sym} head />
-        {ext != null && <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+        {ext != null && <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
           <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap" }}>
             {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>
         </div>}
+        <Matrix sym={r.sym} head />
       </div>
     );
   };
