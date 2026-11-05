@@ -102,8 +102,11 @@ def fetch_longbridge(symbols):
             if not got or not prev:
                 continue
             last, ts, sess = got
-            out[q.symbol] = {"last": last, "prev_close": prev, "change": last - prev,
-                             "pct": (last / prev - 1.0) * 100.0,
+            # 盤前／盤後／夜盤：升跌用「常規收市價」做基準（同 Longbridge app 一樣）；常規時段先用昨收
+            reg = float(q.last_done) if getattr(q, "last_done", None) else 0.0
+            base = reg if (sess != "regular" and reg > 0) else prev
+            out[q.symbol] = {"last": last, "prev_close": base, "change": last - base,
+                             "pct": (last / base - 1.0) * 100.0,
                              "asof": ts.isoformat(), "session": sess, "source": "longbridge"}
         print(f"✓ Longbridge: {len(out)}/{len(symbols)} symbols")
         return out

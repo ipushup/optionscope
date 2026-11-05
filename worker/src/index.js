@@ -226,8 +226,11 @@ async function handleQuotes(req, env, url) {
     const got = pickLatest(q);
     const prev = parseFloat(q.prev_close ?? q.prevClose);
     if (!got || !(prev > 0)) continue;
-    out.push({ symbol: q.symbol, last: got.last, prev_close: prev, change: got.last - prev,
-               pct: (got.last / prev - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess });
+    // 盤前／盤後／夜盤：升跌用「常規收市價」做基準（同 Longbridge app 一樣）；常規時段先用昨收
+    const reg = parseFloat(q.last_done ?? q.lastDone);
+    const base = got.sess !== "regular" && reg > 0 ? reg : prev;
+    out.push({ symbol: q.symbol, last: got.last, prev_close: base, change: got.last - base,
+               pct: (got.last / base - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess });
   }
   const res = json({ fetched_at: new Date().toISOString(), quotes: out, ...(debug ? { raw_sample: list.slice(0, 1) } : {}) }, 200, { "Cache-Control": "public, max-age=5" });
   if (!debug) await cache.put(cacheKey, res.clone());
