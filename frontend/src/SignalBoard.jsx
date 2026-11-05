@@ -208,14 +208,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
-  const tag = (e) => {
-    const bull = BULL.has(e.k), skip = e.k === "TBskip";
-    let col = skip ? T.mute : bull ? T.up : T.dn;
-    if (e.k === "TB" && e.tier === "weak") col = T.yel;
-    if (e.k === "TS" && e.tier === "weak") col = T.warn;
-    const label = e.k === "UTB" ? "UT B" : e.k === "UTS" ? "UT S" : skip ? "skip" : e.k + (e.tier === "strong" ? "★" : "");
-    return { label, col, fresh: e.ago <= near };
-  };
   const Card = ({ r }) => {
     const lb = r.reg > 0 && r.pc > 0;
     const last = lb ? r.reg : r.px;
@@ -223,7 +215,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const ext = lb && r.sess && r.sess !== "盤中" && r.px > 0 ? (r.px / r.reg - 1) * 100 : null;
     const pf = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`;
     const cc = v => (v >= 0 ? T.up : T.dn);
-    const evs = ["TB", "UT", "HEAVY"].map(g => r.d.ev.filter(x => GROUP[x.k] === g).sort((a, b) => a.ago - b.ago)[0]).filter(Boolean);
     const par = PARENTS[r.sym];
     const em = ema[r.sym];
     return (
@@ -243,16 +234,10 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           </div>
         </div>
         <Matrix sym={r.sym} head />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
-          <div style={{ display: "flex", gap: 5, minWidth: 0, flexWrap: "nowrap", overflow: "hidden" }}>
-            {evs.length ? evs.map(e => { const t = tag(e); return (
-              <span key={e.k} style={{ fontFamily: M, fontSize: 11, fontWeight: 700, padding: "1px 5px", borderRadius: 4, whiteSpace: "nowrap", background: t.col + "22", color: t.col, opacity: t.fresh ? 1 : 0.5 }}
-                title={`${e.k} ${e.t} UTC${e.tier ? " · " + e.tier : ""}${e.val ? " · Δ" + e.val : ""}`}>
-                {t.label} {ago(e.ago, tf)}</span>); }) : <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>–</span>}
-          </div>
-          {ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
-            {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>}
-        </div>
+        {ext != null && <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+          <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap" }}>
+            {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>
+        </div>}
       </div>
     );
   };
