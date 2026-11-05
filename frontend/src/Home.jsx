@@ -279,12 +279,13 @@ function BandSection({ band, bq, T }) {
                   return (
                     <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 4 }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
                           <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}{marginSup(r.symbol)}</span>
-                                                    {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
-                            {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
-                          </span>}
+                        <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 3 }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
+                          <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 6px", fontSize: 10, marginRight: 4 }}>{r.st}</span>
+                          {r.st === "ENTRY" ? <><span style={{ color: T.mute }}>ext</span> {r.bandExt != null ? r.bandExt.toFixed(2) : "—"}</> : <><span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}</>}
+                        </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
                           <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{r.last != null ? fmt(r.last) : "N/A"}</span>
@@ -292,9 +293,10 @@ function BandSection({ band, bq, T }) {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
-                        <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap" }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
-                          <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 7px", fontSize: 10, marginRight: 6 }}>{r.st}</span>
-                          {r.st === "ENTRY" ? <><span style={{ color: T.mute }}>ext</span> {r.bandExt != null ? r.bandExt.toFixed(2) : "—"}</> : <><span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}</>}
+                        <div style={{ display: "flex", minWidth: 0 }}>
+                          {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 0 }}>
+                            {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
+                          </span>}
                         </div>
                         {r.ext != null && <div style={{ fontFamily: M, fontSize: 13, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
                           <span style={{ color: T.mute }}>{g.sess}</span> {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span></div>}
