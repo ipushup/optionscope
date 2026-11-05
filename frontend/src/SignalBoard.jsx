@@ -161,7 +161,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
 
   // 交通燈矩陣：3 行（TB / HV / UT）× 6 個時間級別；綠 = 買方向持倉、紅 = 賣方向、灰 = 冇
   const MTF_ROWS = [["tb", "TB", "Triple Band（唔計 skip）"], ["hv", "HV", "Heavy Buy/Sell"], ["ut", "UT", "UT Bot 持倉方向"]];
-  const MTF_COL = 30, MTF_LBL = 20;
+  const MTF_COL = 28, MTF_LBL = 20;
   const dotCol = v => (v === 1 ? T.up : v === -1 ? T.dn : T.line);
   const Matrix = ({ sym, head }) => {
     const m = mtf?.rows?.[sym];
@@ -220,24 +220,26 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     return (
       <div onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=${MIN[tf]}`, "_blank", "noopener")}
         style={{ padding: "9px 12px 8px", borderBottom: `1px solid ${T.soft}`, cursor: "pointer" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
-            {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
-            <span style={{ fontWeight: 500, fontSize: 16, flexShrink: 0 }}>{r.sym}</span>
-            {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
-              {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
-            </span>}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5, minHeight: 24 }}>
+              {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
+              <span style={{ fontWeight: 500, fontSize: 16, flexShrink: 0, alignSelf: "center" }}>{r.sym}</span>
+              {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1, alignSelf: "center" }}>
+                {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
+              </span>}
+            </div>
+            <Matrix sym={r.sym} head />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
-            <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{last?.toFixed(2)}</span>
-            {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: "#fff" }}>{pf(chg)}</span>}
+          <div style={{ flexShrink: 0, whiteSpace: "nowrap", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{last?.toFixed(2)}</span>
+              {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: "#fff" }}>{pf(chg)}</span>}
+            </div>
+            {ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim }}>
+              {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>}
           </div>
         </div>
-        {ext != null && <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
-          <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap" }}>
-            {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>
-        </div>}
-        <Matrix sym={r.sym} head />
       </div>
     );
   };
