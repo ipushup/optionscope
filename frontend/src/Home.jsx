@@ -194,9 +194,10 @@ function IndexCard({ card, T, mode, daily, light }) {
           <span style={{ color: T.txt }}>{card.etf_symbol}</span>
           <span style={{ color: T.txt }}>{etf ? fmt(etf.last) : "N/A"}</span>
           <span style={{ color: etfCol }}>{etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}</span>
+          {etf && <span className="os-bd-d"><SessBadge sess={etf.session} T={T} size={9} /></span>}
         </div>
         {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5, display: "flex", justifyContent: "space-between", gap: 6, whiteSpace: "nowrap" }}>
-          <span>{stamp(etf)}</span><SessBadge sess={etf.session} T={T} /></div>}
+          <span>{stamp(etf)}</span><span className="os-bd-m"><SessBadge sess={etf.session} T={T} /></span></div>}
       </div>
     </div>
   );
@@ -526,6 +527,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-price{font-size:24px}
     .os-px{flex-direction:row;align-items:stretch}
     .os-etf{font-size:13px}
+    .os-bd-m{display:none}
     .os-spark{flex:1 1 0;min-width:0;min-height:44px}
     .os-tabs{display:none}
     .os-h1{font-size:34px}
@@ -548,6 +550,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       .os-price{font-size:22px}
       .os-h1{font-size:26px}
       .os-etf{font-size:11px}
+      .os-bd-d{display:none}
+      .os-bd-m{display:inline}
     }
     .os-navbtn{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:44px;border-radius:9px;border:1px solid transparent;background:transparent;color:${T.sub};font-family:${F};font-size:13px;font-weight:700;cursor:pointer;text-align:left;width:100%}
     .os-navbtn:focus-visible{outline:2px solid ${T.acc};outline-offset:2px}
