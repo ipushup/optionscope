@@ -218,6 +218,26 @@ function BandSection({ band, bq, T }) {
   const [sigAt, setSigAt] = useState(null);
   const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
   const [dly, setDly] = useState({});    // daily.json: sym -> row (EMA stack)
+  const [mgn, setMgn] = useState({ data: {}, stale: false });   // margin.json（daily brief 同一份 margin_cache）
+  useEffect(() => {
+    fetch("/margin.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d || !d.data) return;
+      const age = d.as_of ? (Date.now() - new Date(d.as_of).getTime()) / 864e5 : 0;
+      setMgn({ data: d.data, stale: age > 30, asOf: d.as_of });
+    }).catch(() => {});
+  }, []);
+  // 融資保證金率 superscript —— 顏色同 Watchlist / daily brief 一致
+  const marginSup = (sym) => {
+    const v = mgn.data[sym];
+    if (v == null) return null;
+    const col = (v <= 0 || v >= 70) ? "#ef4444" : v >= 55 ? "#f59e0b" : T.sub;
+    return (
+      <sup title={(v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`) + (mgn.stale ? `（資料 ${mgn.asOf}，已過期）` : "")}
+        style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: col, opacity: mgn.stale ? 0.55 : 1, lineHeight: 0 }}>
+        {v <= 0 ? "✕" : Math.round(v)}
+      </sup>
+    );
+  };
   useEffect(() => {
     const pull = () => {
       fetch("/signals.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -261,7 +281,7 @@ function BandSection({ band, bq, T }) {
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5 }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
-                          <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}</span>
+                          <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}{marginSup(r.symbol)}</span>
                                                     {r.ema && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
                           </span>}

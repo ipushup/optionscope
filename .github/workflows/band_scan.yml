@@ -185,7 +185,10 @@ jobs:
         env:
           GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
-        run: bash scanner/push_private.sh frontend/public/band.json frontend/public/band_quotes.json frontend/public/band_forming_log.json frontend/public/watchlist_quotes.json frontend/public/watchlist_merged.json frontend/public/earnings.json
+        run: |
+          # 孖展保證金率（repo 內手動維護嗰份）→ 主頁 symbol 右上角 superscript
+          cp scanner/margin_cache.json frontend/public/margin.json
+          bash scanner/push_private.sh frontend/public/margin.json frontend/public/band.json frontend/public/band_quotes.json frontend/public/band_forming_log.json frontend/public/watchlist_quotes.json frontend/public/watchlist_merged.json frontend/public/earnings.json
 
       - name: Push to gh-pages
         run: |
