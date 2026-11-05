@@ -75,7 +75,14 @@ function ageText(iso) {
   return `${Math.round(m / 1440)} d ago`;
 }
 
-const SESS_LABEL = { pre: "盤前(Pre)", post: "盤後(Post)", overnight: "夜盤(24h)", 盤前: "盤前(Pre)", 盤後: "盤後(Post)", 夜盤: "夜盤(24h)" };
+const SESS_BADGE = { pre: "Pre", post: "Post", overnight: "24h", 盤前: "Pre", 盤後: "Post", 夜盤: "24h" };
+const SESS_TITLE = { Pre: "盤前 Pre-market", Post: "盤後 Post-market", "24h": "夜盤 24h overnight" };
+// Longbridge 式斜體灰色小徽章
+function SessBadge({ sess, T, size = 9.5 }) {
+  const t = SESS_BADGE[sess];
+  if (!t) return null;
+  return <span title={SESS_TITLE[t]} style={{ display: "inline-block", transform: "skewX(-12deg)", background: T.line, color: T.sub, fontFamily: M, fontSize: size, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
+}
 
 function stamp(q) {
   if (!q?.asof) return "";
@@ -189,7 +196,7 @@ function IndexCard({ card, T, mode, daily, light }) {
           <span style={{ color: etfCol }}>{etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}</span>
         </div>
         {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5, display: "flex", justifyContent: "space-between", gap: 6, whiteSpace: "nowrap" }}>
-          <span>{stamp(etf)}</span>{SESS_LABEL[etf.session] && <span style={{ color: T.sub }}>{SESS_LABEL[etf.session]}</span>}</div>}
+          <span>{stamp(etf)}</span><SessBadge sess={etf.session} T={T} /></div>}
       </div>
     </div>
   );
@@ -330,7 +337,7 @@ function BandSection({ band, bq, T }) {
                           </span>}
                         </div>
                         {r.ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span> <span style={{ color: T.mute, fontSize: 9.5 }}>{SESS_LABEL[g.sess] || g.sess}</span></div>}
+                          {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span> <SessBadge sess={g.sess} T={T} /></div>}
                       </div>
                     </div>
                   );
