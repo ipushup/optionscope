@@ -75,6 +75,8 @@ function ageText(iso) {
   return `${Math.round(m / 1440)} d ago`;
 }
 
+const SESS_LABEL = { pre: "盤前(Pre)", post: "盤後(Post)", overnight: "夜盤(24h)", 盤前: "盤前(Pre)", 盤後: "盤後(Post)", 夜盤: "夜盤(24h)" };
+
 function stamp(q) {
   if (!q?.asof) return "";
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(q.asof));
@@ -186,8 +188,8 @@ function IndexCard({ card, T, mode, daily, light }) {
           <span style={{ color: T.txt }}>{etf ? fmt(etf.last) : "N/A"}</span>
           <span style={{ color: etfCol }}>{etf ? `${arrow(etf)} ${pctText(etf.pct)}` : ""}</span>
         </div>
-        {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5 }}>
-          {{ pre: "盤前", post: "盤後", overnight: "夜盤" }[etf.session] && <span style={{ color: T.sub, marginRight: 4 }}>{{ pre: "盤前", post: "盤後", overnight: "夜盤" }[etf.session]}</span>}{stamp(etf)}</div>}
+        {etf && <div style={{ fontFamily: M, fontSize: 10, color: T.mute, marginTop: 5, display: "flex", justifyContent: "space-between", gap: 6, whiteSpace: "nowrap" }}>
+          <span>{stamp(etf)}</span>{SESS_LABEL[etf.session] && <span style={{ color: T.sub }}>{SESS_LABEL[etf.session]}</span>}</div>}
       </div>
     </div>
   );
@@ -328,7 +330,7 @@ function BandSection({ band, bq, T }) {
                           </span>}
                         </div>
                         {r.ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          <span style={{ color: T.mute }}>{g.sess}</span> {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span></div>}
+                          {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span> <span style={{ color: T.mute, fontSize: 9.5 }}>{SESS_LABEL[g.sess] || g.sess}</span></div>}
                       </div>
                     </div>
                   );
