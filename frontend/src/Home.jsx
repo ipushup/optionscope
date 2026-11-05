@@ -230,7 +230,7 @@ function BandSection({ band, bq, T }) {
   const marginSup = (sym) => {
     const v = mgn.data[sym];
     if (v == null) return null;
-    const col = (v <= 0 || v >= 70) ? "#ef4444" : v >= 55 ? "#f59e0b" : T.sub;
+    const col = T.txt;   // 統一白色（light 主題跟 T.txt）
     return (
       <sup title={(v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`) + (mgn.stale ? `（資料 ${mgn.asOf}，已過期）` : "")}
         style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: col, opacity: mgn.stale ? 0.55 : 1, lineHeight: 0 }}>
