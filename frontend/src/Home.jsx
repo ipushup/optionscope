@@ -278,10 +278,14 @@ function BandSection({ band, bq, T }) {
     const chg = lb ? (g.reg / g.pc - 1) * 100 : isHKrow ? (q.prev_close > 0 && px != null ? (px / q.prev_close - 1) * 100 : null) : (q.chg_pct ?? null);
     const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
     const dd = dly[r.symbol] || {};
-    const tags = [];
-    if (tbMap[r.symbol] != null) tags.push({ t: `TB${tbMap[r.symbol]}`, c: T.up });
-    if (dd.ut && dd.ut.days != null && dd.ut.days <= 5 && dd.ut.pos) tags.push({ t: `${dd.ut.pos > 0 ? "B" : "S"}${dd.ut.days}`, c: dd.ut.pos > 0 ? T.up : T.dn });
-    if (dd.heavy && dd.heavy.days != null && dd.heavy.days + 1 <= 5) tags.push({ t: `${dd.heavy.k}${dd.heavy.days + 1}`, c: dd.heavy.k === "HB" ? T.up : T.dn });
+    // 固定三格：TB / UT / Heavy。最近 5 日有訊號 → 彩色 tag（1 = 最新一棒）；冇 → 灰色 "–"
+    const utN = dd.ut && dd.ut.days != null ? dd.ut.days + 1 : null;   // daily_table 嘅 days 由 0 起算
+    const hvN = dd.heavy && dd.heavy.days != null ? dd.heavy.days + 1 : null;
+    const tags = [
+      tbMap[r.symbol] != null ? { t: `TB${tbMap[r.symbol]}`, c: T.up } : { t: "TB–" },
+      utN != null && utN <= 5 && dd.ut.pos ? { t: `${dd.ut.pos > 0 ? "B" : "S"}${utN}`, c: dd.ut.pos > 0 ? T.up : T.dn } : { t: "UT–" },
+      hvN != null && hvN <= 5 ? { t: `${dd.heavy.k}${hvN}`, c: dd.heavy.k === "HB" ? T.up : T.dn } : { t: "HV–" },
+    ];
     return { ...r, tags, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
   };
   const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map(enrich);
@@ -298,7 +302,7 @@ function BandSection({ band, bq, T }) {
                   return (
                     <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 4 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 4, overflow: "hidden" }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
                           <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}{marginSup(r.symbol)}</span>
                         <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 3 }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
@@ -306,21 +310,21 @@ function BandSection({ band, bq, T }) {
                           {r.st === "ENTRY" ? <><span style={{ color: T.mute }}>ext</span> {r.bandExt != null ? r.bandExt.toFixed(2) : "—"}</> : <><span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}</>}
                         </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0, whiteSpace: "nowrap" }}>
-                          <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{r.last != null ? fmt(r.last) : "N/A"}</span>
-                          {r.chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(r.chg), color: "#fff" }}>{pf(r.chg)}</span>}
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, whiteSpace: "nowrap" }}>
+                          <span style={{ fontFamily: M, fontSize: 14.5, fontWeight: 600 }}>{r.last != null ? fmt(r.last) : "N/A"}</span>
+                          {r.chg != null && <span style={{ fontFamily: M, fontSize: 12, fontWeight: 600, minWidth: 60, textAlign: "right", padding: "2px 4px", borderRadius: 4, background: cc(r.chg), color: "#fff" }}>{pf(r.chg)}</span>}
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
-                        <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
                           {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0, marginLeft: 0 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
                           </span>}
-                          {r.tags && r.tags.length > 0 && <span style={{ display: "flex", gap: 4, flexShrink: 0, marginLeft: 6 }}>
-                            {r.tags.map((x) => <span key={x.t} style={{ fontFamily: M, fontSize: 10, fontWeight: 600, color: x.c, whiteSpace: "nowrap" }}>{x.t}</span>)}
+                          {r.tags && <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, marginLeft: 7, paddingLeft: 7, borderLeft: `1px solid ${T.line}` }}>
+                            {r.tags.map((x) => <span key={x.t} style={{ fontFamily: M, fontSize: 10, fontWeight: x.c ? 600 : 400, color: x.c || T.mute, opacity: x.c ? 1 : 0.7, whiteSpace: "nowrap" }}>{x.t}</span>)}
                           </span>}
                         </div>
-                        {r.ext != null && <div style={{ fontFamily: M, fontSize: 13, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {r.ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
                           <span style={{ color: T.mute }}>{g.sess}</span> {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span></div>}
                       </div>
                     </div>
