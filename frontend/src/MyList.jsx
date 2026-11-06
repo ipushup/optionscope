@@ -31,7 +31,9 @@ export default function MyList({ isMobile, light }) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [mgn, setMgn] = useState({ data: {}, stale: false });   // margin.json（同 Home 一份）
-  const [menu, setMenu] = useState(null);      // 開咗操作選單嘅 symbol
+  const [menu, setMenu] = useState(null);
+  const [allEma, setAllEma] = useState(() => { try { return localStorage.getItem("ml_ema_open") === "1"; } catch { return false; } });   // 預設只顯示 EMA10
+  const toggleEma = () => setAllEma(v => { const n = !v; try { localStorage.setItem("ml_ema_open", n ? "1" : "0"); } catch { /* 無儲存都得 */ } return n; });      // 開咗操作選單嘅 symbol
 
   useEffect(() => {
     fetch("/margin.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(d => {
@@ -175,9 +177,11 @@ export default function MyList({ isMobile, light }) {
                 </div>
               ))}
               <div style={{ borderTop: `1px dashed ${T.line}`, margin: "2px 0" }} />
-              {EMAS.map(p => (
-                <div key={p} style={{ display: "flex", alignItems: "center", height: 13 }}>
-                  <span title={`收市價喺 EMA${p} 之上 = 綠、之下 = 紅`} style={{ width: LBL_W, fontFamily: M, fontSize: 11, color: T.mute }}>EMA{p}</span>
+              {(allEma ? EMAS : EMAS.slice(0, 1)).map((p, i) => (
+                <div key={p} onClick={i === 0 ? toggleEma : undefined} role={i === 0 ? "button" : undefined}
+                  title={i === 0 ? (allEma ? "收埋其他 EMA" : "展開 EMA20 / 50 / 89 / 250") : undefined}
+                  style={{ display: "flex", alignItems: "center", height: 13, cursor: i === 0 ? "pointer" : "default", WebkitTapHighlightColor: "transparent" }}>
+                  <span style={{ width: LBL_W, fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>EMA{p}{i === 0 && <span aria-hidden="true" style={{ fontSize: 8, marginLeft: 3 }}>{allEma ? "▾" : "▸"}</span>}</span>
                   {TFS.map(([tk]) => <span key={tk} style={cell}>{dot(r[tk] ? r[tk].ema?.[p] : null)}</span>)}
                 </div>
               ))}
