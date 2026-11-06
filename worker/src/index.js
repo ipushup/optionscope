@@ -206,7 +206,9 @@ function pickLatest(q) {
   const add = (sess, o) => {
     if (!o) return;
     const last = parseFloat(get(o, "last_done", "lastDone"));
-    const ts = parseInt(get(o, "timestamp"), 10);
+    const rawTs = get(o, "timestamp");
+    let ts = parseInt(rawTs, 10);
+    if (!(ts > 0) || /[-T:]/.test(String(rawTs))) { const d = Date.parse(rawTs); ts = d > 0 ? Math.floor(d / 1000) : ts; }   // 數字 epoch 或 ISO 字串都接受
     if (last > 0 && ts > 0) cands.push({ ts, last, sess });
   };
   // 欄位名唔同版本有出入（pre_market_quote / preMarketQuote / pre_market …）：用正則搵，唔靠死寫
