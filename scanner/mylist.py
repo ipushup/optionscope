@@ -30,7 +30,7 @@ OUT = Path(os.getenv("MYLIST_OUT") or Path(__file__).resolve().parent.parent / "
 EMAS = [10, 20, 50, 89, 250]
 BARS = {"D": 900, "W": 600, "M": 300}
 EVERY = 60
-KEEP = {"D": 45, "W": 40, "M": 30}   # 圖上顯示幾多棒
+KEEP = {"D": 30, "W": 30, "M": 30}   # 圖上顯示幾多棒
 TB_RECENT = 20      # TB 只顯示最近 20 棒內嘅買入訊號
 
 
