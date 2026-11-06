@@ -333,7 +333,7 @@ function BandSection({ band, bq, T }) {
                           {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0, marginLeft: 0 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
                           </span>}
-                          {r.tags && <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, marginLeft: 7, paddingLeft: 7, borderLeft: `1px solid ${T.line}` }}>
+                          {r.tags && <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, marginLeft: 9, paddingLeft: 9, borderLeft: `2px solid ${T.mute}` }}>
                             {r.tags.map((x) => <span key={x.t} style={{ fontFamily: M, fontSize: 10, fontWeight: x.c ? 600 : 400, color: x.c || T.mute, opacity: x.c ? 1 : 0.7, whiteSpace: "nowrap" }}>{x.t}</span>)}
                           </span>}
                         </div>
