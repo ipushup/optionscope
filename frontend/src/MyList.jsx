@@ -100,7 +100,7 @@ export default function MyList({ isMobile, light }) {
 
   // 一個格：UT / HV 顯示 B2 / S12；EMA 顯示點
   const txtCell = (v, tip) => (v
-    ? <span title={tip} style={{ color: v.s === 1 ? T.up : T.dn, fontWeight: 700 }}>{v.s === 1 ? "B" : "S"}{v.n}</span>
+    ? <span title={tip} style={{ color: v.s === 1 ? T.up : T.dn, fontWeight: 600 }}>{v.s === 1 ? "B" : "S"}{v.n}</span>
     : <span style={{ color: T.mute }}>—</span>);
   const dot = v => (v == null
     ? <span title="歷史棒數不足" style={{ display: "inline-block", width: 9, height: 9, borderRadius: 5, background: T.line }} />
@@ -119,7 +119,7 @@ export default function MyList({ isMobile, light }) {
             <div role="button" tabIndex={0} title="撳一下：上移／下移／移除" onClick={() => setMenu(menu === sym ? null : sym)}
               onKeyDown={e => (e.key === "Enter" || e.key === " ") && setMenu(menu === sym ? null : sym)}
               style={{ display: "inline-flex", alignItems: "baseline", gap: 8, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
-              <span style={{ fontFamily: SANS, fontWeight: 500, fontSize: 18 }}>{short(sym)}</span>
+              <span style={{ fontFamily: SANS, fontWeight: 500, fontSize: 16 }}>{short(sym)}</span>
               {sym.endsWith(".HK") && <span style={{ fontFamily: M, fontSize: 10, color: T.mute }}>HK</span>}
               <span aria-hidden="true" style={{ fontSize: 9, color: T.mute }}>▾</span>
             </div>
@@ -127,7 +127,7 @@ export default function MyList({ isMobile, light }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 3 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ fontFamily: M, fontSize: 15, fontWeight: 600 }}>{fmtPx(q?.last, sym)}</span>
+              <span style={{ fontFamily: M, fontSize: 14.5, fontWeight: 600 }}>{fmtPx(q?.last, sym)}</span>
               {q && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 62, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: up ? T.up : T.dn, color: "#fff" }}>{up ? "+" : "−"}{Math.abs(q.pct).toFixed(2)}%</span>}
             </div>
             {sess && <span title={sess[1]} style={{ display: "inline-block", transform: "skewX(-12deg)", background: T.line, color: T.sub, fontFamily: M, fontSize: 9.5, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3 }}>{sess[0]}</span>}
@@ -175,7 +175,10 @@ export default function MyList({ isMobile, light }) {
 
   return (
     <div style={{ background: T.bg, color: T.txt, minHeight: "100vh", fontFamily: SANS, padding: isMobile ? "14px 14px 40px" : "18px 24px 40px" }}>
-      <div style={{ fontFamily: M, fontSize: 12, letterSpacing: "0.12em", color: T.mute }}>MY LIST</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontFamily: M, fontSize: 12, color: T.mute }}>
+        <span style={{ letterSpacing: "0.12em" }}>MY LIST</span>
+        <span style={{ fontSize: 11, whiteSpace: "nowrap" }}>{data?.updated ? `updated ${new Date(data.updated).toLocaleTimeString("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit" })} HKT` : ""}</span>
+      </div>
 
       <div style={{ display: "flex", gap: 8, margin: "12px 0 10px", maxWidth: 520 }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && add()}
