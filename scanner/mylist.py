@@ -30,6 +30,7 @@ OUT = Path(os.getenv("MYLIST_OUT") or Path(__file__).resolve().parent.parent / "
 EMAS = [10, 20, 50, 89, 250]
 BARS = {"D": 900, "W": 600, "M": 300}
 EVERY = 60
+KEEP = {"D": 45, "W": 40, "M": 30}   # 圖上顯示幾多棒
 TB_RECENT = 20      # TB 只顯示最近 20 棒內嘅買入訊號
 
 
@@ -60,7 +61,7 @@ def run_len(arr):
     return n
 
 
-def analyse(df, S):
+def analyse(df, S, key="D"):
     """一個週期嘅 {ut, hv, ema}；數據太少回 None"""
     if df is None or len(df) < 30:
         return None
@@ -88,7 +89,14 @@ def analyse(df, S):
         else:
             e = close.ewm(span=p, adjust=False).mean()
             ema[str(p)] = 1 if float(close.iloc[-1]) > float(e.iloc[-1]) else 0
-    return {"ut": ut, "hv": hv, "tb": tb, "ema": ema, "bars": n}
+    # 細 K 線圖數據：最近 KEEP 棒 OHLC + EMA10/20/50
+    keep = KEEP.get(key, 40)
+    tail = df.iloc[-keep:]
+    k = {c: [round(float(x), 4) for x in tail[col].values] for c, col in (("o", "Open"), ("h", "High"), ("l", "Low"), ("c", "Close"))}
+    for p in (10, 20, 50):
+        e = close.ewm(span=p, adjust=False).mean().iloc[-keep:]
+        k[f"e{p}"] = [round(float(x), 4) if n >= p else None for x in e.values]
+    return {"ut": ut, "hv": hv, "tb": tb, "ema": ema, "bars": n, "k": k}
 
 
 def main():
@@ -133,7 +141,7 @@ def main():
         for s in syms:
             r = {"name": name_of(s)}
             for key, period in (("D", Period.Day), ("W", Period.Week), ("M", Period.Month)):
-                r[key] = analyse(pull(s, period, BARS[key]), S)
+                r[key] = analyse(pull(s, period, BARS[key]), S, key)
             rows[s] = r
         payload = {"updated": datetime.now(timezone.utc).isoformat(), "symbols": syms, "rows": rows}
         OUT.parent.mkdir(parents=True, exist_ok=True)
