@@ -206,13 +206,17 @@ function pickLatest(q) {
   const add = (sess, o) => {
     if (!o) return;
     const last = parseFloat(get(o, "last_done", "lastDone"));
-    const ts = parseInt(get(o, "timestamp"), 10);
+    const rawTs = get(o, "timestamp");
+    let ts = parseInt(rawTs, 10);
+    if (!(ts > 0) || /[-T:]/.test(String(rawTs))) { const d = Date.parse(rawTs); ts = d > 0 ? Math.floor(d / 1000) : ts; }   // 數字 epoch 或 ISO 字串都接受
     if (last > 0 && ts > 0) cands.push({ ts, last, sess });
   };
+  // 欄位名唔同版本有出入（pre_market_quote / preMarketQuote / pre_market …）：用正則搵，唔靠死寫
+  const find = (re) => { for (const k of Object.keys(q || {})) if (re.test(k) && q[k] && typeof q[k] === "object") return q[k]; return null; };
   add("regular", q);
-  add("pre", get(q, "pre_market_quote", "preMarketQuote"));
-  add("post", get(q, "post_market_quote", "postMarketQuote"));
-  add("overnight", get(q, "over_night_quote", "overNightQuote"));
+  add("pre", get(q, "pre_market_quote", "preMarketQuote") || find(/^pre[_-]?market/i));
+  add("post", get(q, "post_market_quote", "postMarketQuote") || find(/^post[_-]?market/i));
+  add("overnight", get(q, "over_night_quote", "overNightQuote") || find(/^over[_-]?night/i));
   if (!cands.length) return null;
   return cands.sort((a, b) => b.ts - a.ts)[0];
 }
