@@ -30,7 +30,28 @@ export default function MyList({ isMobile, light }) {
   const [input, setInput] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mgn, setMgn] = useState({ data: {}, stale: false });   // margin.json（同 Home 一份）
   const [menu, setMenu] = useState(null);      // 開咗操作選單嘅 symbol
+
+  useEffect(() => {
+    fetch("/margin.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(d => {
+      if (!d || !d.data) return;
+      const age = d.as_of ? (Date.now() - new Date(d.as_of).getTime()) / 864e5 : 0;
+      setMgn({ data: d.data, stale: age > 30, asOf: d.as_of });
+    }).catch(() => {});
+  }, []);
+  // 融資保證金率 superscript（同 Home 一樣）：美股 NVDA、港股 0968.HK
+  const marginSup = sym => {
+    const k = sym.endsWith(".HK") ? sym.replace(/\.HK$/, "").padStart(4, "0") + ".HK" : sym.replace(/\.US$/, "");
+    const v = mgn.data[k];
+    if (v == null) return null;
+    return (
+      <sup title={(v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`) + (mgn.stale ? `（資料 ${mgn.asOf}，已過期）` : "")}
+        style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: T.txt, opacity: mgn.stale ? 0.55 : 1, lineHeight: 0 }}>
+        {v <= 0 ? "✕" : Math.round(v)}
+      </sup>
+    );
+  };
 
   // 清單
   useEffect(() => {
@@ -122,7 +143,7 @@ export default function MyList({ isMobile, light }) {
             <div role="button" tabIndex={0} title="撳一下：上移／下移／移除" onClick={() => setMenu(menu === sym ? null : sym)}
               onKeyDown={e => (e.key === "Enter" || e.key === " ") && setMenu(menu === sym ? null : sym)}
               style={{ display: "inline-flex", alignItems: "baseline", gap: 8, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
-              <span style={{ fontFamily: SANS, fontWeight: 500, fontSize: 16 }}>{short(sym)}</span>
+              <span style={{ fontFamily: SANS, fontWeight: 500, fontSize: 16 }}>{short(sym)}{marginSup(sym)}</span>
               {sym.endsWith(".HK") && <span style={{ fontFamily: M, fontSize: 10, color: T.mute }}>HK</span>}
               <span aria-hidden="true" style={{ fontSize: 9, color: T.mute }}>▾</span>
             </div>
