@@ -5,13 +5,14 @@ import BandView from "./Band";
 import Watchlist from "./Watchlist";
 import SignalBoard from "./SignalBoard";
 import DailyTable from "./DailyTable";
+import MyList from "./MyList";
 import Home from "./Home";
 import AppHeader from "./AppHeader";
 import { c, setLight, isLight } from "./theme";
 
 // 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
 // filter、summary bar、loading spinner 都唔應該喺呢啲頁出現。
-const STANDALONE_VIEWS = ["radar", "band", "signals", "daily"];
+const STANDALONE_VIEWS = ["radar", "band", "signals", "daily", "mylist"];
 
 /**
  * 一個 view 掛咗唔應該拖冧成個 app —— 之前 Compass 崩嗰陣，整棵 React tree
@@ -1001,6 +1002,7 @@ export default function App() {
         {view==="watchlist" && <Watchlist isMobile={isMobile} light={light} />}
         {view==="signals" && <SignalBoard isMobile={isMobile} light={light} />}
         {view==="daily" && <DailyTable isMobile={isMobile} light={light} />}
+        {view==="mylist" && <MyList isMobile={isMobile} light={light} />}
 
         </ViewBoundary>
 
