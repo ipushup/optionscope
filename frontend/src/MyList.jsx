@@ -24,7 +24,10 @@ const fmtPx = (v, sym) => (v == null ? "—" : v.toLocaleString("en-US", { minim
 
 
 // 細 K 線圖（同主頁 snapshot 同一風格：K 線 + EMA10 黃 / EMA20 綠 / EMA50 紅）
-function MiniChart({ k, T }) {
+const CHART_BARS = 30;   // D / W / M 一律 30 棒，棒粗幼一致
+function MiniChart({ k: full, T }) {
+  const from = Math.max(0, (full?.c?.length || 0) - CHART_BARS);
+  const k = full && Object.fromEntries(Object.entries(full).map(([key, v]) => [key, Array.isArray(v) ? v.slice(from) : v]));
   const n = k?.c?.length || 0;
   if (n < 5) return null;
   const W = 200, H = 100;
