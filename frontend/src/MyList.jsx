@@ -101,7 +101,7 @@ export default function MyList({ isMobile, light }) {
   // 一個格：UT / HV 顯示 B2 / S12；EMA 顯示點
   const txtCell = (v, tip) => (v
     ? (v.n <= 5   // 5 棒內：綠／紅底白字
-      ? <span title={tip} style={{ background: v.s === 1 ? T.up : T.dn, color: "#fff", fontWeight: 400, padding: "0 5px", borderRadius: 3, lineHeight: "13px", display: "inline-block" }}>{v.s === 1 ? "B" : "S"}{v.n}</span>
+      ? <span title={tip} style={{ background: v.s === 1 ? T.up : T.dn, color: "#fff", fontWeight: 400, padding: "0 4px", borderRadius: 3, fontSize: 11, lineHeight: "11px", display: "inline-block", verticalAlign: "middle" }}>{v.s === 1 ? "B" : "S"}{v.n}</span>
       : <span title={tip} style={{ color: v.s === 1 ? T.up : T.dn, fontWeight: 400 }}>{v.s === 1 ? "B" : "S"}{v.n}</span>)
     : <span style={{ color: T.mute }}>—</span>);
   const dot = v => (v == null
