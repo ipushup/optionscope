@@ -267,8 +267,37 @@ async function keepLoopsAlive(env) {
   }
 }
 
+// ── 收市後一次性 job：GitHub 自己嘅 cron 唔準時（甚至成日唔跑），由 Worker 補 dispatch。
+//    slot = UTC 時間（平日）；開始後 3 小時內，如果該 workflow 未有喺 slot 之後建立嘅 run，就 dispatch 一個。
+const AFTER_CLOSE = [
+  { wf: "index_daily.yml", h: 8, m: 30 },    // HK 收市後
+  { wf: "index_daily.yml", h: 21, m: 30 },   // US 收市後（冬令；夏令更早收市，亦夠遲）
+];
+
+async function afterCloseJobs(env) {
+  if (!env.GH_DISPATCH_TOKEN) return;
+  const H = { Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json",
+              "User-Agent": "optionscope-gateway", "X-GitHub-Api-Version": "2022-11-28" };
+  const now = new Date();
+  const dow = now.getUTCDay();
+  if (dow === 0 || dow === 6) return;
+  for (const { wf, h, m } of AFTER_CLOSE) {
+    try {
+      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), h, m));
+      if (now < start || now - start > 3 * 3600 * 1000) continue;
+      const r = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/${wf}/runs?per_page=5`, { headers: H });
+      if (!r.ok) { console.log(wf, "list failed", r.status); continue; }
+      const runs = (await r.json()).workflow_runs || [];
+      if (runs.some(x => new Date(x.created_at) >= start)) continue;
+      const d = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/${wf}/dispatches`, {
+        method: "POST", headers: { ...H, "Content-Type": "application/json" }, body: JSON.stringify({ ref: "main" }) });
+      console.log(wf, "after-close dispatch", d.status);
+    } catch (e) { console.log(wf, "after-close error", String(e)); }
+  }
+}
+
 export default {
-  async scheduled(event, env, ctx) { ctx.waitUntil(keepLoopsAlive(env)); },
+  async scheduled(event, env, ctx) { ctx.waitUntil(keepLoopsAlive(env)); ctx.waitUntil(afterCloseJobs(env)); },
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname;
