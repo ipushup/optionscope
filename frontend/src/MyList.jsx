@@ -17,10 +17,36 @@ const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
 const TFS = [["D", "D"], ["W", "W"], ["M", "M"]];
 const EMAS = ["10", "20", "50", "89", "250"];
 const SESS = { pre: ["Pre", "盤前 Pre-market"], post: ["Post", "盤後 Post-market"], overnight: ["24h", "夜盤 24h overnight"] };
-const LBL_W = 56, COL_W = 64;
+const LBL_W = 56, COL_W = 42;
 
 const short = s => (s || "").replace(/\.US$/, "").replace(/\.HK$/, "");
 const fmtPx = (v, sym) => (v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: sym.endsWith(".HK") && v < 1 ? 3 : 2 }));
+
+
+// 細 K 線圖（同主頁 snapshot 同一風格：K 線 + EMA10 黃 / EMA20 綠 / EMA50 紅）
+function MiniChart({ k, T }) {
+  const n = k?.c?.length || 0;
+  if (n < 5) return null;
+  const W = 200, H = 100;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < n; i++) { if (k.l[i] < lo) lo = k.l[i]; if (k.h[i] > hi) hi = k.h[i]; }
+  const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad;
+  const X = i => ((i + 0.5) / n) * W, Y = v => H - ((v - lo) / (hi - lo)) * H;
+  const cw = (W / n) * 0.62;
+  const line = arr => { let o = "", pen = false; arr.forEach((v, i) => { if (v == null) { pen = false; return; } o += `${pen ? "L" : "M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; }); return o; };
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }} role="img" aria-label="candles">
+      {k.c.map((c, i) => {
+        const col = c >= k.o[i] ? T.up : T.dn;
+        const top = Y(Math.max(k.o[i], c)), bot = Y(Math.min(k.o[i], c));
+        return <g key={i}><line x1={X(i)} x2={X(i)} y1={Y(k.h[i])} y2={Y(k.l[i])} stroke={col} strokeWidth="1" vectorEffect="non-scaling-stroke" /><rect x={X(i) - cw / 2} y={top} width={cw} height={Math.max(bot - top, 0.8)} fill={col} /></g>;
+      })}
+      <path d={line(k.e10 || [])} fill="none" stroke="#e8c34a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      <path d={line(k.e20 || [])} fill="none" stroke="#8fdc5a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      <path d={line(k.e50 || [])} fill="none" stroke="#e05563" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
 
 export default function MyList({ isMobile, light }) {
   const T = light ? THEMES.light : THEMES.dark;
@@ -33,6 +59,8 @@ export default function MyList({ isMobile, light }) {
   const [mgn, setMgn] = useState({ data: {}, stale: false });   // margin.json（同 Home 一份）
   const [menu, setMenu] = useState(null);
   const [allEma, setAllEma] = useState(() => { try { return localStorage.getItem("ml_ema_open") === "1"; } catch { return false; } });   // 預設只顯示 EMA10
+  const [chartTf, setChartTf] = useState(() => { try { return localStorage.getItem("ml_chart_tf") || "D"; } catch { return "D"; } });   // 預設日線
+  const cycleTf = () => setChartTf(v => { const n = v === "D" ? "W" : v === "W" ? "M" : "D"; try { localStorage.setItem("ml_chart_tf", n); } catch { /* ok */ } return n; });
   const toggleEma = () => setAllEma(v => { const n = !v; try { localStorage.setItem("ml_ema_open", n ? "1" : "0"); } catch { /* 無儲存都得 */ } return n; });      // 開咗操作選單嘅 symbol
 
   useEffect(() => {
@@ -165,7 +193,8 @@ export default function MyList({ isMobile, light }) {
 
         <div style={{ marginTop: 6, borderTop: `1px solid ${T.line}`, paddingTop: 4 }}>
           {!r ? <div style={{ fontFamily: SANS, fontSize: 12, color: T.mute, padding: "10px 0" }}>計算中…（新加入嘅股票約 1 分鐘內出指標）</div> : (
-            <>
+            <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+              <div style={{ flex: "0 0 auto" }}>
               <div style={{ display: "flex", alignItems: "center", marginBottom: 0 }}>
                 <span style={{ width: LBL_W }} />
                 {TFS.map(([k, t]) => <span key={k} style={{ ...cell, fontSize: 11, color: T.mute }}>{t}</span>)}
@@ -185,7 +214,12 @@ export default function MyList({ isMobile, light }) {
                   {TFS.map(([tk]) => <span key={tk} style={cell}>{dot(r[tk] ? r[tk].ema?.[p] : null)}</span>)}
                 </div>
               ))}
-            </>
+              </div>
+              <div onClick={cycleTf} role="button" title="撳一下切換 D / W / M 圖" style={{ flex: 1, minWidth: 0, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent", minHeight: 70 }}>
+                <MiniChart k={r[chartTf]?.k} T={T} />
+                <span style={{ position: "absolute", top: 0, left: 2, fontFamily: M, fontSize: 10, color: T.mute }}>{chartTf}</span>
+              </div>
+            </div>
           )}
         </div>
 
