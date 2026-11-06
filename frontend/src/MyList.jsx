@@ -36,6 +36,7 @@ export default function MyList({ isMobile, light }) {
   const [input, setInput] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [menu, setMenu] = useState(null);      // 開咗操作選單嘅 symbol
 
   // 清單
   useEffect(() => {
@@ -94,11 +95,11 @@ export default function MyList({ isMobile, light }) {
       setMsg(added > 0 ? `已加入 ${added} 隻，約 1 分鐘內出指標` : "冇新增（格式唔啱或已經喺清單）");
     }
   };
-  const remove = s => save((syms || []).filter(x => x !== s));
+  const remove = s => { setMenu(null); return save((syms || []).filter(x => x !== s)); };
   const move = (s, d) => {
     const a = [...syms]; const i = a.indexOf(s); const j = i + d;
     if (j < 0 || j >= a.length) return;
-    [a[i], a[j]] = [a[j], a[i]]; save(a);
+    [a[i], a[j]] = [a[j], a[i]]; save(a);          // 選單保持打開，可連續上移／下移
   };
 
   const rows = useMemo(() => syms || [], [syms]);
@@ -118,12 +119,15 @@ export default function MyList({ isMobile, light }) {
     const up = (q?.pct ?? 0) >= 0;
     const cell = { width: COL_W, textAlign: "center", fontFamily: M, fontSize: 12.5, lineHeight: 1 };
     return (
-      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 14px 8px", minWidth: 0 }}>
+      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 14px 8px", minWidth: 0, position: "relative" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <div role="button" tabIndex={0} title="撳一下：上移／下移／移除" onClick={() => setMenu(menu === sym ? null : sym)}
+              onKeyDown={e => (e.key === "Enter" || e.key === " ") && setMenu(menu === sym ? null : sym)}
+              style={{ display: "inline-flex", alignItems: "baseline", gap: 8, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
               <span style={{ fontFamily: SANS, fontWeight: 500, fontSize: 18 }}>{short(sym)}</span>
               {sym.endsWith(".HK") && <span style={{ fontFamily: M, fontSize: 10, color: T.mute }}>HK</span>}
+              <span aria-hidden="true" style={{ fontSize: 9, color: T.mute }}>▾</span>
             </div>
             <div style={{ fontFamily: SANS, fontSize: 11, color: T.mute, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 170 }}>{r?.name || " "}</div>
           </div>
@@ -160,11 +164,17 @@ export default function MyList({ isMobile, light }) {
           )}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 14, marginTop: 4 }}>
-          <button type="button" disabled={busy} onClick={() => move(sym, -1)} title="上移" style={btn(T)}>↑</button>
-          <button type="button" disabled={busy} onClick={() => move(sym, 1)} title="下移" style={btn(T)}>↓</button>
-          <button type="button" disabled={busy} onClick={() => remove(sym)} title="移除" style={{ ...btn(T), color: T.dn }}>移除</button>
-        </div>
+        {menu === sym && (
+          <>
+            <div onClick={() => setMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 20 }} />
+            <div role="menu" style={{ position: "absolute", left: 10, top: 44, zIndex: 21, background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.35)", minWidth: 120, overflow: "hidden" }}>
+              {[["↑  上移", () => move(sym, -1), T.txt, rows.indexOf(sym) === 0], ["↓  下移", () => move(sym, 1), T.txt, rows.indexOf(sym) === rows.length - 1], ["✕  移除", () => remove(sym), T.dn, false]].map(([t, f, col, off], i) => (
+                <button key={t} type="button" role="menuitem" disabled={busy || off} onClick={f}
+                  style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: i ? `1px solid ${T.line}` : "none", color: col, opacity: off ? 0.35 : 1, fontSize: 14, fontFamily: SANS, padding: "10px 14px", cursor: off ? "default" : "pointer" }}>{t}</button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     );
   };
