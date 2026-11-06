@@ -270,7 +270,8 @@ async function handleQuotes(req, env, url) {
     const reg = parseFloat(q.last_done ?? q.lastDone);
     const base = got.sess !== "regular" && reg > 0 ? reg : prev;
     out.push({ symbol: q.symbol, last: got.last, prev_close: base, change: got.last - base,
-               pct: (got.last / base - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess });
+               pct: (got.last / base - 1) * 100,
+               reg: reg > 0 ? reg : got.last, reg_pct: (reg > 0 ? reg / prev - 1 : got.last / prev - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess });
   }
   const res = json({ fetched_at: new Date().toISOString(), quotes: out, ...(debug ? { raw_sample: list.slice(0, 1) } : {}) }, 200, { "Cache-Control": "public, max-age=5" });
   if (!debug) await cache.put(cacheKey, res.clone());

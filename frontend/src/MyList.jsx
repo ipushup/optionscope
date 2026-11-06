@@ -111,6 +111,7 @@ export default function MyList({ isMobile, light }) {
     const q = live[sym];
     const sess = q && SESS[q.session];
     const up = (q?.pct ?? 0) >= 0;
+    const dayPct = q ? (q.reg_pct ?? q.pct) : 0;
     const cell = { width: COL_W, textAlign: "center", fontFamily: M, fontSize: 12.5, lineHeight: 1 };
     return (
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 14px 8px", minWidth: 0, position: "relative" }}>
@@ -126,11 +127,14 @@ export default function MyList({ isMobile, light }) {
             <div style={{ fontFamily: SANS, fontSize: 11, color: T.mute, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 170 }}>{r?.name || " "}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 3 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ fontFamily: M, fontSize: 14.5, fontWeight: 600 }}>{fmtPx(q?.last, sym)}</span>
-              {q && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 62, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: up ? T.up : T.dn, color: "#fff" }}>{up ? "+" : "−"}{Math.abs(q.pct).toFixed(2)}%</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
+              <span style={{ fontFamily: M, fontSize: 14.5, fontWeight: 600 }}>{fmtPx(q ? (q.reg ?? q.last) : null, sym)}</span>
+              {q && <span style={{ fontFamily: M, fontSize: 12, fontWeight: 600, minWidth: 60, textAlign: "right", padding: "2px 4px", borderRadius: 4, background: dayPct >= 0 ? T.up : T.dn, color: "#fff" }}>{dayPct >= 0 ? "+" : "−"}{Math.abs(dayPct).toFixed(2)}%</span>}
             </div>
-            {sess && <span title={sess[1]} style={{ display: "inline-block", transform: "skewX(-12deg)", background: T.line, color: T.sub, fontFamily: M, fontSize: 9.5, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3 }}>{sess[0]}</span>}
+            {sess && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap" }}>
+              {fmtPx(q.last, sym)} <span style={{ color: up ? T.up : T.dn }}>{up ? "+" : "−"}{Math.abs(q.pct).toFixed(2)}%</span>{" "}
+              <span title={sess[1]} style={{ display: "inline-block", transform: "skewX(-12deg)", background: T.line, color: T.sub, fontFamily: M, fontSize: 9.5, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3, verticalAlign: "middle" }}>{sess[0]}</span>
+            </div>}
           </div>
         </div>
 
