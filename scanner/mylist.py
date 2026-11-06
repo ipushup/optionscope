@@ -30,6 +30,7 @@ OUT = Path(os.getenv("MYLIST_OUT") or Path(__file__).resolve().parent.parent / "
 EMAS = [10, 20, 50, 89, 250]
 BARS = {"D": 900, "W": 600, "M": 300}
 EVERY = 60
+TB_RECENT = 20      # TB 只顯示最近 20 棒內嘅買入訊號
 
 
 def fetch_list():
@@ -74,6 +75,11 @@ def analyse(df, S):
         if bi is not None or si is not None:
             buy = si is None or (bi is not None and bi >= si)
             hv = {"s": 1 if buy else -1, "n": n - (bi if buy else si)}   # 最新棒 = 1
+    # Triple Band：只要真正買入（確認買入嗰支棒，kind == TB；TBskip 唔計），最近 TB_RECENT 棒內
+    tb = None
+    tbs = [e["i"] for e in S.triple_band(df) if e["kind"] == "TB"]
+    if tbs and n - tbs[-1] < TB_RECENT:
+        tb = {"s": 1, "n": n - tbs[-1]}               # 確認棒 = 最新棒 → 1
     close = df["Close"].astype(float)
     ema = {}
     for p in EMAS:
@@ -82,7 +88,7 @@ def analyse(df, S):
         else:
             e = close.ewm(span=p, adjust=False).mean()
             ema[str(p)] = 1 if float(close.iloc[-1]) > float(e.iloc[-1]) else 0
-    return {"ut": ut, "hv": hv, "ema": ema, "bars": n}
+    return {"ut": ut, "hv": hv, "tb": tb, "ema": ema, "bars": n}
 
 
 def main():
