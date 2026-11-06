@@ -240,6 +240,7 @@ async function handleQuotes(req, env, url) {
 // ── 排程：GitHub Actions 自己嘅 cron 唔準時（成日幾個鐘唔跑），
 //    所以由 Cloudflare Cron Trigger 每 5 分鐘睇一次：冇循環 job 喺度跑就 dispatch 一個。
 //    循環 job 每個跑 ~55 分鐘；快完（>40 分鐘）而又未有人排緊隊，就預先排一個接力（concurrency 唔取消，會排隊）。
+const PUBLIC_ICONS = new Set(["/apple-touch-icon.png", "/apple-touch-icon-precomposed.png", "/favicon.png", "/icon-512.png"]);
 const GH_REPO = "ipushup/optionscope";
 // after = 最新一個 run 跑咗幾多分鐘就開下一個接力。signal_stream 熱身要 ~5 分鐘，所以早啲（無 concurrency，新舊重疊）。
 const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }, { wf: "daily_table.yml", after: 40 }, { wf: "signal_mtf.yml", after: 40 }];
@@ -280,6 +281,9 @@ export default {
     }
     if (path.startsWith("/_ingest/") && req.method === "PUT") return handleIngest(req, env, path.slice("/_ingest/".length));
 
+    // 圖示要公開（iOS 加到主畫面時唔會帶登入 cookie）；只係個 X 圖，冇敏感內容
+    if (req.method === "GET" && PUBLIC_ICONS.has(path)) return withSec(await env.ASSETS.fetch(req));
+
     const authed = await validToken(env, getCookie(req, COOKIE));
     if (!authed) {
       const wantsPage = req.method === "GET" && (path === "/" || path === "/index.html");
@@ -312,6 +316,9 @@ const LOGIN_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#16181b">
+<meta name="apple-mobile-web-app-title" content="xMarket">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon.png">
 <title>OptionScope</title>
 <style>
 *{box-sizing:border-box;margin:0}
