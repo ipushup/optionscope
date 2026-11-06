@@ -108,17 +108,17 @@ export default function MyList({ isMobile, light }) {
     ? <span title={tip} style={{ color: v.s === 1 ? T.up : T.dn, fontWeight: 700 }}>{v.s === 1 ? "B" : "S"}{v.n}</span>
     : <span style={{ color: T.mute }}>—</span>);
   const dot = v => (v == null
-    ? <span title="歷史棒數不足" style={{ display: "inline-block", width: 10, height: 10, borderRadius: 5, background: T.line }} />
-    : <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 5, background: v ? T.up : T.dn }} />);
+    ? <span title="歷史棒數不足" style={{ display: "inline-block", width: 9, height: 9, borderRadius: 5, background: T.line }} />
+    : <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 5, background: v ? T.up : T.dn }} />);
 
   const Card = ({ sym }) => {
     const r = data?.rows?.[sym];
     const q = live[sym];
     const sess = q && SESS[q.session];
     const up = (q?.pct ?? 0) >= 0;
-    const cell = { width: COL_W, textAlign: "center", fontFamily: M, fontSize: 13 };
+    const cell = { width: COL_W, textAlign: "center", fontFamily: M, fontSize: 12.5, lineHeight: 1 };
     return (
-      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "12px 14px", minWidth: 0 }}>
+      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 14px 8px", minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -136,22 +136,22 @@ export default function MyList({ isMobile, light }) {
           </div>
         </div>
 
-        <div style={{ marginTop: 10, borderTop: `1px solid ${T.line}`, paddingTop: 8 }}>
+        <div style={{ marginTop: 8, borderTop: `1px solid ${T.line}`, paddingTop: 6 }}>
           {!r ? <div style={{ fontFamily: SANS, fontSize: 12, color: T.mute, padding: "10px 0" }}>計算中…（新加入嘅股票約 1 分鐘內出指標）</div> : (
             <>
-              <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 2 }}>
                 <span style={{ width: LBL_W }} />
                 {TFS.map(([k, t]) => <span key={k} style={{ ...cell, fontSize: 11, color: T.mute }}>{t}</span>)}
               </div>
               {[["ut", "UT", "UT Bot：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒"], ["hv", "HV", "Heavy：B = Heavy Buy、S = Heavy Sell，數字 = 幾多棒前（最新棒 = 1）"]].map(([k, l, tip]) => (
-                <div key={k} style={{ display: "flex", alignItems: "center", height: 26 }}>
+                <div key={k} style={{ display: "flex", alignItems: "center", height: 15 }}>
                   <span title={tip} style={{ width: LBL_W, fontFamily: M, fontSize: 11, color: T.mute }}>{l}</span>
                   {TFS.map(([tk]) => <span key={tk} style={cell}>{r[tk] ? txtCell(r[tk][k], tip) : <span style={{ color: T.mute }}>—</span>}</span>)}
                 </div>
               ))}
-              <div style={{ borderTop: `1px dashed ${T.line}`, margin: "4px 0" }} />
+              <div style={{ borderTop: `1px dashed ${T.line}`, margin: "3px 0" }} />
               {EMAS.map(p => (
-                <div key={p} style={{ display: "flex", alignItems: "center", height: 24 }}>
+                <div key={p} style={{ display: "flex", alignItems: "center", height: 14 }}>
                   <span title={`收市價喺 EMA${p} 之上 = 綠、之下 = 紅`} style={{ width: LBL_W, fontFamily: M, fontSize: 11, color: T.mute }}>EMA{p}</span>
                   {TFS.map(([tk]) => <span key={tk} style={cell}>{dot(r[tk] ? r[tk].ema?.[p] : null)}</span>)}
                 </div>
@@ -160,7 +160,7 @@ export default function MyList({ isMobile, light }) {
           )}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 14, marginTop: 8 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 14, marginTop: 4 }}>
           <button type="button" disabled={busy} onClick={() => move(sym, -1)} title="上移" style={btn(T)}>↑</button>
           <button type="button" disabled={busy} onClick={() => move(sym, 1)} title="下移" style={btn(T)}>↓</button>
           <button type="button" disabled={busy} onClick={() => remove(sym)} title="移除" style={{ ...btn(T), color: T.dn }}>移除</button>
