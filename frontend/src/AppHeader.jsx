@@ -58,7 +58,14 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
             {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
         </button>
-        <div style={{ fontWeight: 800, fontSize: 22, letterSpacing: "-0.5px", color: T.txt, flex: 1, minWidth: 0, marginLeft: 6 }}>xMarket</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, marginLeft: 6 }}>
+          <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true" style={{ flexShrink: 0, borderRadius: 7 }}>
+            <rect width="32" height="32" rx="7" fill="#0f1112" />
+            <path d="M9.5 9.5l13 13" stroke="#e6e9ec" strokeWidth="4.6" strokeLinecap="round" />
+            <path d="M22.5 9.5l-13 13" stroke="#00d4aa" strokeWidth="4.6" strokeLinecap="round" />
+          </svg>
+          <div style={{ fontWeight: 800, fontSize: 22, letterSpacing: "-0.5px", color: T.txt }}>xMarket</div>
+        </div>
         <button type="button" onClick={() => window.location.reload()} aria-label="重新整理頁面" title="Refresh" style={{ ...iconBtn, color: T.sub }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v4.5h-4.5" /></svg>
         </button>
