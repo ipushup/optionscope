@@ -1,0 +1,37 @@
+name: My List
+
+# My List 頁（宏觀看法）：自選股 × D/W/M × UT/HV/EMA。循環 job：跑 ~55 分鐘，每 60 秒重算一次並推去私人 gateway。
+# 自選股由網站頁面增減（gateway /api/mylist），job 用 INGEST_TOKEN 讀返。
+# 由 Cloudflare Worker 排程接力 dispatch（見 worker/src/index.js LOOP_WORKFLOWS）。
+on:
+  workflow_dispatch:
+    inputs:
+      loop:
+        description: 'Loop seconds (0 = once)'
+        default: '3300'
+
+concurrency:
+  group: mylist
+  cancel-in-progress: false
+
+jobs:
+  mylist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy yfinance longbridge
+      - name: Compute My List (loop)
+        env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          LONGBRIDGE_ENABLE_OVERNIGHT: "true"
+          MYLIST_LOOP_SECS: ${{ inputs.loop || '3300' }}
+          SB_INGEST_NAME: mylist.json
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: python scanner/mylist.py

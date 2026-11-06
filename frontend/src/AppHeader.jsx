@@ -22,6 +22,7 @@ export const PAGES = [
   { id: "daily", label: "Daily Table", tab: true },
   { id: "band", label: "Triple Band", tab: true },
   { id: "watchlist", label: "Watchlist", tab: true },
+  { id: "mylist", label: "My List", tab: true },
   { id: "radar", label: "Radar", tab: true },
   { id: "brief", label: "Daily brief", note: "soon", off: true },
   { id: "premium", label: "Premium", note: "paused" },

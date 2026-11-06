@@ -104,7 +104,7 @@ async function handleLogin(req, env) {
 // ── 高頻檔（signals.json / market.json）改放 Durable Object，唔用 KV ──
 // Cloudflare 免費版 KV 每日只可寫 1,000 次；循環 job 每 30–60 秒寫一次會用爆，
 // 之後連每日掃描嘅上傳都 500（error 1101）。DO（SQLite）免費版每日 10 萬次寫入，夠晒。
-const LIVE_NAMES = new Set(["signals.json", "signals2.json", "daily.json", "market.json", "mtf.json"]);
+const LIVE_NAMES = new Set(["signals.json", "signals2.json", "daily.json", "market.json", "mtf.json", "mylist.json"]);
 const liveStub = (env) => env.LIVE.get(env.LIVE.idFromName("live"));
 
 export class LiveStore {
@@ -115,6 +115,42 @@ export class LiveStore {
     const v = await this.state.storage.get(name);
     return v == null ? new Response(null, { status: 404 }) : new Response(v);
   }
+}
+
+
+// ── My List（自選股，宏觀頁）：登入後可喺頁面增減；後台 job 用 ingest token 讀 ──
+const DEFAULT_MYLIST = ["INTC.US", "NVDA.US", "968.HK", "868.HK", "3868.HK"];
+const MYLIST_MAX = 40;
+function normSymbol(raw) {
+  let t = String(raw || "").trim().toUpperCase().replace(/\s+/g, "");
+  if (!t) return null;
+  let m;
+  if ((m = t.match(/^(\d{1,5})(?:\.HK)?$/))) return `${parseInt(m[1], 10)}.HK`;                 // 968 / 0968 / 968.HK → 968.HK
+  if ((m = t.match(/^([A-Z]{1,5}(?:[.-][A-Z])?)(?:\.US)?$/))) return `${m[1].replace("-", ".")}.US`; // NVDA / BRK.B / NVDA.US
+  if ((m = t.match(/^(\d{6})\.(SH|SZ)$/))) return t;                                            // A 股
+  return null;
+}
+async function readMylist(env) {
+  try {
+    const raw = await env.DATA.get("data/mylist_symbols.json");
+    if (raw) { const j = JSON.parse(raw); if (Array.isArray(j.symbols)) return j.symbols; }
+  } catch { /* 用預設 */ }
+  return DEFAULT_MYLIST;
+}
+async function handleMylistPut(req, env) {
+  if (req.headers.get("X-Requested-With") !== "xmarket") return json({ error: "Bad request" }, 400);
+  const text = await req.text();
+  if (text.length > 4096) return json({ error: "Too large" }, 413);
+  let body; try { body = JSON.parse(text); } catch { return json({ error: "Bad JSON" }, 400); }
+  const out = [];
+  for (const x of Array.isArray(body.symbols) ? body.symbols : []) {
+    const n = normSymbol(x);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  if (out.length > MYLIST_MAX) return json({ error: `Max ${MYLIST_MAX} symbols` }, 400);
+  try { await env.DATA.put("data/mylist_symbols.json", JSON.stringify({ symbols: out, updated: new Date().toISOString() })); }
+  catch (e) { return json({ error: "storage write failed", detail: String(e).slice(0, 120) }, 503); }
+  return json({ ok: true, symbols: out });
 }
 
 async function handleIngest(req, env, name) {
@@ -243,7 +279,7 @@ async function handleQuotes(req, env, url) {
 const PUBLIC_ICONS = new Set(["/apple-touch-icon.png", "/apple-touch-icon-precomposed.png", "/favicon.png", "/icon-512.png"]);
 const GH_REPO = "ipushup/optionscope";
 // after = 最新一個 run 跑咗幾多分鐘就開下一個接力。signal_stream 熱身要 ~5 分鐘，所以早啲（無 concurrency，新舊重疊）。
-const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }, { wf: "daily_table.yml", after: 40 }, { wf: "signal_mtf.yml", after: 40 }];
+const LOOP_WORKFLOWS = [{ wf: "signal_stream.yml", after: 33 }, { wf: "market_loop.yml", after: 40 }, { wf: "daily_table.yml", after: 40 }, { wf: "signal_mtf.yml", after: 40 }, { wf: "mylist.yml", after: 40 }];
 
 async function keepLoopsAlive(env) {
   if (!env.GH_DISPATCH_TOKEN) { console.log("GH_DISPATCH_TOKEN 未設，跳過"); return; }
@@ -309,6 +345,11 @@ export default {
       return json({ ok: true }, 200, { "Set-Cookie": `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0` });
     }
     if (path.startsWith("/_ingest/") && req.method === "PUT") return handleIngest(req, env, path.slice("/_ingest/".length));
+    if (path === "/_ingest/mylist.json" && req.method === "GET") {
+      const auth = req.headers.get("Authorization") || "";
+      if (!env.INGEST_TOKEN || !(await safeEqual(auth, `Bearer ${env.INGEST_TOKEN}`, env.SESSION_SECRET))) return json({ error: "Unauthorized" }, 401);
+      return json({ symbols: await readMylist(env) });
+    }
 
     // 圖示要公開（iOS 加到主畫面時唔會帶登入 cookie）；只係個 X 圖，冇敏感內容
     if (req.method === "GET" && PUBLIC_ICONS.has(path)) return withSec(await env.ASSETS.fetch(req));
@@ -318,6 +359,11 @@ export default {
       const wantsPage = req.method === "GET" && (path === "/" || path === "/index.html");
       if (wantsPage) return withSec(new Response(LOGIN_HTML, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }));
       return json({ error: "Unauthorized" }, 401);
+    }
+
+    if (path === "/api/mylist") {
+      if (req.method === "GET") return json({ symbols: await readMylist(env) }, 200, { "Cache-Control": "no-store" });
+      if (req.method === "PUT") return handleMylistPut(req, env);
     }
 
     if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "Read only" }, 405);
