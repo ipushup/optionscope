@@ -147,6 +147,20 @@ async function handleMylistPut(req, env) {
     const n = normSymbol(x);
     if (n && !out.includes(n)) out.push(n);
   }
+  // 新加入嘅股票：美股放最後一隻美股下面，港股放最後一隻港股下面（重排／移除唔受影響）
+  const known = new Set(await readMylist(env));
+  const isHK = (x) => x.endsWith(".HK");
+  const fresh = out.filter((x) => !known.has(x));
+  if (fresh.length && fresh.length < out.length) {
+    const res = out.filter((x) => known.has(x));
+    for (const x of fresh) {
+      let at = -1;
+      res.forEach((y, i) => { if (isHK(y) === isHK(x)) at = i; });
+      if (at < 0) at = isHK(x) ? res.length - 1 : -1;   // 該市場未有股票：港股放最尾，美股放最頭
+      res.splice(at + 1, 0, x);
+    }
+    out.length = 0; out.push(...res);
+  }
   if (out.length > MYLIST_MAX) return json({ error: `Max ${MYLIST_MAX} symbols` }, 400);
   try { await env.DATA.put("data/mylist_symbols.json", JSON.stringify({ symbols: out, updated: new Date().toISOString() })); }
   catch (e) { return json({ error: "storage write failed", detail: String(e).slice(0, 120) }, 503); }
