@@ -14,19 +14,13 @@ const THEMES = {
 };
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
-const TFS = [["D", "日 D"], ["W", "週 W"], ["M", "月 M"]];
+const TFS = [["D", "D"], ["W", "W"], ["M", "M"]];
 const EMAS = ["10", "20", "50", "89", "250"];
 const SESS = { pre: ["Pre", "盤前 Pre-market"], post: ["Post", "盤後 Post-market"], overnight: ["24h", "夜盤 24h overnight"] };
 const LBL_W = 56, COL_W = 64;
 
 const short = s => (s || "").replace(/\.US$/, "").replace(/\.HK$/, "");
 const fmtPx = (v, sym) => (v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: sym.endsWith(".HK") && v < 1 ? 3 : 2 }));
-const stamp = iso => {
-  try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-    return `${p.day} ${p.month} ${p.hour}:${p.minute} HKT`;
-  } catch { return ""; }
-};
 
 export default function MyList({ isMobile, light }) {
   const T = light ? THEMES.light : THEMES.dark;
@@ -181,19 +175,16 @@ export default function MyList({ isMobile, light }) {
 
   return (
     <div style={{ background: T.bg, color: T.txt, minHeight: "100vh", fontFamily: SANS, padding: isMobile ? "14px 14px 40px" : "18px 24px 40px" }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-        <div style={{ fontFamily: M, fontSize: 12, letterSpacing: "0.12em", color: T.mute }}>MY LIST · 宏觀（日／週／月）</div>
-        {data?.updated && <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>指標更新 {stamp(data.updated)}</div>}
-      </div>
+      <div style={{ fontFamily: M, fontSize: 12, letterSpacing: "0.12em", color: T.mute }}>MY LIST</div>
 
-      <div style={{ display: "flex", gap: 8, margin: "12px 0 6px", maxWidth: 520 }}>
+      <div style={{ display: "flex", gap: 8, margin: "12px 0 10px", maxWidth: 520 }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && add()}
           placeholder="加股票：NVDA、968、3868 …" disabled={busy || !syms}
           style={{ flex: 1, minWidth: 0, background: T.soft, color: T.txt, border: `1px solid ${T.line}`, borderRadius: 8, padding: "9px 12px", fontSize: 14, fontFamily: SANS, outline: "none" }} />
         <button type="button" onClick={add} disabled={busy || !input.trim() || !syms}
           style={{ background: T.acc, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: busy || !input.trim() ? 0.5 : 1 }}>加入</button>
       </div>
-      <div style={{ fontFamily: SANS, fontSize: 11.5, color: msg.startsWith("儲存失敗") || msg.startsWith("讀取") ? T.dn : T.mute, minHeight: 16, marginBottom: 8 }}>{msg || "字母 = 美股；數字 = 港股（968 即 0968.HK）。D／W／M 以最新一棒（未收線）計算。"}</div>
+      {msg && <div style={{ fontFamily: SANS, fontSize: 11.5, color: msg.startsWith("儲存失敗") || msg.startsWith("讀取") ? T.dn : T.mute, marginBottom: 8 }}>{msg}</div>}
 
       {!syms ? <div style={{ color: T.mute, fontSize: 13 }}>載入中…</div> : rows.length === 0 ? (
         <div style={{ color: T.mute, fontSize: 13 }}>清單係空嘅，喺上面加入股票。</div>
@@ -202,6 +193,7 @@ export default function MyList({ isMobile, light }) {
           {rows.map(s => <Card key={s} sym={s} />)}
         </div>
       )}
+      <div style={{ fontFamily: SANS, fontSize: 11.5, color: T.mute, marginTop: 14, lineHeight: 1.6 }}>字母 = 美股；數字 = 港股（968 即 0968.HK）。D／W／M 以最新一棒（未收線）計算。</div>
     </div>
   );
 }
