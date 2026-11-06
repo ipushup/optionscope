@@ -24,7 +24,8 @@ id = "5d2acd6f4af34cc9833badf423ba4ff1"
 # 每 5 分鐘（平日 UTC；覆蓋美股夜盤 Sun 20:00 ET = Mon 01:00 UTC 至 Fri 20:00 ET）
 # 睇循環 job 仲喺唔喺度跑，唔喺就 dispatch。需要 secret：GH_DISPATCH_TOKEN
 [triggers]
-crons = ["*/5 * * * 1-5"]
+# Cloudflare 星期編號 1 = Sunday（唔係 Monday），所以用英文縮寫：Mon 01:00 UTC（Sun 20:00 ET 夜盤開）至 Sat 01:00 UTC（Fri 20:00 ET 收）
+crons = ["*/5 * * * MON-FRI", "*/5 0 * * SAT"]
 #   GH_DISPATCH_TOKEN   GitHub fine-grained token：只限 ipushup/optionscope，權限 Actions: Read and write
 
 # 高頻數據（signals.json / market.json）用 Durable Object（SQLite，免費版可用），避開 KV 每日 1,000 次寫入上限
