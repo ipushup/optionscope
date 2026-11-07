@@ -204,6 +204,8 @@ export default function Watchlist({ isMobile, light }) {
   const [sigQ, setSigQ] = useState({});          // Longbridge 即時（signals.json，Signal Board 個 job 每輪更新）→ {ticker: {last, chg_pct, ext_chg_pct}}
   const [quotes, setQuotes] = useState({});      // watchlist_quotes.json -> {ticker: {...}}
   const [qAt, setQAt] = useState(null);
+  const [apiQ, setApiQ] = useState({});          // Longbridge 即時（/api/quotes，Worker 直接問 Longbridge）→ 同 sigQ 一樣格式；優先過 signals.json，yfinance 做後備
+  const [apiAt, setApiAt] = useState(null);
   const [lbAt, setLbAt] = useState(null);          // Longbridge 即時報價最後更新時間（signals.json.updated）
   const [, tick] = useState(0);                  // 15s 迫 re-render，令「幾分鐘前」跳動
   const [err, setErr] = useState(null);
@@ -308,12 +310,48 @@ export default function Watchlist({ isMobile, light }) {
     return () => clearInterval(id);
   }, []);
 
+  // Longbridge 即時報價：Watchlist 全部美股／港股 ticker，每 100 隻一批，逐批問（避免撞 Longbridge 限流）
+  useEffect(() => {
+    if (!status) return undefined;
+    const back = {};
+    for (const r of status.rows || []) {
+      const t = r.ticker || "";
+      let m;
+      if ((m = t.match(/^(\d{1,5})\.HK$/))) back[`${parseInt(m[1], 10)}.HK`] = t;
+      else if (/^[A-Z]{1,5}$/.test(t)) back[`${t}.US`] = t;
+    }
+    const syms = Object.keys(back);
+    if (!syms.length) return undefined;
+    const SESS = { regular: "盤中", pre: "盤前", post: "盤後", overnight: "夜盤" };
+    let alive = true;
+    const pullAPI = async () => {
+      const m = {}; let at = null;
+      for (let i = 0; i < syms.length; i += 100) {
+        try {
+          const r = await fetch(`/api/quotes?symbols=${syms.slice(i, i + 100).join(",")}`, { cache: "no-store" });
+          if (!r.ok) continue;
+          const d = await r.json();
+          for (const q of d.quotes || []) {
+            const t = back[q.symbol];
+            if (!t || !(q.reg > 0)) continue;
+            m[t] = { last: q.reg, chg_pct: +q.reg_pct.toFixed(2), ext_chg_pct: q.session === "regular" ? null : +q.pct.toFixed(2), sess: SESS[q.session] || "盤中" };
+          }
+          if (d.fetched_at) at = d.fetched_at;
+        } catch (e) { /* 呢批失敗 → 跌返 signals.json / yfinance */ }
+      }
+      if (alive && Object.keys(m).length) { setApiQ(m); setApiAt(at || new Date().toISOString()); }
+    };
+    pullAPI();
+    const id = setInterval(pullAPI, 15_000);
+    return () => { alive = false; clearInterval(id); };
+  }, [status]);
+
   if (err) return <Msg t={err} />;
   if (!status) return <Msg t="載入緊…" />;
 
   // live() 覆蓋 status 裡面嘅snapshot報價 —— 同 Band.jsx 嘅 live(symbol) 一樣諗法，
   // 分開兩個檔案輪詢，唔使成個merge file連tband都要15分鐘一次重寫。
-  const live = ticker => sigQ[ticker] ? { ...quotes[ticker], ...sigQ[ticker] } : quotes[ticker];
+  const live = ticker => (apiQ[ticker] || sigQ[ticker]) ? { ...quotes[ticker], ...(apiQ[ticker] || sigQ[ticker]) } : quotes[ticker];   // Longbridge /api/quotes → signals.json → yfinance
 
   const sections = [...new Set(status.rows.map(r => r.section))].sort();
   const query = q.trim().toUpperCase();
@@ -380,7 +418,7 @@ export default function Watchlist({ isMobile, light }) {
             🔭 WATCHLIST
           </span>
           <span style={{ fontSize: 10.5, fontFamily: M, color: C.mute }}>
-            {status.band_bar_date ? `Triple Band ${status.band_bar_date}` : ""} · 報價 {lbAt ? <>{hkTime(lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : <>{qAt ? `${hkTime(qAt)} HKT · ` : ""}{elapsedLabel} (yfinance)</>}
+            {(apiAt || lbAt) ? <>{hkTime(apiAt || lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : (qAt ? `${hkTime(qAt)} HKT` : "")}
             {syncErr && <span style={{ color: C.warn }}> · ⚠ highlight sync失敗(用緊local)</span>}
           </span>
           <button onClick={() => setEditing(true)} style={{ marginLeft: "auto", background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 10px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
