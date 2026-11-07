@@ -498,7 +498,9 @@ export default function Watchlist({ isMobile, light }) {
                   padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
                   color: sortKey === col.key ? C.acc : C.mute,
-                }}>{col.label}{sortKey === col.key ? (sortDir < 0 ? " ▾" : " ▴") : ""}</th>
+                }}>{col.label}{sortKey === col.key
+                    ? (SIG_KEYS.includes(col.key) ? (col.key === "tb_k" || sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
+                    : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.4, fontSize: 9 }}> ▴▾</span> : "")}</th>
               ))}
             </tr>
           </thead>
