@@ -249,7 +249,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
 
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", minHeight: 28, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", minHeight: 20, marginBottom: 10 }}>
         {onBack && <button onClick={onBack} style={chip(false, { border: `1px solid ${T.line}` })}>← Home</button>}
         <div style={{ fontFamily: M, fontSize: 12, color: err ? T.dn : T.dim }}>
           {err ? `⚠ ${err}` : data ? <><span style={{ color: age > 180 ? T.dn : T.up }}>●</span> {stamp(data.updated)} · {data.n} 隻{age > 180 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</> : "loading…"}
