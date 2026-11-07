@@ -257,7 +257,7 @@ export default function MyList({ isMobile, light }) {
     <div style={{ background: T.bg, color: T.txt, minHeight: "100vh", fontFamily: SANS, padding: isMobile ? "14px 14px 40px" : "18px 24px 40px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontFamily: M, fontSize: 12, color: T.mute }}>
         <span style={{ letterSpacing: "0.12em" }}>MY LIST</span>
-        <span style={{ fontSize: 11, whiteSpace: "nowrap" }}>{data?.updated ? `updated ${new Date(data.updated).toLocaleTimeString("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit" })} HKT` : ""}</span>
+        <span style={{ fontSize: 11, whiteSpace: "nowrap" }}>{data?.updated ? `${new Date(data.updated).toLocaleTimeString("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit" })} HKT` : ""}</span>
       </div>
 
       <div style={{ display: "flex", gap: 8, margin: "12px 0 10px", maxWidth: 520 }}>
