@@ -183,7 +183,7 @@ async function pushWithRetry(obj, attempts = 3) {
 
 const BASE = process.env.PUBLIC_URL || "";
 const BAND_LABEL = { confirmed: "Confirmed", forming: "Forming", candidate: "Candidate", exit: "Exit", watch: "Watch", flat: "Tracking" };
-const BAND_ICON = { confirmed: "🟢", forming: "🟠", candidate: "●", exit: "▼", watch: "○", flat: "·" }; // native <select> option 畫唔到colored dot
+const BAND_ICON = { confirmed: "🟢", forming: "🟠", candidate: "⚪", exit: "▼", watch: "○", flat: "·" }; // native <select> option 畫唔到colored dot
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
