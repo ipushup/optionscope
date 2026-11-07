@@ -172,12 +172,13 @@ async function handleMylistPut(req, env) {
 const GH_FILES = { watchlist: "scanner/Watchlists.txt", margin: "scanner/margin.txt" };
 function b64ToUtf8(b64) { const bin = atob(b64.replace(/\s/g, "")); const u = Uint8Array.from(bin, (c) => c.charCodeAt(0)); return new TextDecoder().decode(u); }
 function utf8ToB64(str) { const u = new TextEncoder().encode(str); let bin = ""; for (const b of u) bin += String.fromCharCode(b); return btoa(bin); }
-function ghHeaders(env) { return { Authorization: `Bearer ${env.GH_CONTENTS_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "xmarket-gateway", "X-GitHub-Api-Version": "2022-11-28" }; }
+function ghHeaders(env) { return { Authorization: `Bearer ${env.GH_CONTENTS_TOKEN || env.GH_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "xmarket-gateway", "X-GitHub-Api-Version": "2022-11-28" }; }
 async function handleGhFile(req, env, url) {
-  if (!env.GH_CONTENTS_TOKEN) return json({ error: "GH_CONTENTS_TOKEN 未設定（Worker secret）" }, 503);
+  if (!(env.GH_CONTENTS_TOKEN || env.GH_DISPATCH_TOKEN)) return json({ error: "GH_CONTENTS_TOKEN／GH_DISPATCH_TOKEN 未設定（Worker secret）" }, 503);
   if (req.method === "GET") {
     const f = GH_FILES[url.searchParams.get("name")]; if (!f) return json({ error: "Unknown file" }, 400);
     const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${f}?ref=main`, { headers: ghHeaders(env), cf: { cacheTtl: 0 } });
+    if (r.status === 403 || r.status === 404) return json({ error: `GitHub ${r.status}：token 未有 Contents 權限（喺 GitHub 將 token 加 Contents: Read and write）` }, 502);
     if (!r.ok) return json({ error: `GitHub ${r.status}` }, 502);
     const j = await r.json();
     return json({ content: b64ToUtf8(j.content || ""), sha: j.sha }, 200, { "Cache-Control": "no-store" });
@@ -200,6 +201,7 @@ async function handleGhFile(req, env, url) {
       body: JSON.stringify({ message: String(b.message || `web: edit ${b.name}`).slice(0, 120), content: utf8ToB64(content), sha, branch: "main" }),
     });
     if (r.status === 409 || r.status === 422) return json({ error: "檔案已被改動，請重新載入再試" }, 409);
+    if (r.status === 403 || r.status === 404) return json({ error: `GitHub ${r.status}：token 未有 Contents 寫入權限` }, 502);
     if (!r.ok) return json({ error: `GitHub ${r.status}` }, 502);
     const j = await r.json();
     return json({ ok: true, sha: j.content?.sha });
