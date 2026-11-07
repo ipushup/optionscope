@@ -35,6 +35,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import yfinance as yf
 
 # ---------------------------------------------------------------------------
@@ -210,6 +212,53 @@ def supertrend_status(df: pd.DataFrame, period: int = 10, multiplier: float = 3.
     return "long" if last == 1 else "short"
 
 
+def supertrend_days(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0):
+    """(status, days)：SuperTrend 方向 + 連續咗幾多棒（轉向嗰棒 = 1）。supertrend_status 嘅同一套計算。"""
+    st = supertrend_status(df, period, multiplier)
+    if st is None:
+        return None, None
+    atr = wilder_atr(df, period)
+    hl2 = (df["High"] + df["Low"]) / 2
+    basic_ub = (hl2 + multiplier * atr).values
+    basic_lb = (hl2 - multiplier * atr).values
+    close = df["Close"].values
+    fu = np.zeros(len(close)); fl = np.zeros(len(close)); tr = np.ones(len(close), dtype=int)
+    for i in range(1, len(close)):
+        fu[i] = basic_ub[i] if (basic_ub[i] < fu[i - 1] or close[i - 1] > fu[i - 1]) else fu[i - 1]
+        fl[i] = basic_lb[i] if (basic_lb[i] > fl[i - 1] or close[i - 1] < fl[i - 1]) else fl[i - 1]
+        if tr[i - 1] == 1:
+            tr[i] = -1 if close[i] < fl[i] else 1
+        else:
+            tr[i] = 1 if close[i] > fu[i] else -1
+    days = 0
+    for v in tr[::-1]:
+        if v == tr[-1]:
+            days += 1
+        else:
+            break
+    return st, days
+
+
+def hv_tb_status(df: pd.DataFrame, tb_recent: int = 20):
+    """Heavy（最近一個 HB/HS，最新棒 = 1）同 Triple Band 買入確認棒（只計 TB，最近 tb_recent 棒內）。
+    同 My List / Signal Board 同一套（intraday_signals）。出錯或棒數不足回 (None, None)。"""
+    n = len(df)
+    hv = tb = None
+    try:
+        import intraday_signals as S
+        if n > 101:
+            bi, _bv, si, _sv = S.heavy_now(df)
+            if bi is not None or si is not None:
+                buy = si is None or (bi is not None and bi >= si)
+                hv = {"s": 1 if buy else -1, "n": n - (bi if buy else si)}
+        tbs = [e["i"] for e in S.triple_band(df) if e["kind"] == "TB"]
+        if tbs and n - tbs[-1] < tb_recent:
+            tb = n - tbs[-1]
+    except Exception:  # noqa: BLE001
+        pass
+    return hv, tb
+
+
 # ---------------------------------------------------------------------------
 # 3. Fetch + run
 # ---------------------------------------------------------------------------
@@ -247,11 +296,15 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                 if df.empty:
                     continue
                 ut, ut_days = ut_bot_status(df)
-                st = supertrend_status(df)
+                st, st_days = supertrend_days(df)
+                hv, tb_days = hv_tb_status(df)
                 results[t] = {
                     "ut_bot": ut,
                     "ut_days": ut_days,
                     "supertrend": st,
+                    "st_days": st_days,
+                    "hv": hv,
+                    "tb_days": tb_days,
                     "last_close": round(float(df["Close"].iloc[-1]), 4),
                     "asof_date": str(df.index[-1].date()),
                 }

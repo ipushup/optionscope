@@ -207,6 +207,9 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "ut": ut,
             "ut_days": ut_days,
             "st": ind.get("supertrend"),
+            "st_days": ind.get("st_days"),
+            "hv": ind.get("hv"),            # {"s": 1/-1, "n": 幾多棒前}
+            "tb_days": ind.get("tb_days"),  # Triple Band 買入確認棒（最近 20 棒內）
             "last": q.get("last"),
             "chg_pct": q.get("chg_pct"),
             "ext_chg_pct": q.get("ext_chg_pct"),
