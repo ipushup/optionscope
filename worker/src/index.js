@@ -167,6 +167,56 @@ async function handleMylistPut(req, env) {
   return json({ ok: true, symbols: out });
 }
 
+
+// ── Watchlist / 孖展率 網頁編輯：經 GitHub Contents API 讀寫 repo 入面嘅 txt（需要 secret GH_CONTENTS_TOKEN）──
+const GH_REPO = "ipushup/optionscope";
+const GH_FILES = { watchlist: "scanner/Watchlists.txt", margin: "scanner/margin.txt" };
+function b64ToUtf8(b64) { const bin = atob(b64.replace(/\s/g, "")); const u = Uint8Array.from(bin, (c) => c.charCodeAt(0)); return new TextDecoder().decode(u); }
+function utf8ToB64(str) { const u = new TextEncoder().encode(str); let bin = ""; for (const b of u) bin += String.fromCharCode(b); return btoa(bin); }
+function ghHeaders(env) { return { Authorization: `Bearer ${env.GH_CONTENTS_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "xmarket-gateway", "X-GitHub-Api-Version": "2022-11-28" }; }
+async function handleGhFile(req, env, url) {
+  if (!env.GH_CONTENTS_TOKEN) return json({ error: "GH_CONTENTS_TOKEN 未設定（Worker secret）" }, 503);
+  if (req.method === "GET") {
+    const f = GH_FILES[url.searchParams.get("name")]; if (!f) return json({ error: "Unknown file" }, 400);
+    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${f}?ref=main`, { headers: ghHeaders(env), cf: { cacheTtl: 0 } });
+    if (!r.ok) return json({ error: `GitHub ${r.status}` }, 502);
+    const j = await r.json();
+    return json({ content: b64ToUtf8(j.content || ""), sha: j.sha }, 200, { "Cache-Control": "no-store" });
+  }
+  if (req.method === "PUT") {
+    if (req.headers.get("X-Requested-With") !== "xmarket") return json({ error: "Bad request" }, 400);
+    const text = await req.text();
+    if (text.length > 400000) return json({ error: "Too large" }, 413);
+    let b; try { b = JSON.parse(text); } catch { return json({ error: "Bad JSON" }, 400); }
+    const f = GH_FILES[b.name]; if (!f) return json({ error: "Unknown file" }, 400);
+    const content = String(b.content ?? ""); const sha = String(b.sha || "");
+    if (!sha) return json({ error: "sha missing" }, 400);
+    if (b.name === "watchlist") {   // 基本格式檢查：逗號分隔，### 開頭為 section，其餘 EXCHANGE:SYMBOL
+      const toks = content.trim().split(",").map((x) => x.trim()).filter(Boolean);
+      if (!toks.length || !toks[0].startsWith("###")) return json({ error: "Watchlists 格式唔啱（要以 ###SECTION 開頭）" }, 400);
+      for (const t of toks) if (!(t.startsWith("###") ? t.length > 3 : /^[A-Za-z0-9_.\-!]+:[A-Za-z0-9_.\-!&]+$/.test(t))) return json({ error: `格式唔啱：${t.slice(0, 40)}` }, 400);
+    } else if (content.length < 50) return json({ error: "margin 內容太短" }, 400);
+    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${f}`, {
+      method: "PUT", headers: { ...ghHeaders(env), "Content-Type": "application/json" },
+      body: JSON.stringify({ message: String(b.message || `web: edit ${b.name}`).slice(0, 120), content: utf8ToB64(content), sha, branch: "main" }),
+    });
+    if (r.status === 409 || r.status === 422) return json({ error: "檔案已被改動，請重新載入再試" }, 409);
+    if (!r.ok) return json({ error: `GitHub ${r.status}` }, 502);
+    const j = await r.json();
+    return json({ ok: true, sha: j.content?.sha });
+  }
+  return json({ error: "Method not allowed" }, 405);
+}
+async function handleWlScan(req, env) {   // 手動叫 Triple Band Radar full scan（令新股票出現 TBand/UT/ST）
+  if (req.headers.get("X-Requested-With") !== "xmarket") return json({ error: "Bad request" }, 400);
+  if (!env.GH_DISPATCH_TOKEN) return json({ error: "GH_DISPATCH_TOKEN 未設定" }, 503);
+  const r = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/band_scan.yml/dispatches`, {
+    method: "POST", headers: { Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "xmarket-gateway", "Content-Type": "application/json" },
+    body: JSON.stringify({ ref: "main", inputs: { quotes_only: "false" } }),
+  });
+  return r.ok || r.status === 204 ? json({ ok: true }) : json({ error: `GitHub ${r.status}` }, 502);
+}
+
 async function handleIngest(req, env, name) {
   const auth = req.headers.get("Authorization") || "";
   if (!env.INGEST_TOKEN || !(await safeEqual(auth, `Bearer ${env.INGEST_TOKEN}`, env.SESSION_SECRET))) return json({ error: "Unauthorized" }, 401);
@@ -384,6 +434,9 @@ export default {
       if (req.method === "GET") return json({ symbols: await readMylist(env) }, 200, { "Cache-Control": "no-store" });
       if (req.method === "PUT") return handleMylistPut(req, env);
     }
+
+    if (path === "/api/gh-file") return handleGhFile(req, env, url);
+    if (path === "/api/wl-scan" && req.method === "POST") return handleWlScan(req, env);
 
     if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "Read only" }, 405);
 
