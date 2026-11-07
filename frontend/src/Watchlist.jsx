@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { Fragment, useEffect, useState, useRef } from "react";
 import WatchlistEditor from "./WatchlistEditor";
 
 /**
@@ -359,6 +359,12 @@ export default function Watchlist({ isMobile, light }) {
         chg_pct: lv?.chg_pct ?? r.chg_pct,
         ext_chg_pct: lv?.ext_chg_pct ?? r.ext_chg_pct,
         ext_sess: lv?.ext_chg_pct != null ? lv.sess : null,
+        chg: (lv?.last ?? r.last) != null && (lv?.chg_pct ?? r.chg_pct) != null ? (lv?.last ?? r.last) - (lv?.last ?? r.last) / (1 + (lv?.chg_pct ?? r.chg_pct) / 100) : null,
+        // 排序用：買 > 賣，越新越前
+        ut_k: r.ut && r.ut_days != null ? (r.ut === "long" ? 1 : -1) * (1000 - r.ut_days) : null,
+        hv_k: r.hv ? r.hv.s * (1000 - r.hv.n) : null,
+        tb_k: r.tb_days != null ? 1000 - r.tb_days : null,
+        st_k: r.st && r.st_days != null ? (r.st === "long" ? 1 : -1) * (1000 - r.st_days) : null,
       };
     })
     .sort((a, b) => {
@@ -390,13 +396,23 @@ export default function Watchlist({ isMobile, light }) {
 
   const COLS = [
     { key: "symbol", label: "Symbol" },
-    { key: "tband", label: "TBand" },
-    { key: "ut", label: "UT" },
-    { key: "st", label: "ST" },
+    { key: "ut_k", label: "UT" },
+    { key: "hv_k", label: "HV" },
+    { key: "tb_k", label: "TB" },
+    { key: "st_k", label: "ST" },
     { key: "last", label: "Last" },
+    { key: "chg", label: "Chg" },
     { key: "chg_pct", label: "%Chg" },
-    { key: "ext_chg_pct", label: "E%Chg" },
   ];
+  // 訊號：5 棒內綠／紅底白字（同 My List 一樣），之後綠／紅字；冇訊號 –
+  const sigCell = (s, n, tip) => {
+    if (s == null || n == null) return <span style={{ color: C.mute }}>–</span>;
+    const col = s > 0 ? C.up : C.dn, txt = `${s > 0 ? "B" : "S"}${n}`;
+    return n <= 5
+      ? <span title={tip} style={{ background: col, color: "#fff", padding: "0 4px", borderRadius: 3, fontSize: 11, lineHeight: "13px", display: "inline-block" }}>{txt}</span>
+      : <span title={tip} style={{ color: col }}>{txt}</span>;
+  };
+  const tdSig = { padding: "7px 4px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, whiteSpace: "nowrap" };
 
   return (
     <div style={{
@@ -456,9 +472,14 @@ export default function Watchlist({ isMobile, light }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map(r => (
+            {rows.map((r, ri) => (
+              <Fragment key={r.ticker}>
+              {sortKey == null && (ri === 0 || rows[ri - 1].section !== r.section) && (
+                <tr><td colSpan={COLS.length} style={{ padding: "12px 6px 4px", fontFamily: M, fontSize: 10.5, letterSpacing: "0.08em", color: C.mute, borderBottom: `1px solid ${C.line}`, textAlign: "left", whiteSpace: "nowrap" }}>
+                  {r.section.replace(/^SECTION\s+/i, "")} <span style={{ opacity: 0.7 }}>· {rows.filter(x => x.section === r.section).length}</span>
+                </td></tr>
+              )}
               <tr
-                key={r.ticker}
                 onClick={() => toggleHighlight(r.ticker, r.symbol)}
                 style={{ cursor: "pointer", background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}
               >
@@ -484,36 +505,21 @@ export default function Watchlist({ isMobile, light }) {
                     )}
                   </span>
                 </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right" }}>
-                  {r.tband
-                    ? <TBandDot status={r.tband} days={r.tband_days} />
-                    : <span style={{ color: C.mute }}>–</span>}
-                </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontWeight: 700 }}>
-                  {r.ut
-                    ? (
-                      <span style={{ color: r.ut === "long" ? C.up : C.dn }}>
-                        {r.ut === "long" ? "B" : "S"}
-                        {r.ut_days != null && (
-                          <sup style={{ marginLeft: 1, fontSize: "0.68em", fontWeight: 700 }}>{r.ut_days}</sup>
-                        )}
-                      </span>
-                    )
-                    : <span style={{ color: C.mute }}>–</span>}
-                </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontWeight: 700 }}>
-                  {r.st ? <span style={{ color: r.st === "long" ? C.up : C.dn }}>{r.st === "long" ? "B" : "S"}</span> : <span style={{ color: C.mute }}>–</span>}
-                </td>
+                <td style={tdSig}>{sigCell(r.ut === "long" ? 1 : r.ut === "short" ? -1 : null, r.ut_days, "UT Bot（日線）：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒")}</td>
+                <td style={tdSig}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
+                <td style={tdSig}>{sigCell(r.tb_days != null ? 1 : null, r.tb_days, "Triple Band 買入確認棒，數字 = 幾多棒前（最近 20 棒）")}</td>
+                <td style={tdSig}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
                   {N(r.last)}
+                </td>
+                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg) }}>
+                  {r.chg == null ? "—" : `${r.chg >= 0 ? "+" : "−"}${Math.abs(r.chg).toFixed(2)}`}
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct), fontWeight: 700 }}>
                   {P(r.chg_pct)}
                 </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
-                  {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}
-                </td>
               </tr>
+              </Fragment>
             ))}
           </tbody>
         </table>
