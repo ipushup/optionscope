@@ -63,10 +63,13 @@ def run_len(arr):
 
 def analyse(df, S, key="D"):
     """一個週期嘅 {ut, hv, ema}；數據太少回 None"""
-    if df is None or len(df) < 30:
+    if df is None or len(df) < 5:      # 新上市股票月線棒數少：有幾多畫幾多（指標盡量計）
         return None
     n = len(df)
-    pos = S.ut_bot(df)[1]
+    try:
+        pos = S.ut_bot(df)[1]
+    except Exception:  # noqa: BLE001  棒數太少
+        pos = [0]
     ut = None
     if int(pos[-1]) != 0:
         ut = {"s": int(pos[-1]), "n": run_len(list(pos))}
@@ -78,7 +81,10 @@ def analyse(df, S, key="D"):
             hv = {"s": 1 if buy else -1, "n": n - (bi if buy else si)}   # 最新棒 = 1
     # Triple Band：只要真正買入（確認買入嗰支棒，kind == TB；TBskip 唔計），最近 TB_RECENT 棒內
     tb = None
-    tbs = [e["i"] for e in S.triple_band(df) if e["kind"] == "TB"]
+    try:
+        tbs = [e["i"] for e in S.triple_band(df) if e["kind"] == "TB"] if n >= 30 else []
+    except Exception:  # noqa: BLE001
+        tbs = []
     if tbs and n - tbs[-1] < TB_RECENT:
         tb = {"s": 1, "n": n - tbs[-1]}               # 確認棒 = 最新棒 → 1
     close = df["Close"].astype(float)
@@ -97,7 +103,10 @@ def analyse(df, S, key="D"):
         e = close.ewm(span=p, adjust=False).mean().iloc[-keep:]
         k[f"e{p}"] = [round(float(x), 4) if n >= p else None for x in e.values]
     # UT Bot 買／賣訊號（圖上三角形）：對應 tail 嘅 0/1 陣列
-    evs = S.ut_events(df)
+    try:
+        evs = S.ut_events(df)
+    except Exception:  # noqa: BLE001
+        evs = []
     first = n - len(tail)
     k["b"] = [1 if any(e["kind"] == "UTB" and e["i"] == first + j for e in evs) else 0 for j in range(len(tail))]
     k["s"] = [1 if any(e["kind"] == "UTS" and e["i"] == first + j for e in evs) else 0 for j in range(len(tail))]
