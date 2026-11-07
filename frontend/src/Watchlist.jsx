@@ -40,6 +40,7 @@ const THEMES = {
 };
 let C = THEMES.dark;
 const F = "'Syne',system-ui,sans-serif";
+const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";   // 同 Daily Table 一致：標題／代號用 Inter
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 
 const N = (v, d = 2) => (v == null || Number.isNaN(v) ? "—" : v.toFixed(d));
@@ -401,8 +402,8 @@ export default function Watchlist({ isMobile, light }) {
     { key: "tb_k", label: "TB" },
     { key: "st_k", label: "ST" },
     { key: "last", label: "Last" },
-    { key: "chg", label: "Chg" },
     { key: "chg_pct", label: "%Chg" },
+    { key: "ext_chg_pct", label: "E%Chg" },
   ];
   // 訊號：5 棒內綠／紅底白字（同 My List 一樣），之後綠／紅字；冇訊號 –
   const sigCell = (s, n, tip) => {
@@ -459,12 +460,12 @@ export default function Watchlist({ isMobile, light }) {
       </div>
 
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: isMobile ? 11.5 : 12.5 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
           <thead>
-            <tr style={{ color: C.mute, fontSize: 10.5 }}>
+            <tr style={{ color: C.mute, fontSize: 11 }}>
               {COLS.map((col, i) => (
                 <th key={col.key} onClick={() => toggleSort(col.key)} style={{
-                  padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 700,
+                  padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
                   color: sortKey === col.key ? C.acc : C.mute,
                 }}>{col.label}</th>
@@ -485,7 +486,7 @@ export default function Watchlist({ isMobile, light }) {
               >
                 <td style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
-                  fontWeight: 700, whiteSpace: "nowrap", fontFamily: M, fontVariantNumeric: "tabular-nums",
+                  fontWeight: 500, fontSize: 14, whiteSpace: "nowrap", fontFamily: SANS,
                 }}>
                   {/* 從屬(ETF)縮入 10px：用 position:relative 平移，唔係加 padding，
                       所以唔會撐闊 Symbol 欄、亦唔會擠細其他欄 */}
@@ -512,11 +513,11 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
                   {N(r.last)}
                 </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg) }}>
-                  {r.chg == null ? "—" : `${r.chg >= 0 ? "+" : "−"}${Math.abs(r.chg).toFixed(2)}`}
-                </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct), fontWeight: 700 }}>
+                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
                   {P(r.chg_pct)}
+                </td>
+                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
+                  {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}
                 </td>
               </tr>
               </Fragment>
