@@ -421,7 +421,7 @@ export default function Watchlist({ isMobile, light }) {
       padding: isMobile ? "14px 7px 40px" : "18px 24px 40px", width: "100%", overflowX: "hidden",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.mute, marginBottom: 10 }}>
-        <span style={{ letterSpacing: "0.12em" }}>WATCHLIST</span>
+        <span style={{ letterSpacing: "0.12em" }}>DATALIST</span>
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, whiteSpace: "nowrap" }}>
           {(apiAt || lbAt) ? <>{hkTime(apiAt || lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : (qAt ? `${hkTime(qAt)} HKT` : "")}
           {syncErr && <span style={{ color: C.warn }}>⚠ sync</span>}
