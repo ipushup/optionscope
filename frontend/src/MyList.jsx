@@ -25,7 +25,7 @@ const fmtPx = (v, sym) => (v == null ? "—" : v.toLocaleString("en-US", { minim
 
 // 細 K 線圖（同主頁 snapshot 同一風格：K 線 + EMA10 黃 / EMA20 綠 / EMA50 紅）
 const CHART_BARS = 30;   // D / W / M 一律 30 棒，棒粗幼一致
-function MiniChart({ k: full, T }) {
+function MiniChart({ k: full, T, light }) {
   const from = Math.max(0, (full?.c?.length || 0) - CHART_BARS);
   const k = full && Object.fromEntries(Object.entries(full).map(([key, v]) => [key, Array.isArray(v) ? v.slice(from) : v]));
   const n = k?.c?.length || 0;
@@ -36,6 +36,7 @@ function MiniChart({ k: full, T }) {
   const pad = (hi - lo) * 0.06 || 1; lo -= pad; hi += pad;
   const X = i => ((i + 0.5) / n) * W, Y = v => H - ((v - lo) / (hi - lo)) * H;
   const cw = (W / n) * 0.62;
+  const arrowC = light ? T.txt : "#ffffff";   // UT 買（▲ 喺 K 線下）／賣（▼ 喺 K 線上），同主頁一樣
   const line = arr => { let o = "", pen = false; arr.forEach((v, i) => { if (v == null) { pen = false; return; } o += `${pen ? "L" : "M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; }); return o; };
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }} role="img" aria-label="candles">
@@ -47,6 +48,8 @@ function MiniChart({ k: full, T }) {
       <path d={line(k.e10 || [])} fill="none" stroke="#e8c34a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <path d={line(k.e20 || [])} fill="none" stroke="#8fdc5a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <path d={line(k.e50 || [])} fill="none" stroke="#e05563" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      {(k.b || []).map((on, i) => on ? <path key={`b${i}`} d={`M${X(i)} ${Y(k.l[i]) + 4} l-2.6 4.5 h5.2z`} fill={arrowC} /> : null)}
+      {(k.s || []).map((on, i) => on ? <path key={`s${i}`} d={`M${X(i)} ${Y(k.h[i]) - 4} l-2.6 -4.5 h5.2z`} fill={arrowC} /> : null)}
     </svg>
   );
 }
@@ -219,7 +222,7 @@ export default function MyList({ isMobile, light }) {
               ))}
               </div>
               <div onClick={cycleTf} role="button" title="撳一下切換 D / W / M 圖" style={{ flex: 1, minWidth: 0, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent", minHeight: 70 }}>
-                <MiniChart k={r[chartTf]?.k} T={T} />
+                <MiniChart k={r[chartTf]?.k} T={T} light={light} />
                 <span style={{ position: "absolute", top: 0, left: 2, fontFamily: M, fontSize: 10, color: T.mute }}>{chartTf}</span>
               </div>
             </div>

@@ -96,6 +96,11 @@ def analyse(df, S, key="D"):
     for p in (10, 20, 50):
         e = close.ewm(span=p, adjust=False).mean().iloc[-keep:]
         k[f"e{p}"] = [round(float(x), 4) if n >= p else None for x in e.values]
+    # UT Bot 買／賣訊號（圖上三角形）：對應 tail 嘅 0/1 陣列
+    evs = S.ut_events(df)
+    first = n - len(tail)
+    k["b"] = [1 if any(e["kind"] == "UTB" and e["i"] == first + j for e in evs) else 0 for j in range(len(tail))]
+    k["s"] = [1 if any(e["kind"] == "UTS" and e["i"] == first + j for e in evs) else 0 for j in range(len(tail))]
     return {"ut": ut, "hv": hv, "tb": tb, "ema": ema, "bars": n, "k": k}
 
 
