@@ -202,7 +202,7 @@ function BandPicker({ value, onChange, isMobile, style }) {
         width: "100%", textAlign: "left", background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
         padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: isMobile ? "system-ui,-apple-system,sans-serif" : M, fontSize: isMobile ? 16 : 12, // 手機同原生 select 一樣 16px（index.html 全域規則）
         cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden",
-      }}><span>{label}</span><span style={{ color: C.mute, fontSize: 9 }}>▾</span></button>
+      }}><span>{label}</span><svg width="12" height="16" viewBox="0 0 12 16" fill="none" stroke={C.txt} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true"><path d="M2 6l4-4 4 4M2 10l4 4 4-4" /></svg></button>
       {open && (
         <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, minWidth: "100%", zIndex: 40, background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, boxShadow: "0 6px 20px rgba(0,0,0,.35)", padding: 4 }}>
           {[["", null], ...Object.entries(BAND_LABEL)].map(([k, v]) => (
