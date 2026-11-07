@@ -182,6 +182,8 @@ async function pushWithRetry(obj, attempts = 3) {
 }
 
 const BASE = process.env.PUBLIC_URL || "";
+const BAND_LABEL = { confirmed: "Confirmed", forming: "Forming", candidate: "Candidate", exit: "Exit", watch: "Watch", flat: "Tracking" };
+const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" }; // native <select> option 畫唔到colored dot
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -203,6 +205,7 @@ export default function Watchlist({ isMobile, light }) {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState(false);   // 編輯面板（加／移除股票、分組、孖展率）
   const [section, setSection] = useState("");
+  const [bandFilter, setBandFilter] = useState("");   // Triple Band 分組：confirmed / forming / candidate / exit / watch / flat
   const [sigKind, setSigKind] = useState("");   // "" | ut | hv | tb | st
   const [sigSide, setSigSide] = useState("");   // "" | B | B2 | B5 | S | S2 | S5
   // null = 跟 Watchlists.txt 原本section次序(INDICES → SECTION 1 → … → HONGKONG),
@@ -350,7 +353,8 @@ export default function Watchlist({ isMobile, light }) {
   const rows = status.rows
     .filter(r =>
       (!query || r.symbol.toUpperCase().includes(query)) &&
-      (!section || r.section === section))
+      (!section || r.section === section) &&
+      (!bandFilter || r.tband === bandFilter))
     .map(r => {
       const lv = live(r.ticker);
       return {
@@ -463,12 +467,24 @@ export default function Watchlist({ isMobile, light }) {
           <option value="">{isMobile ? "Section" : "All sections"}</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <select value={bandFilter} onChange={e => setBandFilter(e.target.value)} style={{
+          background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
+          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+        }}>
+          <option value="">{isMobile ? "TBand" : "TBand: all"}</option>
+          {Object.entries(BAND_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>{BAND_ICON[k]} {v}</option>
+          ))}
+        </select>
+      </div>
+      <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
         <select value={sigKind} onChange={e => setSigKind(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
           fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
         }}>
-          <option value="">{isMobile ? "訊號" : "Signal: all"}</option>
+          <option value="">{isMobile ? "Signal" : "Signal: all"}</option>
           <option value="ut">UT</option>
           <option value="hv">HV</option>
           <option value="tb">TB</option>
@@ -495,12 +511,12 @@ export default function Watchlist({ isMobile, light }) {
             <tr style={{ color: C.mute, fontSize: 11 }}>
               {COLS.map((col, i) => (
                 <th key={col.key} onClick={() => toggleSort(col.key)} style={{
-                  padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
+                  padding: isMobile ? "6px 3px" : "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
                   color: sortKey === col.key ? C.acc : C.mute,
                 }}>{col.label}{sortKey === col.key
                     ? (SIG_KEYS.includes(col.key) ? (col.key === "tb_k" || sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
-                    : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.4, fontSize: 9 }}> ▴▾</span> : "")}</th>
+                    : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.4, fontSize: 8 }}>▴▾</span> : "")}</th>
               ))}
             </tr>
           </thead>
