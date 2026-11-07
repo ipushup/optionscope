@@ -58,8 +58,6 @@ const marginColor = v => (v <= 0 || v >= 70) ? MGN_HI : v >= 55 ? MGN_MID : C.su
 const marginGlyph = v => (v <= 0 ? "✕" : Math.round(v).toString());
 const marginTitle = v => (v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`);
 
-const BAND_LABEL = { confirmed: "已確認", forming: "形成中", candidate: "候選", exit: "出場", watch: "觀察", flat: "追蹤中" };
-const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" }; // 淨係native <select> option用,嗰度冇得畫colored dot
 const bandColor = k => ({ confirmed: C.up, forming: C.warn, candidate: C.acc, exit: C.dn, watch: C.mute, flat: C.mute }[k] || C.mute);
 
 // 表格入面嘅TBand格 -- 全部同一種"dot"語言,靠顏色分狀態；
@@ -205,7 +203,8 @@ export default function Watchlist({ isMobile, light }) {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState(false);   // 編輯面板（加／移除股票、分組、孖展率）
   const [section, setSection] = useState("");
-  const [bandFilter, setBandFilter] = useState("");
+  const [sigKind, setSigKind] = useState("");   // "" | ut | hv | tb | st
+  const [sigSide, setSigSide] = useState("");   // "" | B | B2 | B5 | S | S2 | S5
   // null = 跟 Watchlists.txt 原本section次序(INDICES → SECTION 1 → … → HONGKONG),
   // 美股喺前、港股喺最尾。揀咗column先會改做按該column排序。
   const [sortKey, setSortKey] = useState(null);
@@ -351,8 +350,7 @@ export default function Watchlist({ isMobile, light }) {
   const rows = status.rows
     .filter(r =>
       (!query || r.symbol.toUpperCase().includes(query)) &&
-      (!section || r.section === section) &&
-      (!bandFilter || r.tband === bandFilter))
+      (!section || r.section === section))
     .map(r => {
       const lv = live(r.ticker);
       return {
@@ -369,6 +367,13 @@ export default function Watchlist({ isMobile, light }) {
         tb_k: r.tb_days != null ? { s: 1, n: r.tb_days } : null,
         st_k: r.st && r.st_days != null ? { s: r.st === "long" ? 1 : -1, n: r.st_days } : null,
       };
+    })
+    .filter(r => {
+      if (!sigSide) return true;
+      const want = sigSide[0] === "B" ? 1 : -1;
+      const max = sigSide.length > 1 ? Number(sigSide.slice(1)) : Infinity;
+      const keys = sigKind ? [sigKind + "_k"] : SIG_KEYS;
+      return keys.some(k => r[k] && r[k].s === want && r[k].n <= max);
     })
     .sort((a, b) => {
       if (sortKey == null) return 0; // 保持原本section次序(Array.sort係stable)
@@ -458,15 +463,29 @@ export default function Watchlist({ isMobile, light }) {
           <option value="">{isMobile ? "Section" : "All sections"}</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <select value={bandFilter} onChange={e => setBandFilter(e.target.value)} style={{
+        <select value={sigKind} onChange={e => setSigKind(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
           fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
         }}>
-          <option value="">{isMobile ? "TBand" : "TBand: all"}</option>
-          {Object.entries(BAND_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>{BAND_ICON[k]} {v}</option>
-          ))}
+          <option value="">{isMobile ? "訊號" : "Signal: all"}</option>
+          <option value="ut">UT</option>
+          <option value="hv">HV</option>
+          <option value="tb">TB</option>
+          <option value="st">ST</option>
+        </select>
+        <select value={sigSide} onChange={e => setSigSide(e.target.value)} style={{
+          background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
+          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+        }}>
+          <option value="">{isMobile ? "B/S" : "B/S: any"}</option>
+          <option value="B">B any</option>
+          <option value="B2">B ≤2</option>
+          <option value="B5">B ≤5</option>
+          <option value="S">S any</option>
+          <option value="S2">S ≤2</option>
+          <option value="S5">S ≤5</option>
         </select>
       </div>
 
@@ -479,7 +498,7 @@ export default function Watchlist({ isMobile, light }) {
                   padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
                   color: sortKey === col.key ? C.acc : C.mute,
-                }}>{col.label}{sortKey === col.key && SIG_KEYS.includes(col.key) && col.key !== "tb_k" ? (sortDir === 1 ? " B▸" : " S▸") : ""}</th>
+                }}>{col.label}{sortKey === col.key ? (sortDir < 0 ? " ▾" : " ▴") : ""}</th>
               ))}
             </tr>
           </thead>
