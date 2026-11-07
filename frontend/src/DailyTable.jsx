@@ -15,8 +15,8 @@ const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
 
 const hk = iso => {
   try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-    return `${p.hour}:${p.minute}:${p.second} HKT`;
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+    return `${p.day} ${p.month} ${p.hour}:${p.minute}:${p.second} HKT`;
   } catch { return ""; }
 };
 const sigRank = r => (r.sig === "BUY" ? 0 : r.sig === "SELL" ? 1 : 2);
