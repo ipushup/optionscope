@@ -64,10 +64,13 @@ export default function MyList({ isMobile, light }) {
   const [busy, setBusy] = useState(false);
   const [mgn, setMgn] = useState({ data: {}, stale: false });   // margin.json（同 Home 一份）
   const [menu, setMenu] = useState(null);
-  const [allEma, setAllEma] = useState(() => { try { return localStorage.getItem("ml_ema_open") === "1"; } catch { return false; } });   // 預設只顯示 EMA10
-  const [chartTf, setChartTf] = useState(() => { try { return localStorage.getItem("ml_chart_tf") || "D"; } catch { return "D"; } });   // 預設日線
-  const cycleTf = () => setChartTf(v => { const n = v === "D" ? "W" : v === "W" ? "M" : "D"; try { localStorage.setItem("ml_chart_tf", n); } catch { /* ok */ } return n; });
-  const toggleEma = () => setAllEma(v => { const n = !v; try { localStorage.setItem("ml_ema_open", n ? "1" : "0"); } catch { /* 無儲存都得 */ } return n; });      // 開咗操作選單嘅 symbol
+  // 每隻股票自己嘅 EMA 展開／圖表週期（儲存喺呢部機嘅瀏覽器）
+  const loadMap = k => { try { return JSON.parse(localStorage.getItem(k) || "{}") || {}; } catch { return {}; } };
+  const [emaOpen, setEmaOpen] = useState(() => loadMap("ml_ema_open2"));     // sym → true（預設只顯示 EMA10）
+  const [tfMap, setTfMap] = useState(() => loadMap("ml_chart_tf2"));         // sym → D/W/M（預設日線）
+  const saveMap = (k, m) => { try { localStorage.setItem(k, JSON.stringify(m)); } catch { /* ok */ } };
+  const toggleEma = sym => setEmaOpen(m => { const n = { ...m, [sym]: !m[sym] }; saveMap("ml_ema_open2", n); return n; });
+  const cycleTf = sym => setTfMap(m => { const v = m[sym] || "D"; const n = { ...m, [sym]: v === "D" ? "W" : v === "W" ? "M" : "D" }; saveMap("ml_chart_tf2", n); return n; });
 
   useEffect(() => {
     fetch("/margin.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(d => {
@@ -167,6 +170,7 @@ export default function MyList({ isMobile, light }) {
 
   const Card = ({ sym }) => {
     const r = data?.rows?.[sym];
+    const allEma = !!emaOpen[sym], chartTf = tfMap[sym] || "D";
     const q = live[sym];
     const sess = q && SESS[q.session];
     const up = (q?.pct ?? 0) >= 0;
@@ -213,7 +217,7 @@ export default function MyList({ isMobile, light }) {
               ))}
               <div style={{ borderTop: `1px dashed ${T.line}`, margin: "2px 0" }} />
               {(allEma ? EMAS : EMAS.slice(0, 1)).map((p, i) => (
-                <div key={p} onClick={i === 0 ? toggleEma : undefined} role={i === 0 ? "button" : undefined}
+                <div key={p} onClick={i === 0 ? () => toggleEma(sym) : undefined} role={i === 0 ? "button" : undefined}
                   title={i === 0 ? (allEma ? "收埋其他 EMA" : "展開 EMA20 / 50 / 89 / 250") : undefined}
                   style={{ display: "flex", alignItems: "center", height: 13, cursor: i === 0 ? "pointer" : "default", WebkitTapHighlightColor: "transparent" }}>
                   <span style={{ width: LBL_W, fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>EMA{p}{i === 0 && <span aria-hidden="true" style={{ fontSize: 8, marginLeft: 3 }}>{allEma ? "▾" : "▸"}</span>}</span>
@@ -221,7 +225,7 @@ export default function MyList({ isMobile, light }) {
                 </div>
               ))}
               </div>
-              <div onClick={cycleTf} role="button" title="撳一下切換 D / W / M 圖" style={{ flex: 1, minWidth: 0, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent", minHeight: 70 }}>
+              <div onClick={() => cycleTf(sym)} role="button" title="撳一下切換 D / W / M 圖" style={{ flex: 1, minWidth: 0, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent", minHeight: 70 }}>
                 <MiniChart k={r[chartTf]?.k} T={T} light={light} />
                 <span style={{ position: "absolute", top: 0, left: 2, fontFamily: M, fontSize: 10, color: T.mute }}>{chartTf}</span>
               </div>
