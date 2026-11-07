@@ -245,7 +245,7 @@ async function handleIngest(req, env, name) {
 // 端點：POST https://openapi.longbridge.com/quote/quotes  body {"symbol":[...]}
 const LB_BASE = "https://openapi.longbridge.com";
 const SYMBOL_RE = /^\.?[A-Za-z0-9]{1,12}(?:\.[A-Za-z]{1,4})?$/;
-const MAX_SYMBOLS = 30;
+const MAX_SYMBOLS = 100;
 
 async function sha1hex(data) {
   const buf = await crypto.subtle.digest("SHA-1", typeof data === "string" ? enc.encode(data) : data);
