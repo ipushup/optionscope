@@ -490,7 +490,7 @@ export default function Watchlist({ isMobile, light }) {
       background: C.bg, color: C.txt, fontFamily: SANS,
       padding: isMobile ? "14px 7px 40px" : "18px 24px 40px", width: "100%", overflowX: "hidden",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.dim, marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.dim, minHeight: 28, marginBottom: 12 }}>
         <span style={{ fontSize: 12, whiteSpace: "nowrap" }}>
           {(() => {
             const at = apiAt || lbAt || qAt;
