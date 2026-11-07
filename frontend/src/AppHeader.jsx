@@ -38,6 +38,7 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
   const T = light ? TH.light : TH.dark;
   const [open, setOpen] = useState(false);
   const box = useRef(null);
+  const nav = useRef(null);
   const go = (id) => { setOpen(false); if (id !== view) onNavigate(id); };
 
   useEffect(() => {
@@ -47,6 +48,18 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
     document.addEventListener("mousedown", onDoc); document.addEventListener("touchstart", onDoc); document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("touchstart", onDoc); document.removeEventListener("keydown", onKey); };
   }, [open]);
+
+  // 手機 tab 列可橫向捲動：refresh／切頁後將目前 tab 捲到畫面中間，唔會跌出畫面外
+  useEffect(() => {
+    const center = () => {
+      const n = nav.current; if (!n) return;
+      const el = n.querySelector('[aria-current="page"]'); if (!el) return;
+      n.scrollLeft = el.offsetLeft - (n.clientWidth - el.offsetWidth) / 2;
+    };
+    center();
+    const t = setTimeout(center, 400); // 字體載入後闊度會變，再校正一次
+    return () => clearTimeout(t);
+  }, [view]);
 
   const iconBtn = { width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "none", background: "transparent", color: T.txt, cursor: "pointer", flexShrink: 0, padding: 0 };
 
@@ -77,7 +90,7 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
         <button type="button" onClick={logout} style={{ height: 40, padding: "0 6px", border: "none", background: "transparent", color: T.txt, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Log out</button>
       </div>
 
-      <nav aria-label="Primary" style={{ display: "flex", gap: 2, overflowX: "auto", padding: "0 12px", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+      <nav ref={nav} aria-label="Primary" style={{ display: "flex", gap: 2, overflowX: "auto", padding: "0 12px", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         {PAGES.filter(p => p.tab).map(p => {
           const on = p.id === view;
           return (
