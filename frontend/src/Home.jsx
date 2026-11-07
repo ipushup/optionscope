@@ -159,7 +159,7 @@ function IndexCard({ card, T, mode, daily, light }) {
   const col = main ? (up ? T.up : T.dn) : T.mute;
   const etfCol = etf ? (etf.change >= 0 ? T.up : T.dn) : T.mute;
   const arrow = (x) => (x.change >= 0 ? "▲" : "▼");
-  const showDaily = mode === "daily" && daily && daily.c && daily.c.length > 4;
+  const showDaily = mode !== "intraday" && daily && daily.c && daily.c.length > 4;
   const priceBlock = (
     <div style={{ minWidth: 0, flex: "0 0 auto" }}>
       <div className="os-price" style={{ fontFamily: SANS, fontWeight: 700, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em", color: T.txt }}>
@@ -444,7 +444,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const [daily, setDaily] = useState(null);
   const [sm, setSm] = useState(null);
   const [mode, setMode] = useState(() => {
-    try { return localStorage.getItem("os_snap_mode") === "intraday" ? "intraday" : "daily"; } catch (e) { return "daily"; }
+    try { const v = localStorage.getItem("os_snap_mode"); return v === "intraday" ? "intraday" : v === "W" || v === "M" ? v : "D"; } catch (e) { return "D"; }
   });
   const pickMode = (m) => { setMode(m); try { localStorage.setItem("os_snap_mode", m); } catch (e) { /* ignore */ } };
 
@@ -603,7 +603,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div id="s1" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>01 / MARKET SNAPSHOT</div>
               <div role="tablist" aria-label="Chart mode" style={{ display: "flex", border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden" }}>
-                {[["daily", "Daily"], ["intraday", "Intraday"]].map(([k, label]) => (
+                {[["D", "D"], ["W", "W"], ["M", "M"], ["intraday", "Intraday"]].map(([k, label]) => (
                   <button key={k} role="tab" aria-selected={mode === k} onClick={() => pickMode(k)}
                     style={{ fontFamily: M, fontSize: 11, fontWeight: 600, padding: "3px 10px", border: 0, cursor: "pointer", background: mode === k ? T.soft : "transparent", color: mode === k ? T.txt : T.mute }}>{label}</button>
                 ))}
@@ -612,7 +612,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
             <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>{live ? <span style={{ color: T.up }}>● live</span> : "snapshot"}</div>
           </div>
           {mk ? (
-            <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={daily?.cards?.[cd.id]} light={light} />)}</div>
+            <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={mode === "D" ? daily?.cards?.[cd.id] : mode === "W" || mode === "M" ? daily?.cards?.[cd.id]?.[mode] : null} light={light} />)}</div>
           ) : (
             <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: err ? T.dn : T.dim }}>
               {err ? `Could not load market.json (${err}).` : "Loading market data…"}
