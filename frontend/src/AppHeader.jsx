@@ -90,7 +90,7 @@ export default function AppHeader({ view, onNavigate, light, onToggleLight }) {
         <button type="button" onClick={logout} style={{ height: 40, padding: "0 6px", border: "none", background: "transparent", color: T.txt, fontFamily: F, fontSize: 14, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Log out</button>
       </div>
 
-      <nav ref={nav} aria-label="Primary" style={{ display: "flex", gap: 2, overflowX: "auto", padding: "0 12px", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+      <nav ref={nav} aria-label="Primary" style={{ display: "flex", gap: 2, overflowX: "auto", overflowY: "hidden", touchAction: "pan-x", overscrollBehaviorX: "contain", padding: "0 12px", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         {PAGES.filter(p => p.tab).map(p => {
           const on = p.id === view;
           return (
