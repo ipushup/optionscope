@@ -145,8 +145,8 @@ function Candles({ d: full, T, light }) {
       <path d={path(d.ema50)} fill="none" stroke="#e05563" strokeWidth="1" strokeLinejoin="round" />
       <path d={path(d.st, (i) => d.st_dir[i] === 1)} fill="none" stroke="#00b894" strokeWidth="1.4" strokeLinejoin="round" />
       <path d={path(d.st, (i) => d.st_dir[i] === -1)} fill="none" stroke="#ff5d73" strokeWidth="1.4" strokeLinejoin="round" />
-      {d.buy.map((on, i) => on && <path key={`b${i}`} d={`M${X(i)} ${Y(d.l[i]) + 5} l-3.2 5.5 h6.4z`} fill={arrowC} />)}
-      {d.sell.map((on, i) => on && <path key={`s${i}`} d={`M${X(i)} ${Y(d.h[i]) - 5} l-3.2 -5.5 h6.4z`} fill={arrowC} />)}
+      {d.buy.map((on, i) => on && <path key={`b${i}`} d={`M${X(i)} ${Y(d.l[i]) + 6} l-7.5 12.75 h15z`} fill={arrowC} />)}
+      {d.sell.map((on, i) => on && <path key={`s${i}`} d={`M${X(i)} ${Y(d.h[i]) - 6} l-7.5 -12.75 h15z`} fill={arrowC} />)}
     </svg>
   );
 }
