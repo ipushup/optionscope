@@ -87,7 +87,7 @@ export default function DailyTable({ isMobile, light }) {
 
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 14px", minHeight: 28, marginBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 14px", minHeight: 20, marginBottom: 10 }}>
         <span style={{ fontFamily: M, fontSize: 12, color: T.dim }}>
           {err ? `⚠ ${err}` : data ? <><span style={{ color: age > 300 ? T.dn : T.up }}>●</span> {hk(data.updated)} · {data.n} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</> : "loading…"}
         </span>

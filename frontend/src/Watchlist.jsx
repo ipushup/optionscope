@@ -490,7 +490,7 @@ export default function Watchlist({ isMobile, light }) {
       background: C.bg, color: C.txt, fontFamily: SANS,
       padding: isMobile ? "14px 7px 40px" : "18px 24px 40px", width: "100%", overflowX: "hidden",
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.dim, minHeight: 28, marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.dim, minHeight: 20, marginBottom: 10 }}>
         <span style={{ fontSize: 12, whiteSpace: "nowrap" }}>
           {(() => {
             const at = apiAt || lbAt || qAt;
@@ -502,7 +502,7 @@ export default function Watchlist({ isMobile, light }) {
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, whiteSpace: "nowrap" }}>
           {syncErr && <span style={{ color: C.warn }}>⚠ sync</span>}
-          <button onClick={() => setEditing(true)} style={{ background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 10px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
+          <button onClick={() => setEditing(true)} style={{ background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "1px 9px", lineHeight: "16px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
         </span>
       </div>
 
