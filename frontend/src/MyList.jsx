@@ -48,8 +48,8 @@ function MiniChart({ k: full, T, light }) {
       <path d={line(k.e10 || [])} fill="none" stroke="#e8c34a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <path d={line(k.e20 || [])} fill="none" stroke="#8fdc5a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <path d={line(k.e50 || [])} fill="none" stroke="#e05563" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-      {(k.b || []).map((on, i) => on ? <path key={`b${i}`} d={`M${X(i)} ${Y(k.l[i]) + 4} l-2.6 4.5 h5.2z`} fill={arrowC} /> : null)}
-      {(k.s || []).map((on, i) => on ? <path key={`s${i}`} d={`M${X(i)} ${Y(k.h[i]) - 4} l-2.6 -4.5 h5.2z`} fill={arrowC} /> : null)}
+      {(k.b || []).map((on, i) => on ? <path key={`b${i}`} d={`M${X(i)} ${Y(k.l[i]) + 4} l-5 8.5 h10z`} fill={arrowC} /> : null)}
+      {(k.s || []).map((on, i) => on ? <path key={`s${i}`} d={`M${X(i)} ${Y(k.h[i]) - 4} l-5 -8.5 h10z`} fill={arrowC} /> : null)}
     </svg>
   );
 }
