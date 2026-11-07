@@ -184,6 +184,7 @@ async function pushWithRetry(obj, attempts = 3) {
 }
 
 const BASE = process.env.PUBLIC_URL || "";
+const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
 
@@ -362,10 +363,11 @@ export default function Watchlist({ isMobile, light }) {
         ext_sess: lv?.ext_chg_pct != null ? lv.sess : null,
         chg: (lv?.last ?? r.last) != null && (lv?.chg_pct ?? r.chg_pct) != null ? (lv?.last ?? r.last) - (lv?.last ?? r.last) / (1 + (lv?.chg_pct ?? r.chg_pct) / 100) : null,
         // 排序用：買 > 賣，越新越前
-        ut_k: r.ut && r.ut_days != null ? (r.ut === "long" ? 1 : -1) * (1000 - r.ut_days) : null,
-        hv_k: r.hv ? r.hv.s * (1000 - r.hv.n) : null,
-        tb_k: r.tb_days != null ? 1000 - r.tb_days : null,
-        st_k: r.st && r.st_days != null ? (r.st === "long" ? 1 : -1) * (1000 - r.st_days) : null,
+        // 訊號欄：{s:+1買/-1賣, n:幾棒前}；排序見 sigRank
+        ut_k: r.ut && r.ut_days != null ? { s: r.ut === "long" ? 1 : -1, n: r.ut_days } : null,
+        hv_k: r.hv ? { s: r.hv.s, n: r.hv.n } : null,
+        tb_k: r.tb_days != null ? { s: 1, n: r.tb_days } : null,
+        st_k: r.st && r.st_days != null ? { s: r.st === "long" ? 1 : -1, n: r.st_days } : null,
       };
     })
     .sort((a, b) => {
@@ -374,12 +376,21 @@ export default function Watchlist({ isMobile, light }) {
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
+      if (SIG_KEYS.includes(sortKey)) {
+        // 第一下：B1,B2,B3… 再 S1,S2…；第二下：S1,S2… 再 B1,B2…
+        const rank = v => (v.s === (sortDir === 1 ? 1 : -1) ? 0 : 1000) + v.n;
+        return rank(av) - rank(bv);
+      }
       if (typeof av === "number") return (av - bv) * sortDir;
       return String(av).localeCompare(String(bv)) * sortDir;
     });
 
   // 三段式：㩒第一下升序 → 第二下降序 → 第三下返回預設(section次序)
   const toggleSort = key => {
+    if (key === "tb_k") { // TB 只有買入訊號：㩒一下排最新，再㩒返預設
+      if (sortKey !== key) { setSortKey(key); setSortDir(1); } else { setSortKey(null); setSortDir(1); }
+      return;
+    }
     if (sortKey !== key) { setSortKey(key); setSortDir(1); }
     else if (sortDir === 1) setSortDir(-1);
     else { setSortKey(null); setSortDir(1); }
@@ -468,7 +479,7 @@ export default function Watchlist({ isMobile, light }) {
                   padding: "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
                   color: sortKey === col.key ? C.acc : C.mute,
-                }}>{col.label}</th>
+                }}>{col.label}{sortKey === col.key && SIG_KEYS.includes(col.key) && col.key !== "tb_k" ? (sortDir === 1 ? " B▸" : " S▸") : ""}</th>
               ))}
             </tr>
           </thead>
