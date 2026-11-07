@@ -37,6 +37,7 @@ function MiniChart({ k: full, T, light }) {
   const X = i => ((i + 0.5) / n) * W, Y = v => H - ((v - lo) / (hi - lo)) * H;
   const cw = (W / n) * 0.62;
   const arrowC = light ? T.txt : "#ffffff";   // UT 買（▲ 喺 K 線下）／賣（▼ 喺 K 線上），同主頁一樣
+  const lineIf = (arr, mask) => { let o = "", pen = false; arr.forEach((v, i) => { if (v == null || !mask(i)) { pen = false; return; } o += `${pen ? "L" : "M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; }); return o; };
   const line = arr => { let o = "", pen = false; arr.forEach((v, i) => { if (v == null) { pen = false; return; } o += `${pen ? "L" : "M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; }); return o; };
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: "100%", display: "block" }} role="img" aria-label="candles">
@@ -48,6 +49,10 @@ function MiniChart({ k: full, T, light }) {
       <path d={line(k.e10 || [])} fill="none" stroke="#e8c34a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <path d={line(k.e20 || [])} fill="none" stroke="#8fdc5a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
       <path d={line(k.e50 || [])} fill="none" stroke="#e05563" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+      {k.st && <>
+        <path d={lineIf(k.st, i => k.st_dir[i] === 1)} fill="none" stroke="#00b894" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
+        <path d={lineIf(k.st, i => k.st_dir[i] === -1)} fill="none" stroke="#ff5d73" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
+      </>}
       {(k.b || []).map((on, i) => on ? <path key={`b${i}`} d={`M${X(i)} ${Y(k.l[i]) + 4} l-3.2 5.5 h6.4z`} fill={arrowC} /> : null)}
       {(k.s || []).map((on, i) => on ? <path key={`s${i}`} d={`M${X(i)} ${Y(k.h[i]) - 4} l-3.2 -5.5 h6.4z`} fill={arrowC} /> : null)}
     </svg>

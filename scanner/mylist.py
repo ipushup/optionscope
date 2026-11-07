@@ -102,6 +102,14 @@ def analyse(df, S, key="D"):
     for p in (10, 20, 50):
         e = close.ewm(span=p, adjust=False).mean().iloc[-keep:]
         k[f"e{p}"] = [round(float(x), 4) if n >= p else None for x in e.values]
+    # SuperTrend(10,3)：同主頁圖一樣（綠 = 上升趨勢、紅 = 下降趨勢）
+    try:
+        from index_daily import supertrend
+        st, sd = supertrend(df[["High", "Low", "Close"]].astype(float))
+        k["st"] = [None if pd.isna(x) else round(float(x), 4) for x in st.iloc[-keep:]]
+        k["st_dir"] = [int(x) for x in sd.iloc[-keep:]]
+    except Exception:  # noqa: BLE001
+        pass
     # UT Bot 買／賣訊號（圖上三角形）：對應 tail 嘅 0/1 陣列
     try:
         evs = S.ut_events(df)
