@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import WatchlistEditor from "./WatchlistEditor";
 
 /**
  * Watchlist.jsx — 你原本 TradingView watchlist 加埋 Triple Band / UT Bot /
@@ -207,6 +208,7 @@ export default function Watchlist({ isMobile, light }) {
   const [, tick] = useState(0);                  // 15s 迫 re-render，令「幾分鐘前」跳動
   const [err, setErr] = useState(null);
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState(false);   // 編輯面板（加／移除股票、分組、孖展率）
   const [section, setSection] = useState("");
   const [bandFilter, setBandFilter] = useState("");
   // null = 跟 Watchlists.txt 原本section次序(INDICES → SECTION 1 → … → HONGKONG),
@@ -381,9 +383,11 @@ export default function Watchlist({ isMobile, light }) {
             {status.band_bar_date ? `Triple Band ${status.band_bar_date}` : ""} · 報價 {lbAt ? <>{hkTime(lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : <>{qAt ? `${hkTime(qAt)} HKT · ` : ""}{elapsedLabel} (yfinance)</>}
             {syncErr && <span style={{ color: C.warn }}> · ⚠ highlight sync失敗(用緊local)</span>}
           </span>
+          <button onClick={() => setEditing(true)} style={{ marginLeft: "auto", background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 10px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
         </div>
       </div>
 
+      {editing && <WatchlistEditor C={C} F={F} M={M} isMobile={isMobile} onClose={() => setEditing(false)} />}
       <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
         <input
           value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "search…" : "search symbol…"}
