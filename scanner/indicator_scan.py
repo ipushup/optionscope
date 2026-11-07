@@ -179,64 +179,57 @@ def ut_bot_status(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1)
     return ("long" if last == 1 else "short"), days
 
 
-def supertrend_status(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0):
-    if len(df) < period + 5:
-        return None
+def _supertrend_trend(df: pd.DataFrame, period: int, multiplier: float):
+    """SuperTrend 趨勢陣列（1 / -1 / 0=未有效）。ATR 暖機期（NaN）會跳過，從第一個有效棒起算，
+    避免 NaN 污染 final band 令趨勢永遠唔轉向。"""
     atr = wilder_atr(df, period)
     hl2 = (df["High"] + df["Low"]) / 2
     basic_ub = (hl2 + multiplier * atr).values
     basic_lb = (hl2 - multiplier * atr).values
     close = df["Close"].values
-
-    final_ub = np.zeros(len(close))
-    final_lb = np.zeros(len(close))
-    trend = np.ones(len(close), dtype=int)
-
-    for i in range(1, len(close)):
-        final_ub[i] = (
-            basic_ub[i]
-            if (basic_ub[i] < final_ub[i - 1] or close[i - 1] > final_ub[i - 1])
-            else final_ub[i - 1]
-        )
-        final_lb[i] = (
-            basic_lb[i]
-            if (basic_lb[i] > final_lb[i - 1] or close[i - 1] < final_lb[i - 1])
-            else final_lb[i - 1]
-        )
+    n = len(close)
+    trend = np.zeros(n, dtype=int)
+    valid = np.where(~np.isnan(basic_ub))[0]
+    if len(valid) == 0:
+        return trend
+    s = int(valid[0])
+    fu = np.full(n, np.nan); fl = np.full(n, np.nan)
+    fu[s] = basic_ub[s]; fl[s] = basic_lb[s]
+    trend[s] = 1 if close[s] >= (fu[s] + fl[s]) / 2 else -1
+    for i in range(s + 1, n):
+        fu[i] = basic_ub[i] if (basic_ub[i] < fu[i - 1] or close[i - 1] > fu[i - 1]) else fu[i - 1]
+        fl[i] = basic_lb[i] if (basic_lb[i] > fl[i - 1] or close[i - 1] < fl[i - 1]) else fl[i - 1]
         if trend[i - 1] == 1:
-            trend[i] = -1 if close[i] < final_lb[i] else 1
+            trend[i] = -1 if close[i] < fl[i] else 1
         else:
-            trend[i] = 1 if close[i] > final_ub[i] else -1
+            trend[i] = 1 if close[i] > fu[i] else -1
+    return trend
 
-    last = trend[-1]
+
+def supertrend_status(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0):
+    if len(df) < period + 5:
+        return None
+    last = _supertrend_trend(df, period, multiplier)[-1]
+    if last == 0:
+        return None
     return "long" if last == 1 else "short"
 
 
 def supertrend_days(df: pd.DataFrame, period: int = 10, multiplier: float = 3.0):
-    """(status, days)：SuperTrend 方向 + 連續咗幾多棒（轉向嗰棒 = 1）。supertrend_status 嘅同一套計算。"""
-    st = supertrend_status(df, period, multiplier)
-    if st is None:
+    """(status, days)：SuperTrend 方向 + 連續咗幾多棒（轉向嗰棒 = 1）。"""
+    if len(df) < period + 5:
         return None, None
-    atr = wilder_atr(df, period)
-    hl2 = (df["High"] + df["Low"]) / 2
-    basic_ub = (hl2 + multiplier * atr).values
-    basic_lb = (hl2 - multiplier * atr).values
-    close = df["Close"].values
-    fu = np.zeros(len(close)); fl = np.zeros(len(close)); tr = np.ones(len(close), dtype=int)
-    for i in range(1, len(close)):
-        fu[i] = basic_ub[i] if (basic_ub[i] < fu[i - 1] or close[i - 1] > fu[i - 1]) else fu[i - 1]
-        fl[i] = basic_lb[i] if (basic_lb[i] > fl[i - 1] or close[i - 1] < fl[i - 1]) else fl[i - 1]
-        if tr[i - 1] == 1:
-            tr[i] = -1 if close[i] < fl[i] else 1
-        else:
-            tr[i] = 1 if close[i] > fu[i] else -1
+    tr = _supertrend_trend(df, period, multiplier)
+    last = tr[-1]
+    if last == 0:
+        return None, None
     days = 0
     for v in tr[::-1]:
-        if v == tr[-1]:
+        if v == last:
             days += 1
         else:
             break
-    return st, days
+    return ("long" if last == 1 else "short"), days
 
 
 def hv_tb_status(df: pd.DataFrame, tb_recent: int = 20):
