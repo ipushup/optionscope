@@ -183,7 +183,39 @@ async function pushWithRetry(obj, attempts = 3) {
 
 const BASE = process.env.PUBLIC_URL || "";
 const BAND_LABEL = { confirmed: "Confirmed", forming: "Forming", candidate: "Candidate", exit: "Exit", watch: "Watch", flat: "Tracking" };
-const BAND_ICON = { confirmed: "🟢", forming: "🟠", candidate: "⚪", exit: "▼", watch: "○", flat: "·" }; // native <select> option 畫唔到colored dot
+// 自訂下拉（原生 <select> 嘅 option 畫唔到彩色圓點）：● 同 Longbridge 狀態點同款
+const BAND_ICON = { confirmed: ["●", "up"], forming: ["●", "warn"], candidate: ["●", "txt"], exit: ["▼", "dn"], watch: ["○", "mute"], flat: ["·", "mute"] };
+function BandPicker({ value, onChange, isMobile, style }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const off = e => { if (box.current && !box.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", off); document.addEventListener("touchstart", off);
+    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("touchstart", off); };
+  }, [open]);
+  const dot = k => <span style={{ color: C[BAND_ICON[k][1]], display: "inline-block", width: 14, textAlign: "center" }}>{BAND_ICON[k][0]}</span>;
+  const label = value ? <>{dot(value)} {BAND_LABEL[value]}</> : (isMobile ? "TBand" : "TBand: all");
+  return (
+    <div ref={box} style={{ position: "relative", ...style }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        width: "100%", textAlign: "left", background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
+        padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: isMobile ? "system-ui,-apple-system,sans-serif" : M, fontSize: isMobile ? 16 : 12, // 手機同原生 select 一樣 16px（index.html 全域規則）
+        cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden",
+      }}><span>{label}</span><span style={{ color: C.mute, fontSize: 9 }}>▾</span></button>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, minWidth: "100%", zIndex: 40, background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, boxShadow: "0 6px 20px rgba(0,0,0,.35)", padding: 4 }}>
+          {[["", null], ...Object.entries(BAND_LABEL)].map(([k, v]) => (
+            <div key={k} onClick={() => { onChange(k); setOpen(false); }} style={{
+              padding: "9px 10px", fontFamily: M, fontSize: 13, color: C.txt, cursor: "pointer", whiteSpace: "nowrap", borderRadius: 5,
+              background: value === k ? C.chip : "transparent",
+            }}>{k ? <>{dot(k)} {v}</> : "All"}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -467,16 +499,7 @@ export default function Watchlist({ isMobile, light }) {
           <option value="">{isMobile ? "Section" : "All sections"}</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <select value={bandFilter} onChange={e => setBandFilter(e.target.value)} style={{
-          background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
-        }}>
-          <option value="">{isMobile ? "TBand" : "TBand: all"}</option>
-          {Object.entries(BAND_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>{BAND_ICON[k]} {v}</option>
-          ))}
-        </select>
+        <BandPicker value={bandFilter} onChange={setBandFilter} isMobile={isMobile} style={{ flex: "1 1 0%", minWidth: 0 }} />
       </div>
       <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
         <select value={sigKind} onChange={e => setSigKind(e.target.value)} style={{
