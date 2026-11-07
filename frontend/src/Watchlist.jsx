@@ -506,7 +506,11 @@ export default function Watchlist({ isMobile, light }) {
       </div>
 
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+        <table style={{ width: "100%", minWidth: 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
+          {/* 固定欄寬：排序／篩選／active 標示都唔會令欄位郁 */}
+          <colgroup>
+            {[74, 44, 44, 44, 44, 62, 60, 58].map((w, i) => <col key={i} style={{ width: w }} />)}
+          </colgroup>
           <thead>
             <tr style={{ color: C.mute, fontSize: 11 }}>
               {COLS.map((col, i) => (
@@ -524,13 +528,13 @@ export default function Watchlist({ isMobile, light }) {
             {rows.map((r, ri) => (
               <Fragment key={r.ticker}>
               {sortKey == null && (ri === 0 || rows[ri - 1].section !== r.section) && (
-                <tr><td colSpan={COLS.length} style={{ padding: "12px 6px 4px", fontFamily: M, fontSize: 10.5, letterSpacing: "0.08em", color: C.mute, borderBottom: `1px solid ${C.line}`, textAlign: "left", whiteSpace: "nowrap" }}>
+                <tr style={{ height: 32 }}><td colSpan={COLS.length} style={{ padding: "0 6px", verticalAlign: "middle", fontFamily: M, fontSize: 10.5, letterSpacing: "0.08em", color: C.mute, borderBottom: `1px solid ${C.line}`, textAlign: "left", whiteSpace: "nowrap" }}>
                   {r.section.replace(/^SECTION\s+/i, "")} <span style={{ opacity: 0.7 }}>· {rows.filter(x => x.section === r.section).length}</span>
                 </td></tr>
               )}
               <tr
                 onClick={() => toggleHighlight(r.ticker, r.symbol)}
-                style={{ cursor: "pointer", background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}
+                style={{ height: 32, cursor: "pointer", background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}
               >
                 <td style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
@@ -548,7 +552,7 @@ export default function Watchlist({ isMobile, light }) {
                     )}
                     {r.symbol}
                     {r.margin != null && (
-                      <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
+                      <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, lineHeight: 0, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
                         {marginGlyph(r.margin)}
                       </sup>
                     )}
