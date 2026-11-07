@@ -70,10 +70,10 @@ def utbot(df, key=2.0, atr_period=1):
     return stop, buy.astype(bool), sell.astype(bool)
 
 
-def build(df, bars=BARS):
+def build(df, bars=BARS, min_len=60):
     """日線 DataFrame（Open/High/Low/Close）→ 前端用 dict；數據唔夠回 None。"""
     df = df.dropna(subset=["Open", "High", "Low", "Close"]).copy()
-    if len(df) < 60:
+    if len(df) < min_len:
         return None
     e10, e20, e50 = (_ema(df["Close"], n) for n in (10, 20, 50))
     st, d = supertrend(df)
@@ -91,16 +91,32 @@ def build(df, bars=BARS):
 
 
 def fetch(sym):
+    """日線 dict（同舊格式）＋ 'W' / 'M' 兩個鍵（週線、月線，同一套指標）。日線失敗就成個 None。"""
     import yfinance as yf
-    try:
-        df = yf.Ticker(sym).history(period="1y", interval="1d")
+
+    def hist(period, interval):
+        df = yf.Ticker(sym).history(period=period, interval=interval)
         if df.empty:
             return None
         df.index = df.index.tz_localize(None) if df.index.tz is not None else df.index
-        return build(df)
+        return df
+
+    try:
+        d = hist("1y", "1d")
+        out = build(d) if d is not None else None
     except Exception as e:  # noqa: BLE001 — 單個失敗唔拖冧成個 job
         print(f"⚠ {sym}: {e}")
         return None
+    if out is None:
+        return None
+    for key, (period, interval) in (("W", ("6y", "1wk")), ("M", ("15y", "1mo"))):
+        try:
+            df = hist(period, interval)
+            out[key] = build(df, min_len=30) if df is not None else None
+        except Exception as e:  # noqa: BLE001
+            print(f"⚠ {sym} {key}: {e}")
+            out[key] = None
+    return out
 
 
 def main():
