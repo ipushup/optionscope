@@ -548,7 +548,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
       .os-home{flex-direction:column}
       .os-side{display:none}
       .os-tabs{display:flex;flex-direction:column;gap:10px;background:${T.side};border-bottom:1px solid ${T.line};padding:12px 14px 0;position:sticky;top:0;z-index:5}
-      .os-main{padding:16px 14px 40px}
+      .os-main{padding:16px 7px 40px}
       .os-hero{flex-direction:column}
       .os-herocard{flex-basis:auto}
       .os-px{flex-direction:column;align-items:stretch}
