@@ -410,19 +410,15 @@ export default function Watchlist({ isMobile, light }) {
   return (
     <div style={{
       background: C.bg, color: C.txt, fontFamily: F,
-      padding: isMobile ? "8px 8px 24px" : 16, width: "100%", overflowX: "hidden",
+      padding: isMobile ? "14px 7px 40px" : "18px 24px 40px", width: "100%", overflowX: "hidden",
     }}>
-      <div style={{ borderLeft: `3px solid ${C.acc}`, paddingLeft: 9, marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: isMobile ? 16 : 19, fontWeight: 800, letterSpacing: ".02em" }}>
-            🔭 WATCHLIST
-          </span>
-          <span style={{ fontSize: 10.5, fontFamily: M, color: C.mute }}>
-            {(apiAt || lbAt) ? <>{hkTime(apiAt || lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : (qAt ? `${hkTime(qAt)} HKT` : "")}
-            {syncErr && <span style={{ color: C.warn }}> · ⚠ highlight sync失敗(用緊local)</span>}
-          </span>
-          <button onClick={() => setEditing(true)} style={{ marginLeft: "auto", background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 10px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.mute, marginBottom: 10 }}>
+        <span style={{ letterSpacing: "0.12em" }}>WATCHLIST</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, whiteSpace: "nowrap" }}>
+          {(apiAt || lbAt) ? <>{hkTime(apiAt || lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : (qAt ? `${hkTime(qAt)} HKT` : "")}
+          {syncErr && <span style={{ color: C.warn }}>⚠ sync</span>}
+          <button onClick={() => setEditing(true)} style={{ background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 10px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
+        </span>
       </div>
 
       {editing && <WatchlistEditor C={C} F={F} M={M} isMobile={isMobile} onClose={() => setEditing(false)} />}

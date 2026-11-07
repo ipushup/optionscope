@@ -12,7 +12,7 @@ import { c, setLight, isLight } from "./theme";
 
 // 自帶 data fetch / loading / error 嘅 view —— OptionScope 掃描器嗰套
 // filter、summary bar、loading spinner 都唔應該喺呢啲頁出現。
-const STANDALONE_VIEWS = ["radar", "band", "signals", "daily", "mylist"];
+const STANDALONE_VIEWS = ["radar", "band", "signals", "daily", "mylist", "watchlist"];
 
 /**
  * 一個 view 掛咗唔應該拖冧成個 app —— 之前 Compass 崩嗰陣，整棵 React tree
