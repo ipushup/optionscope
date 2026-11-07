@@ -57,15 +57,6 @@ const marginColor = v => (v <= 0 || v >= 70) ? MGN_HI : v >= 55 ? MGN_MID : C.su
 const marginGlyph = v => (v <= 0 ? "✕" : Math.round(v).toString());
 const marginTitle = v => (v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`);
 
-// Longbridge 式斜體灰色徽章（同 Home / Signal Board 一致）
-const SessBadge = ({ s }) => {
-  const t = { 夜盤: "24h", 盤前: "Pre", 盤後: "Post" }[s];
-  if (!t) return null;
-  return <span title={{ "24h": "夜盤 24h overnight", Pre: "盤前 Pre-market", Post: "盤後 Post-market" }[t]}
-    style={{ display: "inline-block", transform: "skewX(-12deg)", marginLeft: 4, background: C.line, color: C.sub, fontFamily: M, fontSize: 9, fontWeight: 700,
-      fontStyle: "italic", lineHeight: 1.25, padding: "1px 4px", borderRadius: 3, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
-};
-
 const BAND_LABEL = { confirmed: "已確認", forming: "形成中", candidate: "候選", exit: "出場", watch: "觀察", flat: "追蹤中" };
 const BAND_ICON = { confirmed: "✅", forming: "⏳", candidate: "●", exit: "▼", watch: "○", flat: "·" }; // 淨係native <select> option用,嗰度冇得畫colored dot
 const bandColor = k => ({ confirmed: C.up, forming: C.warn, candidate: C.acc, exit: C.dn, watch: C.mute, flat: C.mute }[k] || C.mute);
@@ -520,7 +511,7 @@ export default function Watchlist({ isMobile, light }) {
                   {P(r.chg_pct)}
                 </td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
-                  {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}{!isHK(r.ticker) && <SessBadge s={r.ext_sess} />}
+                  {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}
                 </td>
               </tr>
             ))}
