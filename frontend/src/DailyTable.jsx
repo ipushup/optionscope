@@ -86,7 +86,7 @@ export default function DailyTable({ isMobile, light }) {
     </div>);
 
   return (
-    <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 12px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+    <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 14px", marginBottom: 12 }}>
         <span style={{ fontFamily: M, fontSize: 12, letterSpacing: ".14em", color: T.mute }}>DAILY TABLE</span>
         <span style={{ fontFamily: M, fontSize: 12, color: T.dim }}>

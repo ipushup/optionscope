@@ -107,7 +107,7 @@ export default function BandView({ isMobile, light }) {
   return (
     <div style={{
       background: C.bg, color: C.txt, fontFamily: F,
-      padding: isMobile ? "8px 8px 24px" : 16, width: "100%", overflowX: "hidden",
+      padding: isMobile ? "8px 7px 24px" : 16, width: "100%", overflowX: "hidden",
     }}>
       <Head band={band} qAt={qAt} isMobile={isMobile} />
 

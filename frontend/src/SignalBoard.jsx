@@ -248,7 +248,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const td = { padding: isMobile ? "9px 6px" : "9px 10px", borderBottom: `1px solid ${T.soft}`, fontSize: isMobile ? 12 : 13, fontFamily: M };
 
   return (
-    <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 12px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+    <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
         {onBack && <button onClick={onBack} style={chip(false, { border: `1px solid ${T.line}` })}>← Home</button>}
         <div style={{ fontFamily: M, fontSize: 11, color: T.mute, letterSpacing: 1 }}>SIGNAL BOARD</div>
