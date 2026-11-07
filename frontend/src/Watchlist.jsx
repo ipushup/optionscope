@@ -447,6 +447,12 @@ export default function Watchlist({ isMobile, light }) {
     else { setSortKey(null); setSortDir(1); }
   };
 
+  const hkDate = iso => {
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short" }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+      return `${p.day} ${p.month}`;
+    } catch { return ""; }
+  };
   const hkTime = iso => {
     try {
       const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
@@ -489,7 +495,7 @@ export default function Watchlist({ isMobile, light }) {
             if (!at) return "";
             if (marketsClosed()) return <><span style={{ color: C.mute }}>●</span> 休市 · {status.count} 隻</>;
             const age = Math.max(0, (Date.now() - new Date(at).getTime()) / 1000);
-            return <><span style={{ color: age > 300 ? C.dn : C.up }}>●</span> {hkTime(at)} HKT · {status.count} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</>;
+            return <><span style={{ color: age > 300 ? C.dn : C.up }}>●</span> {hkDate(at)} {hkTime(at)} HKT · {status.count} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</>;
           })()}
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, whiteSpace: "nowrap" }}>
