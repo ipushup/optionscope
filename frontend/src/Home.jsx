@@ -517,8 +517,17 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   } : cd));
   const complete = cards.filter((c) => c.index && c.etf).length;
   const ageMin = mk ? (Date.now() - new Date(mk.updated_at).getTime()) / 60000 : null;
-  const stale = ageMin != null && ageMin > 60;
-  const feedColor = !mk ? T.dn : stale ? T.warn : T.up;
+  // 美股休市時段（紐約時間 週五 20:00 → 週日 20:00）：舊數據係正常，用灰色，唔當 stale
+  const usClosed = (() => {
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+      const h = parseInt(p.hour, 10);
+      return p.weekday === "Sat" || (p.weekday === "Sun" && h < 20) || (p.weekday === "Fri" && h >= 20);
+    } catch (e) { return false; }
+  })();
+  const stale = ageMin != null && ageMin > 60 && !usClosed;
+  const feedClosed = ageMin != null && ageMin > 60 && usClosed;
+  const feedColor = !mk ? T.dn : stale ? T.warn : feedClosed ? T.mute : T.up;
 
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
@@ -593,13 +602,13 @@ export default function Home({ onNavigate, light, onToggleLight }) {
 
       <main className="os-main">
         <div className="os-hero">
-          <div className="os-herocard" style={{ background: T.okBg, border: `1px solid ${T.okLine}`, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 6 }}>
+          <div className="os-herocard" style={{ background: feedClosed ? T.soft : T.okBg, border: `1px solid ${feedClosed ? T.line : T.okLine}`, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 6 }}>
             <div style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.1em", color: feedColor }}>● MARKET FEED</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: feedColor }}>
               {!mk ? (err ? "Unavailable" : "Loading…") : `${complete} of ${cards.length} cards complete`}
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.5, color: T.dim }}>
-              {mk ? `Updated ${ageText(mk.updated_at)}${stale ? " · stale" : ""}.` : "market.json could not be read."}
+              {mk ? `Updated ${ageText(mk.updated_at)}${stale ? " · stale" : feedClosed ? " · market closed" : ""}.` : "market.json could not be read."}
             </div>
           </div>
         </div>
