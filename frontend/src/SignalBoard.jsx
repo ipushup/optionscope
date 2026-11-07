@@ -33,8 +33,8 @@ function beep() {
 }
 const stamp = iso => {
   try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-    return `${p.day} ${p.month} ${p.hour}:${p.minute}:${p.second} HKT`;
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+    return `${p.hour}:${p.minute}:${p.second} HKT`;
   } catch { return ""; }
 };
 
@@ -251,8 +251,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
         {onBack && <button onClick={onBack} style={chip(false, { border: `1px solid ${T.line}` })}>← Home</button>}
-        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, letterSpacing: 1 }}>SIGNAL BOARD</div>
-        <div style={{ flex: 1 }} />
         <div style={{ fontFamily: M, fontSize: 11, color: err ? T.dn : T.mute }}>
           {err ? `⚠ ${err}` : data ? <><span style={{ color: age > 180 ? T.dn : T.up }}>●</span> {stamp(data.updated)} · {data.n} 隻{age > 180 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</> : "loading…"}
         </div>

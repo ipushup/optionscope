@@ -15,8 +15,8 @@ const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
 
 const hk = iso => {
   try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-    return `${p.day} ${p.month} ${p.hour}:${p.minute}:${p.second} HKT`;
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+    return `${p.hour}:${p.minute}:${p.second} HKT`;
   } catch { return ""; }
 };
 const sigRank = r => (r.sig === "BUY" ? 0 : r.sig === "SELL" ? 1 : 2);
@@ -88,9 +88,8 @@ export default function DailyTable({ isMobile, light }) {
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 14px", marginBottom: 12 }}>
-        <span style={{ fontFamily: M, fontSize: 12, letterSpacing: ".14em", color: T.mute }}>DAILY TABLE</span>
         <span style={{ fontFamily: M, fontSize: 12, color: T.dim }}>
-          {err ? `⚠ ${err}` : data ? <><span style={{ color: age > 300 ? T.dn : T.up }}>●</span> {hk(data.updated)} · {data.n} 隻{data.live_n ? " · 盤中" : " · 休市"}{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</> : "loading…"}
+          {err ? `⚠ ${err}` : data ? <><span style={{ color: age > 300 ? T.dn : T.up }}>●</span> {hk(data.updated)} · {data.n} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</> : "loading…"}
         </span>
       </div>
 

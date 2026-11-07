@@ -473,9 +473,15 @@ export default function Watchlist({ isMobile, light }) {
       padding: isMobile ? "14px 7px 40px" : "18px 24px 40px", width: "100%", overflowX: "hidden",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontFamily: M, fontSize: 12, color: C.mute, marginBottom: 10 }}>
-        <span style={{ letterSpacing: "0.12em" }}>DATA</span>
+        <span style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+          {(() => {
+            const at = apiAt || lbAt || qAt;
+            if (!at) return "";
+            const age = Math.max(0, (Date.now() - new Date(at).getTime()) / 1000);
+            return <><span style={{ color: age > 300 ? C.dn : C.up }}>●</span> {hkTime(at)} HKT · {status.count} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</>;
+          })()}
+        </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, whiteSpace: "nowrap" }}>
-          {(apiAt || lbAt) ? <>{hkTime(apiAt || lbAt)} HKT <span style={{ color: C.up }}>● Longbridge</span></> : (qAt ? `${hkTime(qAt)} HKT` : "")}
           {syncErr && <span style={{ color: C.warn }}>⚠ sync</span>}
           <button onClick={() => setEditing(true)} style={{ background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 10px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
         </span>
