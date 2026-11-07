@@ -54,7 +54,7 @@ const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','S
 const NAV = [
   { id: "home", label: "Home", tag: "now", icon: "M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V11z" },
   { id: "band", label: "Triple Band", tag: "live", icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" },
-  { id: "watchlist", label: "Watchlist", tag: "live", icon: "M4 6h16M4 12h16M4 18h10" },
+  { id: "watchlist", label: "Datalist", tag: "live", icon: "M4 6h16M4 12h16M4 18h10" },
   { id: "signals", label: "Signals", tag: "live", icon: "M3 18h3v-5H3zM9 18h3V8H9zM15 18h3V4h-3zM21 20H2" },
   { id: "radar", label: "Radar", tag: "live", icon: "M12 12l6-6M12 3a9 9 0 1 0 9 9" },
   { id: "brief", label: "Daily brief", tag: "soon", dim: true, icon: "M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7" },
