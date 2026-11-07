@@ -169,7 +169,6 @@ async function handleMylistPut(req, env) {
 
 
 // ── Watchlist / 孖展率 網頁編輯：經 GitHub Contents API 讀寫 repo 入面嘅 txt（需要 secret GH_CONTENTS_TOKEN）──
-const GH_REPO = "ipushup/optionscope";
 const GH_FILES = { watchlist: "scanner/Watchlists.txt", margin: "scanner/margin.txt" };
 function b64ToUtf8(b64) { const bin = atob(b64.replace(/\s/g, "")); const u = Uint8Array.from(bin, (c) => c.charCodeAt(0)); return new TextDecoder().decode(u); }
 function utf8ToB64(str) { const u = new TextEncoder().encode(str); let bin = ""; for (const b of u) bin += String.fromCharCode(b); return btoa(bin); }
