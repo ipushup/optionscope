@@ -216,6 +216,14 @@ function BandPicker({ value, onChange, isMobile, style }) {
     </div>
   );
 }
+// 美股／港股全部休市（紐約時間 週五 20:00 → 週日 20:00）：唔使再每 15 秒拉報價，狀態燈轉灰
+const marketsClosed = () => {
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+    const h = parseInt(p.hour, 10);
+    return p.weekday === "Sat" || (p.weekday === "Sun" && h < 20) || (p.weekday === "Fri" && h >= 20);
+  } catch { return false; }
+};
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -368,8 +376,10 @@ export default function Watchlist({ isMobile, light }) {
       }
       if (alive && Object.keys(m).length) { setApiQ(m); setApiAt(at || new Date().toISOString()); }
     };
-    pullAPI();
-    const id = setInterval(pullAPI, 15_000);
+    let got = false;
+    const pull = async () => { await pullAPI(); got = true; };
+    pull();
+    const id = setInterval(() => { if (got && marketsClosed()) return; pullAPI(); }, 15_000);   // 休市：拉一次顯示收市價就停
     return () => { alive = false; clearInterval(id); };
   }, [status]);
 
@@ -477,6 +487,7 @@ export default function Watchlist({ isMobile, light }) {
           {(() => {
             const at = apiAt || lbAt || qAt;
             if (!at) return "";
+            if (marketsClosed()) return <><span style={{ color: C.mute }}>●</span> 休市 · {status.count} 隻</>;
             const age = Math.max(0, (Date.now() - new Date(at).getTime()) / 1000);
             return <><span style={{ color: age > 300 ? C.dn : C.up }}>●</span> {hkTime(at)} HKT · {status.count} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</>;
           })()}
