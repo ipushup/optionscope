@@ -776,7 +776,24 @@ function DetailPage({ stock, onClose }) {
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [view, setView]               = useState("home");
+  const VIEWS = ["home","signals","daily","band","watchlist","mylist","radar","premium"];
+  const [view, setViewRaw] = useState(() => {
+    try { const h = decodeURIComponent(window.location.hash.replace(/^#\/?/, "")); return VIEWS.includes(h) ? h : "home"; }
+    catch { return "home"; }
+  });
+  // 切頁寫入 URL hash，refresh 後留喺同一頁；瀏覽器返回鍵亦跟住行
+  const setView = (v) => {
+    setViewRaw(v);
+    try { window.history.pushState(null, "", v === "home" ? window.location.pathname + window.location.search : "#" + v); } catch {}
+  };
+  useEffect(() => {
+    const on = () => {
+      const h = window.location.hash.replace(/^#\/?/, "");
+      setViewRaw(VIEWS.includes(h) ? h : "home");
+    };
+    window.addEventListener("popstate", on);
+    return () => window.removeEventListener("popstate", on);
+  }, []);
   const [data, setData]               = useState(null);
   const [selected, setSelected]       = useState(null);
   const [detailStock, setDetailStock] = useState(null);
