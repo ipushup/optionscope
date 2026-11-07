@@ -239,6 +239,7 @@ export default function Watchlist({ isMobile, light }) {
   const [qAt, setQAt] = useState(null);
   const [apiQ, setApiQ] = useState({});          // Longbridge 即時（/api/quotes，Worker 直接問 Longbridge）→ 同 sigQ 一樣格式；優先過 signals.json，yfinance 做後備
   const [apiAt, setApiAt] = useState(null);
+  const [apiAsof, setApiAsof] = useState(null);      // 所有報價入面最新一筆成交時間（休市時顯示呢個）
   const [lbAt, setLbAt] = useState(null);          // Longbridge 即時報價最後更新時間（signals.json.updated）
   const [, tick] = useState(0);                  // 15s 迫 re-render，令「幾分鐘前」跳動
   const [err, setErr] = useState(null);
@@ -360,7 +361,7 @@ export default function Watchlist({ isMobile, light }) {
     const SESS = { regular: "盤中", pre: "盤前", post: "盤後", overnight: "夜盤" };
     let alive = true;
     const pullAPI = async () => {
-      const m = {}; let at = null;
+      const m = {}; let at = null; let asof = 0;
       for (let i = 0; i < syms.length; i += 100) {
         try {
           const r = await fetch(`/api/quotes?symbols=${syms.slice(i, i + 100).join(",")}`, { cache: "no-store" });
@@ -369,12 +370,13 @@ export default function Watchlist({ isMobile, light }) {
           for (const q of d.quotes || []) {
             const t = back[q.symbol];
             if (!t || !(q.reg > 0)) continue;
+            { const ms = Date.parse(q.asof); if (ms > asof) asof = ms; }
             m[t] = { last: q.reg, chg_pct: +q.reg_pct.toFixed(2), ext_chg_pct: q.session === "regular" ? null : +q.pct.toFixed(2), sess: SESS[q.session] || "盤中" };
           }
           if (d.fetched_at) at = d.fetched_at;
         } catch (e) { /* 呢批失敗 → 跌返 signals.json / yfinance */ }
       }
-      if (alive && Object.keys(m).length) { setApiQ(m); setApiAt(at || new Date().toISOString()); }
+      if (alive && Object.keys(m).length) { setApiQ(m); setApiAt(at || new Date().toISOString()); if (asof) setApiAsof(new Date(asof).toISOString()); }
     };
     let got = false;
     const pull = async () => { await pullAPI(); got = true; };
@@ -493,7 +495,7 @@ export default function Watchlist({ isMobile, light }) {
           {(() => {
             const at = apiAt || lbAt || qAt;
             if (!at) return "";
-            if (marketsClosed()) return <><span style={{ color: C.mute }}>●</span> 休市 · {status.count} 隻</>;
+            if (marketsClosed()) { const t = apiAsof || at; return <><span style={{ color: C.mute }}>●</span> {hkDate(t)} {hkTime(t)} HKT · {status.count} 隻</>; }
             const age = Math.max(0, (Date.now() - new Date(at).getTime()) / 1000);
             return <><span style={{ color: age > 300 ? C.dn : C.up }}>●</span> {hkDate(at)} {hkTime(at)} HKT · {status.count} 隻{age > 300 ? ` · ⚠ ${Math.round(age / 60)} 分鐘冇更新` : ""}</>;
           })()}
