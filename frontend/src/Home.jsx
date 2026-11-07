@@ -151,7 +151,8 @@ function Candles({ d: full, T, light }) {
   );
 }
 
-function IndexCard({ card, T, mode, daily, light }) {
+function IndexCard({ card, T, mode, daily, light, tf, onCycle }) {
+  const bars = daily && tf !== "D" && daily[tf] ? daily[tf] : daily;   // 每隻指數自己揀 D / W / M
   const ix = card.index, etf = card.etf;
   const isYield = card.id === "us10y";
   const main = ix || null;
@@ -159,7 +160,7 @@ function IndexCard({ card, T, mode, daily, light }) {
   const col = main ? (up ? T.up : T.dn) : T.mute;
   const etfCol = etf ? (etf.change >= 0 ? T.up : T.dn) : T.mute;
   const arrow = (x) => (x.change >= 0 ? "▲" : "▼");
-  const showDaily = mode !== "intraday" && daily && daily.c && daily.c.length > 4;
+  const showDaily = mode !== "intraday" && bars && bars.c && bars.c.length > 4;
   const priceBlock = (
     <div style={{ minWidth: 0, flex: "0 0 auto" }}>
       <div className="os-price" style={{ fontFamily: SANS, fontWeight: 700, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em", color: T.txt }}>
@@ -179,7 +180,10 @@ function IndexCard({ card, T, mode, daily, light }) {
       {showDaily ? (
         <>
           <div style={{ marginTop: 10 }}>{priceBlock}</div>
-          <div style={{ marginTop: 10 }}><Candles d={daily} T={T} light={light} /></div>
+          <div onClick={onCycle} role="button" title="撳一下切換 D / W / M" style={{ marginTop: 10, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+            <Candles d={bars} T={T} light={light} />
+            <span style={{ position: "absolute", top: 0, left: 2, fontFamily: M, fontSize: 10, color: T.mute }}>{tf}</span>
+          </div>
         </>
       ) : (
         <div className="os-px" style={{ display: "flex", gap: 10, marginTop: 10 }}>
@@ -444,8 +448,10 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const [daily, setDaily] = useState(null);
   const [sm, setSm] = useState(null);
   const [mode, setMode] = useState(() => {
-    try { const v = localStorage.getItem("os_snap_mode"); return v === "intraday" ? "intraday" : v === "W" || v === "M" ? v : "D"; } catch (e) { return "D"; }
+    try { return localStorage.getItem("os_snap_mode") === "intraday" ? "intraday" : "D"; } catch (e) { return "D"; }
   });
+  const [tfMap, setTfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("os_snap_tf") || "{}") || {}; } catch (e) { return {}; } });
+  const cycleTf = (id) => setTfMap((m) => { const v = m[id] || "D"; const n = { ...m, [id]: v === "D" ? "W" : v === "W" ? "M" : "D" }; try { localStorage.setItem("os_snap_tf", JSON.stringify(n)); } catch (e) { /* ignore */ } return n; });
   const pickMode = (m) => { setMode(m); try { localStorage.setItem("os_snap_mode", m); } catch (e) { /* ignore */ } };
 
   useEffect(() => {
@@ -603,7 +609,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div id="s1" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>01 / MARKET SNAPSHOT</div>
               <div role="tablist" aria-label="Chart mode" style={{ display: "flex", border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden" }}>
-                {[["D", "D"], ["W", "W"], ["M", "M"], ["intraday", "Intraday"]].map(([k, label]) => (
+                {[["D", "D/W/M"], ["intraday", "Intraday"]].map(([k, label]) => (
                   <button key={k} role="tab" aria-selected={mode === k} onClick={() => pickMode(k)}
                     style={{ fontFamily: M, fontSize: 11, fontWeight: 600, padding: "3px 10px", border: 0, cursor: "pointer", background: mode === k ? T.soft : "transparent", color: mode === k ? T.txt : T.mute }}>{label}</button>
                 ))}
@@ -612,7 +618,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
             <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>{live ? <span style={{ color: T.up }}>● live</span> : "snapshot"}</div>
           </div>
           {mk ? (
-            <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={mode === "D" ? daily?.cards?.[cd.id] : mode === "W" || mode === "M" ? daily?.cards?.[cd.id]?.[mode] : null} light={light} />)}</div>
+            <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={daily?.cards?.[cd.id]} tf={tfMap[cd.id] || "D"} onCycle={() => cycleTf(cd.id)} light={light} />)}</div>
           ) : (
             <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: err ? T.dn : T.dim }}>
               {err ? `Could not load market.json (${err}).` : "Loading market data…"}
