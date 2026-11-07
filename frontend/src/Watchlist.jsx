@@ -516,7 +516,7 @@ export default function Watchlist({ isMobile, light }) {
                   color: light ? "#6b7580" : "#75777a",   // 同 Daily Table / Signal Board 表頭一致（active 用 ▴▾ 標示，唔變色）
                 }}>{col.label}{sortKey === col.key
                     ? (SIG_KEYS.includes(col.key) ? (col.key === "tb_k" || sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
-                    : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.4, fontSize: 8 }}>▴▾</span> : "")}</th>
+                    : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.45 }}> ▾</span> : "")}</th>
               ))}
             </tr>
           </thead>
