@@ -515,31 +515,31 @@ export default function Watchlist({ isMobile, light }) {
       </div>
 
       {editing && <WatchlistEditor C={C} F={F} M={M} isMobile={isMobile} onClose={() => setEditing(false)} />}
-      <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: isMobile ? 4 : 6, alignItems: "center", marginBottom: 8 }}>
         <input
           value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "search…" : "search symbol…"}
           style={{
             background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
             padding: isMobile ? "6px 6px" : "6px 9px", borderRadius: 6, fontFamily: M,
-            fontSize: isMobile ? 11 : 12, flex: "0 1 76px", minWidth: 0,
+            fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
           }}
         />
         <select value={section} onChange={e => setSection(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
           appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "Section" : "All sections"}</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <BandPicker value={bandFilter} onChange={setBandFilter} isMobile={isMobile} style={{ flex: "1 1 0%", minWidth: 0 }} />
+        <BandPicker value={bandFilter} onChange={setBandFilter} isMobile={isMobile} style={{ minWidth: 0 }} />
       </div>
       <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
         <select value={sigKind} onChange={e => setSigKind(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
           appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "Signal" : "Signal: all"}</option>
@@ -551,7 +551,7 @@ export default function Watchlist({ isMobile, light }) {
         <select value={sigSide} onChange={e => setSigSide(e.target.value)} style={{
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
           appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "B/S" : "B/S: any"}</option>
