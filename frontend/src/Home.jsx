@@ -471,9 +471,9 @@ function ConfluenceSection({ wl, T, onNavigate }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10, height: 24, fontFamily: SANS, fontSize: 10.5, color: T.mute }}>
             <div style={{ width: 70 }}>Symbol</div>
             <div style={{ flexGrow: 1, display: "flex", gap: 10 }}>
-              {["D 日", "W 週", "M 月"].map((t) => <div key={t} style={{ flex: "1 1 0", textAlign: "center" }}>{t}</div>)}
+              {["D", "W", "M"].map((t) => <div key={t} style={{ flex: "1 1 0", textAlign: "center" }}>{t}</div>)}
             </div>
-            <div style={{ width: 30, textAlign: "right" }}>共</div>
+            <div style={{ width: 30, textAlign: "right" }}>Total</div>
           </div>
           {shown.length === 0 && <div style={{ padding: "14px 0", fontFamily: M, fontSize: 12, color: T.dim }}>冇股票達到 {CONF_MIN}/9。</div>}
           {shown.map((r) => (
