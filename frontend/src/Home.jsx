@@ -424,12 +424,12 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const [all, setAll] = useState(false);
   const pick = (v) => { setSide(v); setAll(false); try { localStorage.setItem("os_conf_side", v); } catch (e) { /* ignore */ } };
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
-  const rows = (wl?.rows || []).map((r) => {
-    const g = confSigs(r);
-    const hit = g.map((x) => (x && x.s === want ? x : null));
-    const n = hit.filter(Boolean).length;
-    return { sym: r.symbol || r.ticker, hit, n, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+  const calc = (w) => (wl?.rows || []).map((r) => {
+    const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
+    return { sym: r.symbol || r.ticker, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
+  const bullRows = calc(1), bearRows = calc(-1);
+  const rows = side === "B" ? bullRows : bearRows;
   const shown = all ? rows : rows.slice(0, CONF_SHOW);
   const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
   return (
@@ -446,6 +446,24 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         </div>
         <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>D·W·M × UT HV TB · ≤{CONF_BARS} 棒 · ≥{CONF_MIN}/9</div>
       </div>
+      {wl && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          {[["偏多最強", bullRows, T.up], ["偏空最強", bearRows, T.dn]].map(([lb, rs, c]) => {
+            const top = rs.length ? rs[0].n : null, names = top == null ? [] : rs.filter((r) => r.n === top);
+            return (
+              <div key={lb} style={{ flex: "1 1 0", minWidth: 0, background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, padding: "10px 12px" }}>
+                <div style={{ fontFamily: SANS, fontSize: 11, color: c }}>{lb}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 2, minWidth: 0 }}>
+                  <span style={{ fontFamily: M, fontSize: 22, fontWeight: 700, color: T.txt, fontVariantNumeric: "tabular-nums" }}>{top ?? "–"}</span>
+                  <span style={{ fontFamily: SANS, fontSize: 11, color: T.mute, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
+                    / 9{names.length ? ` · ${names.slice(0, 3).map((r) => r.sym.replace(/\.HK$/, "")).join(" ")}${names.length > 3 ? ` +${names.length - 3}` : ""}` : " · 冇"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {!wl ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>watchlist_merged.json not available.</div>
       ) : (
