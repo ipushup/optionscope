@@ -210,6 +210,11 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "st_days": ind.get("st_days"),
             "hv": ind.get("hv"),            # {"s": 1/-1, "n": 幾多棒前}
             "tb_days": ind.get("tb_days"),  # Triple Band 買入確認棒（最近 20 棒內）
+            # 週／月：{ut, ut_days, st, st_days, hv, tb_days}（Data 頁 W / M 按鈕用）；冇數據就冇呢個 key
+            **{k: {"ut": ind[k].get("ut_bot"), "ut_days": ind[k].get("ut_days"),
+                   "st": ind[k].get("supertrend"), "st_days": ind[k].get("st_days"),
+                   "hv": ind[k].get("hv"), "tb_days": ind[k].get("tb_days")}
+               for k in ("W", "M") if isinstance(ind.get(k), dict)},
             "last": q.get("last"),
             "chg_pct": q.get("chg_pct"),
             "ext_chg_pct": q.get("ext_chg_pct"),
