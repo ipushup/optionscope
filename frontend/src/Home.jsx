@@ -22,6 +22,7 @@ const MARKET_URL = `${BASE}/market.json`;
 const DAILY_URL = `${BASE}/index_daily.json`;
 const SUMMARY_URL = `${BASE}/summary.json`;
 const BAND_URL = `${BASE}/band.json`;
+const WL_URL = `${BASE}/watchlist_merged.json`;
 const BQ_URL = `${BASE}/band_quotes.json`;
 // 即時報價（Worker 代 Longbridge 查）。card id → Longbridge 指數代號；ETF 代號喺 market.json 入面。
 const LIVE_URL = "/api/quotes";
@@ -405,6 +406,86 @@ function BandSection({ band, bq, T }) {
   );
 }
 
+// ── 訊號共振榜：Data 頁 D/W/M × UT/HV/TB 九格，最近 5 棒內同向訊號數 ≥ 5（唔加權，純數數）──
+const CONF_MIN = 5, CONF_BARS = 5, CONF_SHOW = 8;
+const CONF_KEYS = ["UT", "HV", "TB"];
+function confSigs(r) {
+  // 返回 9 格 [{s, n} | null]，次序 D UT/HV/TB, W …, M …
+  const one = (src) => {
+    const ut = src.ut === "long" ? 1 : src.ut === "short" ? -1 : null;
+    const tb = src.tb ?? (src.tb_days != null ? { s: 1, n: src.tb_days } : null);
+    return [ut != null && src.ut_days != null ? { s: ut, n: src.ut_days } : null, src.hv?.s ? src.hv : null, tb?.s ? tb : null]
+      .map((x) => (x && x.n != null && x.n <= CONF_BARS ? x : null));
+  };
+  return [...one(r), ...one(r.W || {}), ...one(r.M || {})];
+}
+function ConfluenceSection({ wl, T, onNavigate }) {
+  const [side, setSide] = useState(() => { try { return localStorage.getItem("os_conf_side") === "S" ? "S" : "B"; } catch (e) { return "B"; } });
+  const [all, setAll] = useState(false);
+  const pick = (v) => { setSide(v); setAll(false); try { localStorage.setItem("os_conf_side", v); } catch (e) { /* ignore */ } };
+  const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
+  const rows = (wl?.rows || []).map((r) => {
+    const g = confSigs(r);
+    const hit = g.map((x) => (x && x.s === want ? x : null));
+    const n = hit.filter(Boolean).length;
+    return { sym: r.symbol || r.ticker, hit, n, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+  }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
+  const shown = all ? rows : rows.slice(0, CONF_SHOW);
+  const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
+  return (
+    <section aria-labelledby="s2b">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px 8px", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div id="s2b" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>03 / SIGNAL CONFLUENCE</div>
+          <div role="tablist" aria-label="Side" style={{ display: "flex", border: `1px solid ${T.line}`, borderRadius: 7, overflow: "hidden" }}>
+            {[["B", "偏多 ▲"], ["S", "偏空 ▼"]].map(([k, lb]) => (
+              <button key={k} role="tab" aria-selected={side === k} onClick={() => pick(k)}
+                style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, padding: "3px 10px", border: 0, cursor: "pointer", background: side === k ? T.soft : "transparent", color: side === k ? (k === "B" ? T.up : T.dn) : T.mute }}>{lb}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>D·W·M × UT HV TB · ≤{CONF_BARS} 棒 · ≥{CONF_MIN}/9</div>
+      </div>
+      {!wl ? (
+        <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>watchlist_merged.json not available.</div>
+      ) : (
+        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "6px 14px 10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, height: 24, fontFamily: SANS, fontSize: 10.5, color: T.mute }}>
+            <div style={{ width: 70 }}>Symbol</div>
+            <div style={{ flexGrow: 1, display: "flex", gap: 10 }}>
+              {["D 日", "W 週", "M 月"].map((t) => <div key={t} style={{ flex: "1 1 0", textAlign: "center" }}>{t}</div>)}
+            </div>
+            <div style={{ width: 30, textAlign: "right" }}>共</div>
+          </div>
+          {shown.length === 0 && <div style={{ padding: "14px 0", fontFamily: M, fontSize: 12, color: T.dim }}>冇股票達到 {CONF_MIN}/9。</div>}
+          {shown.map((r) => (
+            <button key={r.sym} type="button" onClick={() => onNavigate && onNavigate("watchlist")} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", height: 40, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
+              <div style={{ width: 70, fontFamily: SANS, fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}</div>
+              <div style={{ flexGrow: 1, display: "flex", gap: 10 }}>
+                {[0, 3, 6].map((o) => (
+                  <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 2 }}>
+                    {[0, 1, 2].map((j) => <div key={j} style={{ flex: "1 1 0", height: 10, borderRadius: 2, background: r.hit[o + j] ? col : T.line }} />)}
+                  </div>
+                ))}
+              </div>
+              <div style={{ width: 30, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: col }}>{r.n}<span style={{ fontSize: 10, fontWeight: 400, color: T.mute }}>/9</span></div>
+            </button>
+          ))}
+          {rows.length > CONF_SHOW && (
+            <button type="button" onClick={() => setAll((v) => !v)} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 0 2px", border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer" }}>
+              {all ? "收埋" : `展開全部 ${rows.length} 隻`}
+            </button>
+          )}
+        </div>
+      )}
+      <div style={{ marginTop: 10, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
+        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行去 Data 頁睇詳情。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
+      </div>
+    </section>
+  );
+}
+
 function SummarySection({ sm, T }) {
   const fmtDate = (d) => {
     const dt = new Date(`${d}T00:00:00Z`);
@@ -413,7 +494,7 @@ function SummarySection({ sm, T }) {
   return (
     <section aria-labelledby="s3">
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
-        <div id="s3" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>03 / US AFTER-MARKET</div>
+        <div id="s3" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>04 / US AFTER-MARKET</div>
         {sm && <div style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{fmtDate(sm.date)} close{sm.temperature ? ` · temp ${sm.temperature.value}` : ""}</div>}
       </div>
       {!sm ? (
@@ -448,6 +529,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const [bq, setBq] = useState(null);
   const [daily, setDaily] = useState(null);
   const [sm, setSm] = useState(null);
+  const [wl, setWl] = useState(null);
   const [mode, setMode] = useState(() => {
     try { return localStorage.getItem("os_snap_mode") === "intraday" ? "intraday" : "D"; } catch (e) { return "D"; }
   });
@@ -467,6 +549,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     get(SUMMARY_URL, setSm);
     get(BAND_URL, setBand);
     get(BQ_URL, setBq);
+    get(WL_URL, setWl);
     const t = setInterval(() => get(BQ_URL, setBq), 120 * 1000);
     return () => { dead = true; clearInterval(t); };
   }, []);
@@ -640,6 +723,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         </section>
 
         <BandSection band={band} bq={bq} T={T} />
+
+        <ConfluenceSection wl={wl} T={T} onNavigate={onNavigate} />
 
         <SummarySection sm={sm} T={T} />
 
