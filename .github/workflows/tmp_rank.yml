@@ -1,0 +1,17 @@
+name: tmp rank
+on: workflow_dispatch
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install yfinance pandas numpy
+      - run: |
+          git fetch origin gh-pages --depth=1
+          git show origin/gh-pages:band.json > frontend/public/band.json
+          git show origin/gh-pages:watchlist_quotes.json > frontend/public/watchlist_quotes.json || echo '{"quotes":{}}' > frontend/public/watchlist_quotes.json
+          python scanner/indicator_scan.py --watchlist scanner/Watchlists.txt --out frontend/public/indicator_signals.json
+          python scanner/merge_watchlist.py --watchlist scanner/Watchlists.txt --band frontend/public/band.json --band-scan scanner/band_scan.py --indicators frontend/public/indicator_signals.json --quotes frontend/public/watchlist_quotes.json --margin scanner/margin_cache.json --parents scanner/watchlist_parents.txt --out frontend/public/watchlist_merged.json
+          python scanner/_rank_tmp.py
