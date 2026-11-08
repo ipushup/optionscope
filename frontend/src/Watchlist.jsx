@@ -401,7 +401,7 @@ export default function Watchlist({ isMobile, light }) {
       (!bandFilter || r.tband === bandFilter))
     .map(r0 => {
       // D 用日線欄位；W / M 用該時間框嘅訊號（冇數據就顯示「–」）
-      const r = tf === "D" ? r0 : { ...r0, ut: null, ut_days: null, st: null, st_days: null, hv: null, tb_days: null, ...(r0[tf] || {}) };
+      const r = tf === "D" ? r0 : { ...r0, ut: null, ut_days: null, st: null, st_days: null, hv: null, tb_days: null, tb: null, ...(r0[tf] || {}) };
       const lv = live(r.ticker);
       return {
         ...r,
@@ -414,7 +414,7 @@ export default function Watchlist({ isMobile, light }) {
         // 訊號欄：{s:+1買/-1賣, n:幾棒前}；排序見 sigRank
         ut_k: r.ut && r.ut_days != null ? { s: r.ut === "long" ? 1 : -1, n: r.ut_days } : null,
         hv_k: r.hv ? { s: r.hv.s, n: r.hv.n } : null,
-        tb_k: r.tb_days != null ? { s: 1, n: r.tb_days } : null,
+        tb_k: r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null),   // tb = 最近 TB(B)/TS(S)；舊 JSON 只有 tb_days
         st_k: r.st && r.st_days != null ? { s: r.st === "long" ? 1 : -1, n: r.st_days } : null,
       };
     })
@@ -442,10 +442,6 @@ export default function Watchlist({ isMobile, light }) {
 
   // 三段式：㩒第一下升序 → 第二下降序 → 第三下返回預設(section次序)
   const toggleSort = key => {
-    if (key === "tb_k") { // TB 只有買入訊號：㩒一下排最新，再㩒返預設
-      if (sortKey !== key) { setSortKey(key); setSortDir(1); } else { setSortKey(null); setSortDir(1); }
-      return;
-    }
     if (sortKey !== key) { setSortKey(key); setSortDir(1); }
     else if (sortDir === 1) setSortDir(-1);
     else { setSortKey(null); setSortDir(1); }
@@ -579,7 +575,7 @@ export default function Watchlist({ isMobile, light }) {
                   ...(i === 0 ? { position: "sticky", left: 0, zIndex: 2, background: C.bg } : {}),
                   color: LB_KEYS.includes(col.key) ? "#00b8a5" : light ? "#6b7580" : "#75777a",   // 其餘同 Daily Table / Signal Board 表頭一致；Longbridge 即時欄用 Longbridge 綠
                 }}>{col.label}{sortKey === col.key
-                    ? (SIG_KEYS.includes(col.key) ? (col.key === "tb_k" || sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
+                    ? (SIG_KEYS.includes(col.key) ? (sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
                     : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.45 }}> ▾</span> : "")}</th>
               ))}
             </tr>
@@ -622,7 +618,7 @@ export default function Watchlist({ isMobile, light }) {
                 </td>
                 <td style={tdSig}>{sigCell(r.ut === "long" ? 1 : r.ut === "short" ? -1 : null, r.ut_days, `UT Bot（${TF_NAME[tf]}）：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒`)}</td>
                 <td style={tdSig}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
-                <td style={tdSig}>{sigCell(r.tb_days != null ? 1 : null, r.tb_days, "Triple Band 買入確認棒，數字 = 幾多棒前（最近 20 棒）")}</td>
+                <td style={tdSig}>{sigCell((r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.s, (r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.n, "Triple Band：B = 買入確認（TB）、S = 賣出（TS），數字 = 幾多棒前（最近 20 棒）")}</td>
                 <td style={tdSig}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
                   {N(r.last)}
