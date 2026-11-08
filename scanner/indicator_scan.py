@@ -256,6 +256,19 @@ def hv_tb_status(df: pd.DataFrame, tb_recent: int = 20):
 # 3. Fetch + run
 # ---------------------------------------------------------------------------
 
+def tf_signals(df: pd.DataFrame):
+    """一個時間框（D / W / M 棒）嘅 UT / ST / HV / TB。棒數不足嘅項目留 None。"""
+    ut, ut_days = ut_bot_status(df)
+    st, st_days = supertrend_days(df)
+    hv, tb_days = hv_tb_status(df)
+    return {"ut_bot": ut, "ut_days": ut_days, "supertrend": st, "st_days": st_days, "hv": hv, "tb_days": tb_days}
+
+
+def _clean(data, batch, t):
+    df = data[t].dropna(how="all") if len(batch) > 1 else data.dropna(how="all")
+    return df.dropna(subset=["Close"])
+
+
 def chunked(seq, n):
     for i in range(0, len(seq), n):
         yield seq[i:i + n]
@@ -282,25 +295,33 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
             time.sleep(sleep_s)
             continue
 
+        # 週線（5 年）／月線（15 年）：Data 頁 D/W/M 切換用。HV 要 >101 棒，所以月線攞足年期
+        tf_data = {}
+        for key, interval, period in (("W", "1wk", "5y"), ("M", "1mo", "15y")):
+            try:
+                tf_data[key] = yf.download(
+                    tickers=batch, period=period, interval=interval,
+                    group_by="ticker", threads=True, progress=False, auto_adjust=False,
+                )
+            except Exception as ex:
+                print(f"{key} batch download failed ({batch[:3]}...): {ex}", file=sys.stderr)
+
         for t in batch:
             try:
-                df = data[t].dropna(how="all") if len(batch) > 1 else data.dropna(how="all")
-                df = df.dropna(subset=["Close"])
+                df = _clean(data, batch, t)
                 if df.empty:
                     continue
-                ut, ut_days = ut_bot_status(df)
-                st, st_days = supertrend_days(df)
-                hv, tb_days = hv_tb_status(df)
-                results[t] = {
-                    "ut_bot": ut,
-                    "ut_days": ut_days,
-                    "supertrend": st,
-                    "st_days": st_days,
-                    "hv": hv,
-                    "tb_days": tb_days,
-                    "last_close": round(float(df["Close"].iloc[-1]), 4),
-                    "asof_date": str(df.index[-1].date()),
-                }
+                r = tf_signals(df)
+                r["last_close"] = round(float(df["Close"].iloc[-1]), 4)
+                r["asof_date"] = str(df.index[-1].date())
+                for key, d in tf_data.items():
+                    try:
+                        dfk = _clean(d, batch, t)
+                        if len(dfk) >= 15:
+                            r[key] = tf_signals(dfk)
+                    except Exception as ex:  # noqa: BLE001
+                        print(f"Skip {t} {key}: {ex}", file=sys.stderr)
+                results[t] = r
             except Exception as ex:
                 print(f"Skip {t}: {ex}", file=sys.stderr)
         time.sleep(sleep_s)

@@ -217,6 +217,7 @@ function BandPicker({ value, onChange, isMobile, style }) {
     </div>
   );
 }
+const TF_NAME = { D: "日線", W: "週線", M: "月線" };
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -239,6 +240,8 @@ export default function Watchlist({ isMobile, light }) {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState(false);   // 編輯面板（加／移除股票、分組、孖展率）
   const [section, setSection] = useState("");
+  const [tf, setTf] = useState(() => { try { const v = localStorage.getItem("os_wl_tf"); return v === "W" || v === "M" ? v : "D"; } catch { return "D"; } });
+  const pickTf = v => { setTf(v); try { localStorage.setItem("os_wl_tf", v); } catch { /* 無痕模式 */ } };
   const [bandFilter, setBandFilter] = useState("");   // Triple Band 分組：confirmed / forming / candidate / exit / watch / flat
   const [sigKind, setSigKind] = useState("");   // "" | ut | hv | tb | st
   const [sigSide, setSigSide] = useState("");   // "" | B | B2 | B5 | S | S2 | S5
@@ -392,7 +395,9 @@ export default function Watchlist({ isMobile, light }) {
       (!query || r.symbol.toUpperCase().includes(query)) &&
       (!section || r.section === section) &&
       (!bandFilter || r.tband === bandFilter))
-    .map(r => {
+    .map(r0 => {
+      // D 用日線欄位；W / M 用該時間框嘅訊號（冇數據就顯示「–」）
+      const r = tf === "D" ? r0 : { ...r0, ut: null, ut_days: null, st: null, st_days: null, hv: null, tb_days: null, ...(r0[tf] || {}) };
       const lv = live(r.ticker);
       return {
         ...r,
@@ -495,6 +500,12 @@ export default function Watchlist({ isMobile, light }) {
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, whiteSpace: "nowrap" }}>
           {syncErr && <span style={{ color: C.warn }}>⚠ sync</span>}
+          <div role="tablist" aria-label="Timeframe" style={{ display: "flex", border: `1px solid ${C.line}`, borderRadius: 6, overflow: "hidden" }}>
+            {["D", "W", "M"].map(k => (
+              <button key={k} role="tab" aria-selected={tf === k} onClick={() => pickTf(k)}
+                style={{ fontFamily: M, fontSize: 12, fontWeight: 600, lineHeight: "16px", padding: "1px 9px", border: 0, cursor: "pointer", background: tf === k ? C.chip : "transparent", color: tf === k ? C.txt : C.mute }}>{k}</button>
+            ))}
+          </div>
           <button onClick={() => setEditing(true)} style={{ background: C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "1px 9px", lineHeight: "16px", fontFamily: M, fontSize: 12, cursor: "pointer" }}>✎ Edit</button>
         </span>
       </div>
@@ -599,7 +610,7 @@ export default function Watchlist({ isMobile, light }) {
                     )}
                   </span>
                 </td>
-                <td style={tdSig}>{sigCell(r.ut === "long" ? 1 : r.ut === "short" ? -1 : null, r.ut_days, "UT Bot（日線）：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒")}</td>
+                <td style={tdSig}>{sigCell(r.ut === "long" ? 1 : r.ut === "short" ? -1 : null, r.ut_days, `UT Bot（${TF_NAME[tf]}）：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒`)}</td>
                 <td style={tdSig}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
                 <td style={tdSig}>{sigCell(r.tb_days != null ? 1 : null, r.tb_days, "Triple Band 買入確認棒，數字 = 幾多棒前（最近 20 棒）")}</td>
                 <td style={tdSig}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
