@@ -185,7 +185,7 @@ async function pushWithRetry(obj, attempts = 3) {
 const BASE = process.env.PUBLIC_URL || "";
 const BAND_LABEL = { confirmed: "Confirmed", forming: "Forming", candidate: "Candidate", exit: "Exit", watch: "Watch", flat: "Tracking" };
 // 自訂下拉（原生 <select> 嘅 option 畫唔到彩色圓點）：● 同 Longbridge 狀態點同款
-const BAND_ICON = { confirmed: ["●", "up"], forming: ["●", "warn"], candidate: ["●", "txt"], exit: ["▼", "dn"], watch: ["○", "mute"], flat: ["·", "mute"] };
+const BAND_ICON = { confirmed: ["●", "up"], forming: ["●", "acc"], candidate: ["●", "txt"], exit: ["▼", "dn"], watch: ["○", "mute"], flat: ["·", "mute"] };
 function BandPicker({ value, onChange, isMobile, style }) {
   const [open, setOpen] = useState(false);
   const box = useRef(null);
