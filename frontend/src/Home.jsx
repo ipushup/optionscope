@@ -1,3 +1,4 @@
+import { marketsClosed } from "./marketHours";
 import { useEffect, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
@@ -385,7 +386,7 @@ function BandSection({ band, bq, T }) {
             </div>
           )}
           <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt && !isHK ? <>{hkTime(sigAt)} HKT <span style={{ color: T.up }}>● live</span></> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span></div>
+            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt && !isHK ? <>{hkTime(sigAt)} HKT {marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>}</> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span></div>
             {rows.length === 0 ? (
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>{isHK ? (band?.forming_hk ? "No HK forming signals." : "HK forming not scanned yet — appears after the next full Triple Band scan.") : "No forming signals."}</div>
             ) : (
@@ -491,8 +492,10 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     const syms = mk.cards.flatMap((cd) => [INDEX_LB[cd.id], cd.etf_symbol]).filter(Boolean);
     if (!syms.length) return undefined;
     let dead = false;
+    let got = false;
     const tick = async () => {
       if (document.hidden) return;
+      if (got && marketsClosed()) return;   // 休市：拉一次顯示收市價就停
       try {
         const r = await fetch(`${LIVE_URL}?symbols=${encodeURIComponent(syms.join(","))}`, { cache: "no-store" });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -500,6 +503,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         const bySymbol = {};
         for (const q of j.quotes || []) bySymbol[q.symbol] = q;
         if (!dead) setLive(Object.keys(bySymbol).length ? { fetched_at: j.fetched_at, bySymbol } : null);
+        got = Object.keys(bySymbol).length > 0;
       } catch { if (!dead) setLive(null); }
     };
     tick();
@@ -624,7 +628,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
                 ))}
               </div>
             </div>
-            <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>{live ? <span style={{ color: T.up }}>● live</span> : "snapshot"}</div>
+            <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>{live ? (marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>) : "snapshot"}</div>
           </div>
           {mk ? (
             <div className="os-grid">{cards.map((cd) => <IndexCard key={cd.id} card={cd} T={T} mode={mode} daily={daily?.cards?.[cd.id]} tf={tfMap[cd.id] || "D"} onCycle={() => cycleTf(cd.id)} light={light} />)}</div>

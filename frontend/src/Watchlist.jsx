@@ -1,3 +1,4 @@
+import { marketsClosed } from "./marketHours";
 import { Fragment, useEffect, useState, useRef } from "react";
 import WatchlistEditor from "./WatchlistEditor";
 
@@ -216,14 +217,6 @@ function BandPicker({ value, onChange, isMobile, style }) {
     </div>
   );
 }
-// 美股／港股全部休市（紐約時間 週五 20:00 → 週日 20:00）：唔使再每 15 秒拉報價，狀態燈轉灰
-const marketsClosed = () => {
-  try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(x => [x.type, x.value]));
-    const h = parseInt(p.hour, 10);
-    return p.weekday === "Sat" || (p.weekday === "Sun" && h < 20) || (p.weekday === "Fri" && h >= 20);
-  } catch { return false; }
-};
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
