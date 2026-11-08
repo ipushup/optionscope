@@ -177,9 +177,8 @@ def main():
         t0 = time.time()
         try:
             one_round()
-            if loop_s:
-                sb._LAST_PUSH[0] = 0
-                sb.push(OUT)
+            sb._LAST_PUSH[0] = 0
+            sb.push(OUT)    # 一次性（loop=0）都要推，否則新加股票永遠計唔出
         except Exception as e:  # noqa: BLE001
             print(f"::warning::round failed: {e}", flush=True)
             if not loop_s:
