@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, BarChart, Bar } from "recharts";
 import RadarView from "./Radar";
 import BandView from "./Band";
@@ -786,6 +786,56 @@ export default function App() {
     setViewRaw(v);
     try { window.history.pushState(null, "", v === "home" ? window.location.pathname + window.location.search : "#" + v); } catch {}
   };
+  // 手機左右掃去轉頁（順序同頂部 tab 一樣）。喺可橫向捲動嘅表格／圖表／彈窗入面掃就唔轉。
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  useEffect(() => {
+    const ORDER = ["home", "signals", "daily", "band", "watchlist", "mylist", "radar"];
+    let st = null;
+    // 返回 null＝完全唔准掃（彈窗／輸入框）；否則返回起手位置上面所有可橫向捲動嘅容器
+    const scrollers = el => {
+      const list = [];
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        if (n.dataset && n.dataset.noswipe != null) return null;
+        if (/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) return null;
+        const cs = window.getComputedStyle(n);
+        if (cs.position === "fixed") return null;
+        if ((cs.overflowX === "auto" || cs.overflowX === "scroll") && n.scrollWidth > n.clientWidth + 2)
+          list.push({ n, left: n.scrollLeft, max: n.scrollWidth - n.clientWidth });
+      }
+      return list;
+    };
+    const onStart = e => {
+      if (e.touches.length !== 1) { st = null; return; }
+      const t = e.touches[0];
+      const sc = t.clientX < 24 ? null : scrollers(e.target);
+      st = sc ? { x: t.clientX, y: t.clientY, t: Date.now(), sc } : null;
+    };
+    const onEnd = e => {
+      if (!st) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - st.x, dy = t.clientY - st.y, dt = Date.now() - st.t;
+      const sc = st.sc; st = null;
+      if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.5 || dt > 600) return;
+      // 表格／圖表仲可以喺呢個方向捲，就當係捲動，唔轉頁（捲到盡頭再掃先轉）
+      for (const o of sc) {
+        if (Math.abs(o.n.scrollLeft - o.left) > 2) return;
+        if (dx > 0 && o.left > 2) return;
+        if (dx < 0 && o.left < o.max - 2) return;
+      }
+      const i = ORDER.indexOf(viewRef.current);
+      if (i < 0) return;
+      const j = dx < 0 ? i + 1 : i - 1;       // 向左掃 → 下一頁
+      if (j < 0 || j >= ORDER.length) return;
+      setView(ORDER[j]);
+      window.scrollTo(0, 0);
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchend", onEnd, { passive: true });
+    return () => { document.removeEventListener("touchstart", onStart); document.removeEventListener("touchend", onEnd); };
+    // eslint-disable-next-line
+  }, []);
+
   useEffect(() => {
     const on = () => {
       const h = window.location.hash.replace(/^#\/?/, "");
