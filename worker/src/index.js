@@ -164,7 +164,22 @@ async function handleMylistPut(req, env) {
   if (out.length > MYLIST_MAX) return json({ error: `Max ${MYLIST_MAX} symbols` }, 400);
   try { await env.DATA.put("data/mylist_symbols.json", JSON.stringify({ symbols: out, updated: new Date().toISOString() })); }
   catch (e) { return json({ error: "storage write failed", detail: String(e).slice(0, 120) }, 503); }
-  return json({ ok: true, symbols: out });
+  // 新加股票但冇循環 job 喺度跑（週末／休市，Worker cron 唔接力）→ 即刻 dispatch 一次性 job（loop=0）計好指標
+  let kicked = false;
+  if (fresh.length && env.GH_DISPATCH_TOKEN) {
+    try {
+      const H = { Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "optionscope-gateway", "X-GitHub-Api-Version": "2022-11-28" };
+      const r = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/mylist.yml/runs?per_page=5`, { headers: H });
+      const runs = r.ok ? ((await r.json()).workflow_runs || []) : [];
+      const busy = runs.some((x) => ["in_progress", "queued", "waiting", "pending"].includes(x.status));
+      if (!busy) {
+        const d = await fetch(`https://api.github.com/repos/${GH_REPO}/actions/workflows/mylist.yml/dispatches`, {
+          method: "POST", headers: { ...H, "Content-Type": "application/json" }, body: JSON.stringify({ ref: "main", inputs: { loop: "0" } }) });
+        kicked = d.status === 204;
+      }
+    } catch (e) { /* 唔影響儲存 */ }
+  }
+  return json({ ok: true, symbols: out, kicked });
 }
 
 
