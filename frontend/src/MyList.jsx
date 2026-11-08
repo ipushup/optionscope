@@ -1,3 +1,4 @@
+import { marketsClosed } from "./marketHours";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
@@ -119,14 +120,17 @@ export default function MyList({ isMobile, light }) {
   useEffect(() => {
     if (!key) return undefined;
     let dead = false;
+    let got = false;
     const tick = async () => {
       if (document.hidden) return;
+      if (got && marketsClosed()) return;   // 休市：拉一次顯示收市價就停
       try {
         const r = await fetch(`/api/quotes?symbols=${encodeURIComponent(key)}`, { cache: "no-store" });
         if (!r.ok) return;
         const j = await r.json(); const m = {};
         for (const q of j.quotes || []) m[q.symbol] = q;
         if (!dead) setLive(m);
+        got = Object.keys(m).length > 0;
       } catch { /* 下次再試 */ }
     };
     tick(); const id = setInterval(tick, 10000);
