@@ -100,6 +100,8 @@ const HILITE = {
   red: { label: "咪call/咪買", swatch: "#ff5c5c" },
   blue: { label: "長線提醒", swatch: "#5cb3ff" },
 };
+// 原生 <select> 嘅箭嘴顏色由系統決定（dark mode 會變暗灰）→ 自畫同 TBand 一樣嘅上下箭嘴
+const chevronBg = color => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='12' height='16' viewBox='0 0 12 16' fill='none' stroke='${color}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M2 6l4-4 4 4M2 10l4 4 4-4'/></svg>`)}")`;
 const hlBg = colorKey => C[`hl${colorKey[0].toUpperCase()}${colorKey.slice(1)}`];
 
 // 自己highlight嘅symbol，存落localStorage(同theme.js嘅osTheme一樣做法)，
@@ -526,6 +528,7 @@ export default function Watchlist({ isMobile, light }) {
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
           fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+          appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "Section" : "All sections"}</option>
           {sections.map(s => <option key={s} value={s}>{s}</option>)}
@@ -537,6 +540,7 @@ export default function Watchlist({ isMobile, light }) {
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
           fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+          appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "Signal" : "Signal: all"}</option>
           <option value="ut">UT</option>
@@ -548,6 +552,7 @@ export default function Watchlist({ isMobile, light }) {
           background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
           padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
           fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0,
+          appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "B/S" : "B/S: any"}</option>
           <option value="B">B any</option>
