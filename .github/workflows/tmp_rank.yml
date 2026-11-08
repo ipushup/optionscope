@@ -1,5 +1,7 @@
 name: tmp rank
-on: workflow_dispatch
+on:
+  push:
+    branches: [tmp/signal-rank]
 jobs:
   r:
     runs-on: ubuntu-latest
