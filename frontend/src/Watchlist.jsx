@@ -571,6 +571,7 @@ export default function Watchlist({ isMobile, light }) {
                 <th key={col.key} onClick={() => toggleSort(col.key)} title={LB_KEYS.includes(col.key) ? "Longbridge 即時報價" : SIG_KEYS.includes(col.key) || col.key === "ut_k" ? "Yahoo Finance K 線（掃描計算）" : undefined} style={{
                   padding: isMobile ? "6px 3px" : "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
+                  ...(i === 0 ? { position: "sticky", left: 0, zIndex: 2, background: C.bg } : {}),
                   color: LB_KEYS.includes(col.key) ? "#00b8a5" : light ? "#6b7580" : "#75777a",   // 其餘同 Daily Table / Signal Board 表頭一致；Longbridge 即時欄用 Longbridge 綠
                 }}>{col.label}{sortKey === col.key
                     ? (SIG_KEYS.includes(col.key) ? (col.key === "tb_k" || sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
@@ -583,7 +584,7 @@ export default function Watchlist({ isMobile, light }) {
               <Fragment key={r.ticker}>
               {sortKey == null && (ri === 0 || rows[ri - 1].section !== r.section) && (
                 <tr style={{ height: 32 }}><td colSpan={COLS.length} style={{ padding: "0 6px", verticalAlign: "middle", fontFamily: M, fontSize: 10.5, letterSpacing: "0.08em", color: C.mute, borderBottom: `1px solid ${C.line}`, textAlign: "left", whiteSpace: "nowrap" }}>
-                  {r.section.replace(/^SECTION\s+/i, "")} <span style={{ opacity: 0.7 }}>· {rows.filter(x => x.section === r.section).length}</span>
+                  <span style={{ position: "sticky", left: 6 }}>{r.section.replace(/^SECTION\s+/i, "")} <span style={{ opacity: 0.7 }}>· {rows.filter(x => x.section === r.section).length}</span></span>
                 </td></tr>
               )}
               <tr
@@ -593,6 +594,8 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
                   fontWeight: 500, fontSize: 14, whiteSpace: "nowrap", fontFamily: SANS,
+                  position: "sticky", left: 0, zIndex: 1,
+                  background: highlighted[r.ticker] ? `linear-gradient(${hlBg(highlighted[r.ticker])},${hlBg(highlighted[r.ticker])}) ${C.bg}` : C.bg,   // 固定喺左邊，橫拉時 Symbol 一直見到
                 }}>
                   {/* 從屬(ETF)縮入 10px：用 position:relative 平移，唔係加 padding，
                       所以唔會撐闊 Symbol 欄、亦唔會擠細其他欄 */}
