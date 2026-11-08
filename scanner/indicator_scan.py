@@ -237,6 +237,7 @@ def hv_tb_status(df: pd.DataFrame, tb_recent: int = 20):
     同 My List / Signal Board 同一套（intraday_signals）。出錯或棒數不足回 (None, None)。"""
     n = len(df)
     hv = tb = None
+    tbs_sig = None
     try:
         import intraday_signals as S
         if n > 101:
@@ -244,12 +245,16 @@ def hv_tb_status(df: pd.DataFrame, tb_recent: int = 20):
             if bi is not None or si is not None:
                 buy = si is None or (bi is not None and bi >= si)
                 hv = {"s": 1 if buy else -1, "n": n - (bi if buy else si)}
-        tbs = [e["i"] for e in S.triple_band(df) if e["kind"] == "TB"]
-        if tbs and n - tbs[-1] < tb_recent:
-            tb = n - tbs[-1]
+        # TB = 買入確認、TS = 賣出（TBskip 唔計）；攞最近一個，最近 tb_recent 棒內
+        evs = [e for e in S.triple_band(df) if e["kind"] in ("TB", "TS")]
+        if evs and n - evs[-1]["i"] < tb_recent:
+            last = evs[-1]
+            tbs_sig = {"s": 1 if last["kind"] == "TB" else -1, "n": n - last["i"]}
+            if last["kind"] == "TB":
+                tb = tbs_sig["n"]
     except Exception:  # noqa: BLE001
         pass
-    return hv, tb
+    return hv, tb, tbs_sig
 
 
 # ---------------------------------------------------------------------------
@@ -260,8 +265,8 @@ def tf_signals(df: pd.DataFrame):
     """一個時間框（D / W / M 棒）嘅 UT / ST / HV / TB。棒數不足嘅項目留 None。"""
     ut, ut_days = ut_bot_status(df)
     st, st_days = supertrend_days(df)
-    hv, tb_days = hv_tb_status(df)
-    return {"ut_bot": ut, "ut_days": ut_days, "supertrend": st, "st_days": st_days, "hv": hv, "tb_days": tb_days}
+    hv, tb_days, tb = hv_tb_status(df)
+    return {"ut_bot": ut, "ut_days": ut_days, "supertrend": st, "st_days": st_days, "hv": hv, "tb_days": tb_days, "tb": tb}
 
 
 def _clean(data, batch, t):
