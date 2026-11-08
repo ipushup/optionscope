@@ -218,6 +218,8 @@ function BandPicker({ value, onChange, isMobile, style }) {
   );
 }
 const TF_NAME = { D: "日線", W: "週線", M: "月線" };
+// 來自 Longbridge 即時報價嘅欄（其餘訊號欄來自 Yahoo 掃描）
+const LB_KEYS = ["last", "chg_pct", "ext_chg_pct"];
 const SIG_KEYS = ["ut_k", "hv_k", "tb_k", "st_k"];
 const WATCHLIST_URL = `${BASE}/watchlist_merged.json`;
 const QUOTES_URL = `${BASE}/watchlist_quotes.json`;
@@ -566,10 +568,10 @@ export default function Watchlist({ isMobile, light }) {
           <thead>
             <tr style={{ color: C.mute, fontSize: 11 }}>
               {COLS.map((col, i) => (
-                <th key={col.key} onClick={() => toggleSort(col.key)} style={{
+                <th key={col.key} onClick={() => toggleSort(col.key)} title={LB_KEYS.includes(col.key) ? "Longbridge 即時報價" : SIG_KEYS.includes(col.key) || col.key === "ut_k" ? "Yahoo Finance K 線（掃描計算）" : undefined} style={{
                   padding: isMobile ? "6px 3px" : "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
-                  color: light ? "#6b7580" : "#75777a",   // 同 Daily Table / Signal Board 表頭一致（active 用 ▴▾ 標示，唔變色）
+                  color: LB_KEYS.includes(col.key) ? "#00b8a5" : light ? "#6b7580" : "#75777a",   // 其餘同 Daily Table / Signal Board 表頭一致；Longbridge 即時欄用 Longbridge 綠
                 }}>{col.label}{sortKey === col.key
                     ? (SIG_KEYS.includes(col.key) ? (col.key === "tb_k" || sortDir > 0 ? " B▸" : " S▸") : (sortDir < 0 ? " ▾" : " ▴"))
                     : (SIG_KEYS.includes(col.key) ? <span style={{ opacity: 0.45 }}> ▾</span> : "")}</th>
