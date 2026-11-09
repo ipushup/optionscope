@@ -553,7 +553,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontFamily: M, fontSize: 11, color: T.dim, minWidth: 0 }}>
                   {(q?.sess && q.sess !== "regular" ? [q.sess] : []).filter((k) => q?.exts?.[k]).map((k) => {   // 只顯示而家呢個時段（夜盤時唔顯示舊嘅盤前／盤後）
                     const x = q.exts[k], c = x.pct == null ? T.mute : x.pct >= 0 ? T.up : T.dn;
-                    return <span key={k} style={{ whiteSpace: "nowrap" }}><SessBadge sess={k} T={T} size={9} /> {fmt(x.last, x.last >= 1000 ? 0 : 2)} {x.pct != null && <span style={{ color: c }}>{pctText(x.pct)}</span>}</span>;
+                    return <span key={k} style={{ whiteSpace: "nowrap" }}>{fmt(x.last, x.last >= 1000 ? 0 : 2)} {x.pct != null && <span style={{ color: c }}>{pctText(x.pct)}</span>} <SessBadge sess={k} T={T} size={9} /></span>;
                   })}
                   {!q || (q.sess && q.sess !== "regular" && !q.exts?.[q.sess]) ? <span style={{ color: T.mute }}>–</span> : null}
                 </div>
