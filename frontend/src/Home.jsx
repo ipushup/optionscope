@@ -228,6 +228,16 @@ const hkTime = (iso) => {
   } catch { return "—"; }
 };
 
+// 香港時間 "MM-DD HH:mm"；withDate=false 或者係今日就只出 "HH:mm"
+const hktStamp = (iso, withDate = true) => {
+  try {
+    const f = (d) => Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d).map((x) => [x.type, x.value]));
+    const p = f(new Date(iso)), n = f(new Date());
+    const hm = `${p.hour === "24" ? "00" : p.hour}:${p.minute}`;
+    return withDate || p.month !== n.month || p.day !== n.day ? `${p.month}-${p.day} ${hm}` : hm;
+  } catch { return "—"; }
+};
+
 function BandSection({ band, bq, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
@@ -369,7 +379,13 @@ function BandSection({ band, bq, T }) {
             ))}
           </div>
         </div>
-        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }}>bar {(band?.bar_date || "—").slice(5)} · prices {bq?.quoted_at ? ageText(bq.quoted_at) : "—"}</div>
+        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }} title="訊號 = 訊號所用嘅最後一支已收市日線；掃描 = 完整 Triple Band 掃描完成時間；報價 = 價錢最後更新時間（全部香港時間）">
+          {(() => {
+            const hkDates = isHK ? [...(band?.forming_hk || []), ...(band?.observe || []).filter((r) => r.market === "HK")].map((r) => r.date).filter(Boolean).sort() : [];
+            const barDate = (isHK && hkDates.length ? hkDates[hkDates.length - 1] : band?.bar_date) || "";
+            return <>訊號 {barDate ? barDate.slice(5) + " 收市" : "—"} · 掃描 {band?.scanned_at ? hktStamp(band.scanned_at) : "—"} · 報價 {bq?.quoted_at ? hktStamp(bq.quoted_at, false) : "—"} HKT</>;
+          })()}
+        </div>
       </div>
       {!band ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>band.json not available.</div>
