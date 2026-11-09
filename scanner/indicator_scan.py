@@ -35,6 +35,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from daily_calc import compute_ema_status
 import sys as _sys, os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import yfinance as yf
@@ -318,6 +319,10 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     continue
                 r = tf_signals(df)
                 r["last_close"] = round(float(df["Close"].iloc[-1]), 4)
+                try:   # EMA 疊（10/20/50/89/250，收市價 vs EMA）畀主頁共振榜展開行用
+                    r["ema"] = [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in compute_ema_status(df.copy())["pills"]]
+                except Exception:  # noqa: BLE001
+                    pass
                 r["asof_date"] = str(df.index[-1].date())
                 for key, d in tf_data.items():
                     try:

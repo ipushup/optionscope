@@ -210,6 +210,7 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "st_days": ind.get("st_days"),
             "hv": ind.get("hv"),            # {"s": 1/-1, "n": 幾多棒前}
             "tb_days": ind.get("tb_days"),  # Triple Band 買入確認棒（最近 20 棒內）
+            "ema": ind.get("ema"),          # [{p, above, valid}] 日線收市 vs EMA
             "tb": ind.get("tb"),            # {s: 1=TB買 / -1=TS賣, n}：最近一個 TB/TS（最近 20 棒內）
             # 週／月：{ut, ut_days, st, st_days, hv, tb_days}（Data 頁 W / M 按鈕用）；冇數據就冇呢個 key
             **{k: {"ut": ind[k].get("ut_bot"), "ut_days": ind[k].get("ut_days"),

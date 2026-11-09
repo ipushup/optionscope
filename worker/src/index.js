@@ -298,7 +298,8 @@ function pickLatest(q) {
   add("post", get(q, "post_market_quote", "postMarketQuote") || find(/^post[_-]?market/i));
   add("overnight", get(q, "over_night_quote", "overNightQuote") || find(/^over[_-]?night/i));
   if (!cands.length) return null;
-  return cands.sort((a, b) => b.ts - a.ts)[0];
+  const best = cands.sort((a, b) => b.ts - a.ts)[0];
+  return { ...best, all: cands };   // all = 各時段最新價（常規／盤前／盤後／夜盤），畀前端展開行顯示
 }
 
 async function handleQuotes(req, env, url) {
@@ -351,7 +352,8 @@ async function handleQuotes(req, env, url) {
     const base = got.sess !== "regular" && reg > 0 ? reg : prev;
     out.push({ symbol: q.symbol, last: got.last, prev_close: base, change: got.last - base,
                pct: (got.last / base - 1) * 100,
-               reg: reg > 0 ? reg : got.last, reg_pct: (reg > 0 ? reg / prev - 1 : got.last / prev - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess });
+               reg: reg > 0 ? reg : got.last, reg_pct: (reg > 0 ? reg / prev - 1 : got.last / prev - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess,
+               ext: Object.fromEntries(got.all.filter((c) => c.sess !== "regular").map((c) => [c.sess, { last: c.last, pct: reg > 0 ? (c.last / reg - 1) * 100 : null, ts: new Date(c.ts * 1000).toISOString() }])) });
   }
   const res = json({ fetched_at: new Date().toISOString(), quotes: out, ...(debug ? { raw_sample: list.slice(0, 1) } : {}) }, 200, { "Cache-Control": "public, max-age=5" });
   if (!debug) await cache.put(cacheKey, res.clone());
