@@ -225,6 +225,28 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             "margin": margin.get(ticker),  # None if not in margin.txt -- "唔顯示" per margin.txt's own convention
         })
 
+    # 迷你K線只畀有共振（>=5/9 同向，5 棒內）嘅股票，避免 JSON 脹大。規則同前端 Home.jsx confSigs 一致
+    def _conf_n(r):
+        best = 0
+        for w in (1, -1):
+            n = 0
+            for src in (r, r.get("W") or {}, r.get("M") or {}):
+                ut = 1 if src.get("ut") == "long" else -1 if src.get("ut") == "short" else None
+                tb = src.get("tb")
+                if tb is None and src.get("tb_days") is not None:
+                    tb = {"s": 1, "n": src["tb_days"]}
+                for x in ((({"s": ut, "n": src.get("ut_days")}) if ut is not None and src.get("ut_days") is not None else None),
+                          src.get("hv") if (src.get("hv") or {}).get("s") else None,
+                          tb if (tb or {}).get("s") else None):
+                    if x and x.get("n") is not None and x["n"] <= 5 and x["s"] == w:
+                        n += 1
+            best = max(best, n)
+        return best
+    for row in merged:
+        bars = indicators.get(row["ticker"], {}).get("bars")
+        if bars and _conf_n(row) >= 5:
+            row["bars"] = bars
+
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "band_scanned_at": band_json.get("scanned_at"),

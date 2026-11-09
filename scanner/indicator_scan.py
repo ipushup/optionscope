@@ -323,6 +323,10 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     r["ema"] = [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in compute_ema_status(df.copy())["pills"]]
                 except Exception:  # noqa: BLE001
                     pass
+                try:   # 最近 40 棒日線 [o,h,l,c]（展開行迷你K線；merge 只保留有共振嘅股票）
+                    r["bars"] = [[round(float(x), 4) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(40).values.tolist()]
+                except Exception:  # noqa: BLE001
+                    pass
                 r["asof_date"] = str(df.index[-1].date())
                 for key, d in tf_data.items():
                     try:
