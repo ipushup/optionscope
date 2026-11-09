@@ -14,7 +14,9 @@ out = {}; syms = list(back)
 for i in range(0, len(syms), 100):
     try:
         for inf in ctx.static_info(syms[i:i+100]):
-            n = (getattr(inf, "name_en", "") or getattr(inf, "name_hk", "") or getattr(inf, "name_cn", "") or "").strip()
+            hk = inf.symbol.endswith(".HK")   # 港股用中文名、美股用英文名
+            n = ((getattr(inf, "name_hk", "") or getattr(inf, "name_cn", "") or getattr(inf, "name_en", "")) if hk else (getattr(inf, "name_en", "") or getattr(inf, "name_cn", ""))) or ""
+            n = n.strip()
             if n: out[back[inf.symbol]] = n
     except Exception as ex:
         print("batch fail", i, ex)
