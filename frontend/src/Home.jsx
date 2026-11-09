@@ -478,12 +478,12 @@ function ConfluenceSection({ wl, T, onNavigate }) {
           {shown.length === 0 && <div style={{ padding: "14px 0", fontFamily: M, fontSize: 12, color: T.dim }}>冇股票達到 {CONF_MIN}/9。</div>}
           {shown.map((r) => (
             <button key={r.sym} type="button" onClick={() => onNavigate && onNavigate("watchlist")} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
-              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", height: 44, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
               <div style={{ width: 70, fontFamily: SANS, fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}</div>
               <div style={{ flexGrow: 1, display: "flex", gap: 10 }}>
                 {[0, 3, 6].map((o) => (
                   <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 2 }}>
-                    {[0, 1, 2].map((j) => { const x = r.hit[o + j]; return <div key={j} style={{ flex: "1 1 0", height: 22, borderRadius: 4, background: x ? col : T.line, color: T.card, fontFamily: M, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", justifyContent: "center" }}>{x ? x.n : ""}</div>; })}
+                    {[0, 1, 2].map((j) => { const x = r.hit[o + j]; return <div key={j} style={{ flex: "1 1 0", height: 20, borderRadius: 4, background: x ? col : T.line, color: T.card, fontFamily: M, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", justifyContent: "center" }}>{x ? x.n : ""}</div>; })}
                   </div>
                 ))}
               </div>
