@@ -1,0 +1,22 @@
+name: tmp fund
+on:
+  push:
+    branches: [tmp/fund]
+permissions:
+  contents: write
+jobs:
+  n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy yfinance longbridge
+      - env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+        run: python scanner/_fund_tmp.py
+      - run: |
+          git config user.name "names-bot"; git config user.email "bot@users.noreply.github.com"
+          git add -f frontend/src/fundamentals.json && git commit -m "fundamentals.json [skip ci]" && git push
