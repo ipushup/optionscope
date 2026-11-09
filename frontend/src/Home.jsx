@@ -381,18 +381,18 @@ function BandSection({ band, bq, T }) {
             ))}
           </div>
         </div>
+        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }} title="訊號 = 訊號所用嘅最後一支已收市日線；掃描 = 完整 Triple Band 掃描完成時間（Confirmed 表同 4 個卡嘅數字只喺掃描後更新）；今日掃描只顯示時間，全部香港時間">
+          {(() => {
+            const hkDates = isHK ? [...(band?.forming_hk || []), ...(band?.observe || []).filter((r) => r.market === "HK")].map((r) => r.date).filter(Boolean).sort() : [];
+            const barDate = (isHK && hkDates.length ? hkDates[hkDates.length - 1] : band?.bar_date) || "";
+            return <>訊號 {barDate ? barDate.slice(5) : "—"} · 掃描 {band?.scanned_at ? hktStamp(band.scanned_at, false) : "—"} HKT</>;
+          })()}
+        </div>
       </div>
       {!band ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>band.json not available.</div>
       ) : (
         <>
-          <div style={{ fontFamily: M, fontSize: 11, color: T.mute, marginBottom: 10 }} title="訊號 = 訊號所用嘅最後一支已收市日線；掃描 = 完整 Triple Band 掃描完成時間（Confirmed 表同 4 個卡嘅數字只喺掃描後更新）；全部香港時間">
-            {(() => {
-              const hkDates = isHK ? [...(band?.forming_hk || []), ...(band?.observe || []).filter((r) => r.market === "HK")].map((r) => r.date).filter(Boolean).sort() : [];
-              const barDate = (isHK && hkDates.length ? hkDates[hkDates.length - 1] : band?.bar_date) || "";
-              return <>訊號 {barDate ? barDate.slice(5) + " 收市" : "—"} · 掃描 {band?.scanned_at ? hktStamp(band.scanned_at) : "—"} HKT</>;
-            })()}
-          </div>
           <div className="os-grid">
             {isHK ? <>
               <Tile label="CONFIRMED" value={c.hk_entry ?? hkEntries.length} sub="observe only" color={T.up} T={T} />
