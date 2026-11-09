@@ -325,6 +325,8 @@ function BandSection({ band, bq, T }) {
     ];
     return { ...r, tags, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
   };
+  // 報價更新時間（Confirmed／Forming 表頭右邊共用）：美股 = Longbridge 即時，HK = 15 分鐘報價
+  const liveStamp = <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt && !isHK ? <>{hkTime(sigAt)} HKT {marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>}</> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span>;
   const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map(enrich);
   const hkEntries = isHK ? (band?.observe || []).filter((r) => r.market === "HK") : [];
   const confRows = groupRows(isHK ? hkEntries : band?.confirmed || []).map(enrich);
@@ -379,18 +381,18 @@ function BandSection({ band, bq, T }) {
             ))}
           </div>
         </div>
-        <div style={{ fontFamily: M, fontSize: 11, color: T.mute, whiteSpace: "nowrap" }} title="訊號 = 訊號所用嘅最後一支已收市日線；掃描 = 完整 Triple Band 掃描完成時間；報價 = 價錢最後更新時間（全部香港時間）">
-          {(() => {
-            const hkDates = isHK ? [...(band?.forming_hk || []), ...(band?.observe || []).filter((r) => r.market === "HK")].map((r) => r.date).filter(Boolean).sort() : [];
-            const barDate = (isHK && hkDates.length ? hkDates[hkDates.length - 1] : band?.bar_date) || "";
-            return <>訊號 {barDate ? barDate.slice(5) + " 收市" : "—"} · 掃描 {band?.scanned_at ? hktStamp(band.scanned_at) : "—"} · 報價 {bq?.quoted_at ? hktStamp(bq.quoted_at, false) : "—"} HKT</>;
-          })()}
-        </div>
       </div>
       {!band ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>band.json not available.</div>
       ) : (
         <>
+          <div style={{ fontFamily: M, fontSize: 11, color: T.mute, marginBottom: 10 }} title="訊號 = 訊號所用嘅最後一支已收市日線；掃描 = 完整 Triple Band 掃描完成時間（Confirmed 表同 4 個卡嘅數字只喺掃描後更新）；全部香港時間">
+            {(() => {
+              const hkDates = isHK ? [...(band?.forming_hk || []), ...(band?.observe || []).filter((r) => r.market === "HK")].map((r) => r.date).filter(Boolean).sort() : [];
+              const barDate = (isHK && hkDates.length ? hkDates[hkDates.length - 1] : band?.bar_date) || "";
+              return <>訊號 {barDate ? barDate.slice(5) + " 收市" : "—"} · 掃描 {band?.scanned_at ? hktStamp(band.scanned_at) : "—"} HKT</>;
+            })()}
+          </div>
           <div className="os-grid">
             {isHK ? <>
               <Tile label="CONFIRMED" value={c.hk_entry ?? hkEntries.length} sub="observe only" color={T.up} T={T} />
@@ -406,13 +408,13 @@ function BandSection({ band, bq, T }) {
           </div>
           {confRows.length > 0 && (
             <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-              <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700 }}>Confirmed signals{isHK ? " · HK" : ""} <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>{isHK ? "observe only" : "buy next open"}</span></div>
+              <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Confirmed signals{isHK ? " · HK" : ""} <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>{isHK ? "observe only" : "buy next open"}</span></span> {liveStamp}</div>
               <div>{(allConf ? confRows : confRows.slice(0, BAND_SHOW)).map(renderCard)}</div>
               {moreBtn(allConf, setAllConf, confRows.length)}
             </div>
           )}
           <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt && !isHK ? <>{hkTime(sigAt)} HKT {marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>}</> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span></div>
+            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> {liveStamp}</div>
             {rows.length === 0 ? (
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>{isHK ? (band?.forming_hk ? "No HK forming signals." : "HK forming not scanned yet — appears after the next full Triple Band scan.") : "No forming signals."}</div>
             ) : (
