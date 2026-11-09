@@ -427,11 +427,11 @@ function fmtBig(n, unit) {
   if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
-function MiniChart({ bars, emas, tf, T }) {
+function MiniChart({ bars, emas, utf, tf, T }) {
   const W = 168, H = 92, n = bars.length, step = (W - 12) / n;
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
-  const y = (v) => 16 + ((hi - v) / (hi - lo || 1)) * (H - 24);
+  const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 34);   // 上下留位畀 UT 三角形
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", flexShrink: 0, borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
@@ -444,6 +444,13 @@ function MiniChart({ bars, emas, tf, T }) {
           <polyline key={p} stroke={EC[p]} points={emas[p].map((v, i) => `${(6 + i * step + step / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ")} />
         ))}
       </g>
+      {utf && utf.length === n && utf.map((f, i) => {   // UT Bot：買 = 低位下面向上三角，賣 = 高位上面向下三角（同 01 Market Snapshot 一樣）
+        if (!f) return null;
+        const x = 6 + i * step + step / 2;
+        return f > 0
+          ? <path key={`u${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5).toFixed(1)} l-3 5.2 h6z`} fill={T.txt} />
+          : <path key={`u${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][1]) - 2.5).toFixed(1)} l-3 -5.2 h6z`} fill={T.txt} />;
+      })}
       <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
     </svg>
   );
@@ -463,7 +470,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, bars: r.bars, emas: r.emas, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, bars: r.bars, emas: r.emas, utf: r.utf, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
@@ -606,7 +613,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                     return (
                       <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" style={{ flexShrink: 0, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
                         {bars && bars.length > 5
-                          ? <MiniChart bars={bars} emas={src.emas} tf={tf} T={T} />
+                          ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tf={tf} T={T} />
                           : <div style={{ width: 168, height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{tf} 線待下次掃描</div>}
                       </div>
                     );
