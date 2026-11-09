@@ -249,6 +249,12 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
             emas = indicators.get(row["ticker"], {}).get("emas")
             if emas:
                 row["emas"] = emas
+            for k in ("W", "M"):   # 週／月 圖（撳圖切換 D→W→M）
+                src = indicators.get(row["ticker"], {}).get(k)
+                if isinstance(src, dict) and src.get("bars") and isinstance(row.get(k), dict):
+                    row[k]["bars"] = src["bars"]
+                    if src.get("emas"):
+                        row[k]["emas"] = src["emas"]
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
