@@ -430,7 +430,7 @@ function fmtBig(n, unit) {
 function MiniChart({ bars, emas, tf, T }) {
   const W = 168, H = 92, n = bars.length, step = (W - 12) / n;
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
-  const EC = { 10: "#f5c542", 20: "#ff9f43", 50: "#4da3ff", 89: "#b57cff", 250: "#e8eaec" };
+  const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
   const y = (v) => 16 + ((hi - v) / (hi - lo || 1)) * (H - 24);
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", flexShrink: 0, borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
