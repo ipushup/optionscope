@@ -431,7 +431,7 @@ function BandSection({ band, bq, T }) {
           </div>
           {confRows.length > 0 && (
             <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-              <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Confirmed signals{isHK ? " · HK" : ""} <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>{isHK ? "observe only" : "buy next open"}</span></span> {liveStamp}</div>
+              <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Confirmed signals{isHK ? " · HK" : ""} {!isHK && <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>buy next open</span>}</span> {liveStamp}</div>
               <div>{(allConf ? confRows : confRows.slice(0, BAND_SHOW)).map(renderCard)}</div>
               {moreBtn(allConf, setAllConf, confRows.length)}
             </div>
