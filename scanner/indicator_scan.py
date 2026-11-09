@@ -138,12 +138,10 @@ def wilder_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
 
 
-def ut_bot_status(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1):
-    """Returns (status, days) as of the last closed bar -- 'long'/'short' plus
-    how many consecutive closed bars pos has held that same direction (1 =
-    flipped on the most recent bar). None if not enough data."""
+def ut_pos_series(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1):
+    """UT Bot 持倉序列 pos（1 long / -1 short / 0 未有訊號）；None = 數據不足。"""
     if len(df) < max(atr_period, 2) + 5:
-        return None, None
+        return None
     atr = wilder_atr(df, atr_period)
     n_loss = (key_value * atr).values
     close = df["Close"].values
@@ -168,6 +166,16 @@ def ut_bot_status(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1)
         else:
             pos[i] = pos[i - 1]
 
+    return pos
+
+
+def ut_bot_status(df: pd.DataFrame, key_value: float = 2.0, atr_period: int = 1):
+    """Returns (status, days) as of the last closed bar -- 'long'/'short' plus
+    how many consecutive closed bars pos has held that same direction (1 =
+    flipped on the most recent bar). None if not enough data."""
+    pos = ut_pos_series(df, key_value, atr_period)
+    if pos is None:
+        return None, None
     last = pos[-1]
     if last == 0:
         return None, None
@@ -273,6 +281,13 @@ def tf_signals(df: pd.DataFrame):
 def chart_series(df: pd.DataFrame, n: int = 40):
     """最近 n 棒 [o,h,l,c] + 同棒對齊嘅 EMA 10/20/50/89/250（用全段收市價計；歷史唔夠 p 棒就唔畫該條）"""
     out = {"bars": [[round(float(x), 4) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
+    try:   # UT Bot 買／賣訊號棒（1 = 轉 long，-1 = 轉 short），同 40 棒對齊；圖上畫三角形
+        pos = ut_pos_series(df)
+        if pos is not None:
+            flips = [0] + [int(pos[i]) if pos[i] != 0 and pos[i] != pos[i - 1] else 0 for i in range(1, len(pos))]
+            out["utf"] = flips[-n:]
+    except Exception:  # noqa: BLE001
+        pass
     close = df["Close"].astype(float)
     out["emas"] = {str(p_): [round(float(v), 4) for v in close.ewm(span=p_, adjust=False).mean().tail(n).values]
                    for p_ in (10, 20, 50, 89, 250) if len(close) >= p_}
