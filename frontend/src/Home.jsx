@@ -1,4 +1,5 @@
 import { marketsClosed } from "./marketHours";
+import STOCK_NAMES from "./names.json";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
@@ -441,8 +442,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const shown = all ? rows : rows.slice(0, CONF_SHOW);
   const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
   const [open, setOpen] = useState(null);   // 展開咗邊隻（ticker）
-  const [names, setNames] = useState({});
-  useEffect(() => { fetch(`${BASE}/names.json`).then((r) => (r.ok ? r.json() : {})).then(setNames).catch(() => {}); }, []);
+  const names = STOCK_NAMES;
   const [lq, setLq] = useState({});   // Longbridge 即時：{ticker: {last, pct, ext, sess}}
   const symKey = shown.map((r) => r.ticker).join(",");
   useEffect(() => {
