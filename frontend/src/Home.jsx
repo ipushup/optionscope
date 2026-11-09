@@ -619,10 +619,10 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "6px 10px 10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, height: 24, fontFamily: SANS, fontSize: 10.5, color: T.mute }}>
             <div style={{ width: 56 }}>Symbol</div>
-            <div style={{ display: "flex", gap: 4, width: 145 }}>
+            <div style={{ display: "flex", gap: 4, width: 145, marginLeft: -4 }}>
               {["D", "W", "M"].map((t) => <div key={t} style={{ flex: "1 1 0", textAlign: "center" }}>{t}</div>)}
             </div>
-            <div style={{ width: 24, textAlign: "right" }}>Total</div>
+            <div style={{ width: 24, textAlign: "right", marginLeft: -4 }}>Total</div>
             <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", gap: 3, color: "#00b8a5" }}>
               <div style={{ flex: "1 1 0", textAlign: "right" }}>Last</div>
               <div style={{ width: 48, textAlign: "right" }}>%Chg</div>
@@ -638,14 +638,14 @@ function ConfluenceSection({ wl, T, onNavigate }) {
             <button type="button" onClick={() => setOpen(open === r.ticker ? null : r.ticker)} aria-expanded={open === r.ticker} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
               style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
               <div style={{ width: 56, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}{(() => { const mv = mgn.data ? mgn.data[r.ticker] : r.margin; return mv != null && <sup title={(mv <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(mv)}%`) + (mgn.stale ? `（資料 ${mgn.asOf}，已過期）` : "")} style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: T.txt, opacity: mgn.stale ? 0.55 : 1, lineHeight: 0 }}>{mv <= 0 ? "✕" : Math.round(mv)}</sup>; })()}</div>
-              <div style={{ display: "flex", gap: 4, width: 145 }}>
+              <div style={{ display: "flex", gap: 4, width: 145, marginLeft: -4 }}>
                 {[0, 3, 6].map((o) => (
                   <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 1 }}>
                     {[0, 1, 2].map((j) => { const x = r.hit[o + j]; return <div key={j} style={{ flex: "1 1 0", height: 16, borderRadius: 3, background: x ? col : T.line, color: T.card, fontFamily: M, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", justifyContent: "center" }}>{x ? x.n : ""}</div>; })}
                   </div>
                 ))}
               </div>
-              <div style={{ width: 24, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 700, color: col }}>{r.n}<span style={{ fontSize: 9, fontWeight: 400, color: T.mute }}>/9</span></div>
+              <div style={{ width: 24, textAlign: "right", marginLeft: -4, fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 700, color: col }}>{r.n}<span style={{ fontSize: 9, fontWeight: 400, color: T.mute }}>/9</span></div>
               <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", gap: 3, alignItems: "center", fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 12 }}>
                 <div style={{ flex: "1 1 0", minWidth: 0, textAlign: "right", color: q ? T.txt : T.mute, whiteSpace: "nowrap" }}>{q ? fmt(q.last, q.last >= 1000 ? 0 : 2) : "–"}</div>
                 <div style={{ width: 48, textAlign: "right", fontSize: 11.5, color: !q ? T.mute : q.pct >= 0 ? T.up : T.dn, whiteSpace: "nowrap" }}>{q ? pctText(q.pct) : "–"}</div>
