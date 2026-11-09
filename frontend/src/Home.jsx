@@ -419,6 +419,14 @@ function confSigs(r) {
   };
   return [...one(r), ...one(r.W || {}), ...one(r.M || {})];
 }
+const SESS_NAME = { pre: "盤前", post: "盤後", overnight: "夜盤 24h" };
+// pre = 日出、post = 月、overnight(24h) = 時鐘；顏色跟該時段升跌
+function sessIcon(sess) {
+  const p = { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
+  if (sess === "pre") return <svg {...p}><path d="M5 18a7 7 0 0 1 14 0M12 4v4M4.5 9.5l2 2M19.5 9.5l-2 2M2 21h20" /></svg>;
+  if (sess === "post") return <svg {...p}><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" /></svg>;
+  return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
+}
 function ConfluenceSection({ wl, T, onNavigate }) {
   const [side, setSide] = useState(() => { try { return localStorage.getItem("os_conf_side") === "S" ? "S" : "B"; } catch (e) { return "B"; } });
   const [all, setAll] = useState(false);
@@ -426,12 +434,40 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
   const shown = all ? rows : rows.slice(0, CONF_SHOW);
   const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
+  const [lq, setLq] = useState({});   // Longbridge 即時：{ticker: {last, pct, ext, sess}}
+  const symKey = shown.map((r) => r.ticker).join(",");
+  useEffect(() => {
+    const back = {};
+    for (const t of symKey.split(",")) {
+      let m;
+      if ((m = t.match(/^(\d{1,5})\.HK$/))) back[`${parseInt(m[1], 10)}.HK`] = t;
+      else if (/^[A-Z]{1,5}$/.test(t)) back[`${t}.US`] = t;
+    }
+    const syms = Object.keys(back);
+    if (!syms.length) return undefined;
+    let alive = true, got = false;
+    const pull = async () => {
+      try {
+        const r = await fetch(`${LIVE_URL}?symbols=${syms.join(",")}`, { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json(), m = {};
+        for (const q of d.quotes || []) {
+          const t = back[q.symbol];
+          if (t && q.reg > 0) m[t] = { last: q.reg, pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct, sess: q.session };
+        }
+        if (alive && Object.keys(m).length) { setLq((o) => ({ ...o, ...m })); got = true; }
+      } catch (e) { /* 冇即時價 → 顯示 – */ }
+    };
+    pull();
+    const id = setInterval(() => { if (got && marketsClosed()) return; pull(); }, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, [symKey]);
   return (
     <section aria-labelledby="s2b">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px 8px", marginBottom: 14 }}>
@@ -467,29 +503,42 @@ function ConfluenceSection({ wl, T, onNavigate }) {
       {!wl ? (
         <div style={{ border: `1px solid ${T.line}`, background: T.card, borderRadius: 12, padding: 18, fontFamily: M, fontSize: 12, color: T.dim }}>watchlist_merged.json not available.</div>
       ) : (
-        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "6px 14px 10px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, height: 24, fontFamily: SANS, fontSize: 10.5, color: T.mute }}>
-            <div style={{ width: 70 }}>Symbol</div>
-            <div style={{ flexGrow: 1, display: "flex", gap: 10 }}>
+        <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "6px 10px 10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, height: 24, fontFamily: SANS, fontSize: 10.5, color: T.mute }}>
+            <div style={{ width: 48 }}>Symbol</div>
+            <div style={{ display: "flex", gap: 4, width: 145 }}>
               {["D", "W", "M"].map((t) => <div key={t} style={{ flex: "1 1 0", textAlign: "center" }}>{t}</div>)}
             </div>
-            <div style={{ width: 30, textAlign: "right" }}>Total</div>
+            <div style={{ width: 24, textAlign: "right" }}>Total</div>
+            <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", gap: 3, color: "#00b8a5" }}>
+              <div style={{ flex: "1 1 0", textAlign: "right" }}>Last</div>
+              <div style={{ width: 48, textAlign: "right" }}>%Chg</div>
+              <div style={{ width: 14, textAlign: "center" }}>E</div>
+            </div>
           </div>
           {shown.length === 0 && <div style={{ padding: "14px 0", fontFamily: M, fontSize: 12, color: T.dim }}>冇股票達到 {CONF_MIN}/9。</div>}
-          {shown.map((r) => (
+          {shown.map((r) => {
+            const q = lq[r.ticker];
+            return (
             <button key={r.sym} type="button" onClick={() => onNavigate && onNavigate("watchlist")} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
-              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
-              <div style={{ width: 70, fontFamily: SANS, fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}</div>
-              <div style={{ flexGrow: 1, display: "flex", gap: 10 }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
+              <div style={{ width: 48, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}</div>
+              <div style={{ display: "flex", gap: 4, width: 145 }}>
                 {[0, 3, 6].map((o) => (
-                  <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 2 }}>
-                    {[0, 1, 2].map((j) => { const x = r.hit[o + j]; return <div key={j} style={{ flex: "1 1 0", height: 20, borderRadius: 4, background: x ? col : T.line, color: T.card, fontFamily: M, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", justifyContent: "center" }}>{x ? x.n : ""}</div>; })}
+                  <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 1 }}>
+                    {[0, 1, 2].map((j) => { const x = r.hit[o + j]; return <div key={j} style={{ flex: "1 1 0", height: 16, borderRadius: 3, background: x ? col : T.line, color: T.card, fontFamily: M, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", justifyContent: "center" }}>{x ? x.n : ""}</div>; })}
                   </div>
                 ))}
               </div>
-              <div style={{ width: 30, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: col }}>{r.n}<span style={{ fontSize: 10, fontWeight: 400, color: T.mute }}>/9</span></div>
+              <div style={{ width: 24, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 700, color: col }}>{r.n}<span style={{ fontSize: 9, fontWeight: 400, color: T.mute }}>/9</span></div>
+              <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", gap: 3, alignItems: "center", fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 12 }}>
+                <div style={{ flex: "1 1 0", minWidth: 0, textAlign: "right", color: q ? T.txt : T.mute, whiteSpace: "nowrap" }}>{q ? fmt(q.last, q.last >= 1000 ? 0 : 2) : "–"}</div>
+                <div style={{ width: 48, textAlign: "right", fontSize: 11.5, color: !q ? T.mute : q.pct >= 0 ? T.up : T.dn, whiteSpace: "nowrap" }}>{q ? pctText(q.pct) : "–"}</div>
+                <div style={{ width: 14, display: "flex", justifyContent: "center", color: q?.ext == null ? T.mute : q.ext >= 0 ? T.up : T.dn }} title={q?.ext != null ? `${SESS_NAME[q.sess] || q.sess} ${pctText(q.ext)}` : undefined}>{q?.ext != null ? sessIcon(q.sess) : null}</div>
+              </div>
             </button>
-          ))}
+            );
+          })}
           {rows.length > CONF_SHOW && (
             <button type="button" onClick={() => setAll((v) => !v)} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 0 2px", border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer" }}>
               {all ? "收埋" : `展開全部 ${rows.length} 隻`}
