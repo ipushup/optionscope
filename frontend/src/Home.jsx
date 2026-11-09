@@ -1,4 +1,4 @@
-import { marketsClosed } from "./marketHours";
+import { marketsClosed, hkClosed } from "./marketHours";
 import STOCK_NAMES from "./names.json";
 import FUND from "./fundamentals.json";   // {ticker: [總股本, EPS TTM]}（算市盈率／總市值）   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useRef, useState } from "react";
@@ -251,6 +251,7 @@ function BandSection({ band, bq, T }) {
   );
   const isHK = mkt === "HK";
   const [sigAt, setSigAt] = useState(null);
+  const [hkLive, setHkLive] = useState({ q: {}, at: null });   // 港股 Longbridge 即時（/api/quotes）：{ "0700.HK": {price, day_low, prev_close} }
   const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
   const [dly, setDly] = useState({});    // daily.json: sym -> row (EMA stack)
   const [mgn, setMgn] = useState({ data: {}, stale: false });   // margin.json（daily brief 同一份 margin_cache）
@@ -286,6 +287,28 @@ function BandSection({ band, bq, T }) {
     };
     pull(); const id = setInterval(pull, 15000); return () => clearInterval(id);
   }, []);
+  // 港股形成中／已確認：用 Longbridge 即時價（同 03 共振榜一樣），收市後拉一次顯示收市價就停
+  const hkSymKey = [...(band?.forming_hk || []), ...(band?.observe || []).filter((r) => r.market === "HK")].map((r) => r.symbol).filter(Boolean).sort().join(",");
+  useEffect(() => {
+    if (!hkSymKey) return undefined;
+    const back = {};
+    hkSymKey.split(",").forEach((t) => { const m = t.match(/^(\d{1,5})\.HK$/); if (m) back[`${parseInt(m[1], 10)}.HK`] = t; });
+    const syms = Object.keys(back);
+    if (!syms.length || syms.length > 60) return undefined;
+    let alive = true, got = false;
+    const pull = async () => {
+      try {
+        const r = await fetch(`${LIVE_URL}?symbols=${syms.join(",")}`, { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json(), m = {};
+        for (const q of d.quotes || []) { const t = back[q.symbol]; if (t && q.reg > 0) m[t] = { price: q.reg, day_low: q.low, prev_close: q.prev_reg }; }
+        if (alive && Object.keys(m).length) { setHkLive({ q: m, at: new Date().toISOString() }); got = true; }
+      } catch (e) { /* 冇即時價 → 照用 Yahoo 15 分鐘報價 */ }
+    };
+    pull();
+    const id = setInterval(() => { if (got && (hkClosed() || marketsClosed())) return; pull(); }, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, [hkSymKey]);
   // 最近 5 日訊號 tag：1 = 最新一根日棒（今日 / bar_date），5 = 五日前
   const busDiff = (a, b) => { // a→b 之間嘅交易日數（週一至五）
     let n = 0; const d = new Date(a + "T00:00:00Z"), e = new Date(b + "T00:00:00Z");
@@ -302,7 +325,7 @@ function BandSection({ band, bq, T }) {
     return m;
   })();
   const enrich = (r) => {
-    const q = quotes[r.symbol] || {};
+    const q = { ...(quotes[r.symbol] || {}), ...(hkLive.q[r.symbol] || {}) };   // 港股：Longbridge 即時優先，冇就用 Yahoo 15 分鐘報價
     const px = q.price ?? null, low = q.day_low ?? null;
     let st = "—";
     if (r.kill_low == null) st = "ENTRY";
@@ -326,7 +349,7 @@ function BandSection({ band, bq, T }) {
     return { ...r, tags, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
   };
   // 報價更新時間（Confirmed／Forming 表頭右邊共用）：美股 = Longbridge 即時，HK = 15 分鐘報價
-  const liveStamp = <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{sigAt && !isHK ? <>{hkTime(sigAt)} HKT {marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>}</> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span>;
+  const liveStamp = <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400, whiteSpace: "nowrap" }}>{isHK && hkLive.at ? <>{hkTime(hkLive.at)} HKT {hkClosed() || marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>}</> : sigAt && !isHK ? <>{hkTime(sigAt)} HKT {marketsClosed() ? <span><span style={{ color: T.mute }}>●</span> closed</span> : <span style={{ color: T.up }}>● live</span>}</> : bq?.quoted_at ? `${hkTime(bq.quoted_at)} HKT` : "—"}</span>;
   const rows = groupRows((isHK ? band?.forming_hk : band?.forming) || []).filter((r) => (r.tier_gap_pct ?? 0) > -3).map(enrich);
   const hkEntries = isHK ? (band?.observe || []).filter((r) => r.market === "HK") : [];
   const confRows = groupRows(isHK ? hkEntries : band?.confirmed || []).map(enrich);
@@ -425,7 +448,7 @@ function BandSection({ band, bq, T }) {
             )}
           </div>
           <div style={{ marginTop: 12, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-            {isHK ? "HK is observe-only (no validated config). HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). Prices from Yahoo, about 15 min delayed; CHG% vs previous close, EMA from daily bars (Longbridge live feed not connected for HK yet)." : null}
+            {isHK ? "HK is observe-only (no validated config). HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). Price, CHG% and HOLD/BROKE from Longbridge realtime (falls back to Yahoo, about 15 min delayed, if unavailable); EMA from daily bars." : null}
             {isHK ? null : <>HOLD: day low above kill low. BROKE: day low touched kill low (dimmed). TIER: price above kill close. Price, CHG% and pre/post EXT% from Longbridge realtime; EMA 10/20/50/89/250 (green above, red below). HOLD/BROKE/TIER refreshes about every 15 min.</>}
           </div>
         </>
