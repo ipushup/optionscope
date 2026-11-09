@@ -270,6 +270,15 @@ def tf_signals(df: pd.DataFrame):
     return {"ut_bot": ut, "ut_days": ut_days, "supertrend": st, "st_days": st_days, "hv": hv, "tb_days": tb_days, "tb": tb}
 
 
+def chart_series(df: pd.DataFrame, n: int = 40):
+    """最近 n 棒 [o,h,l,c] + 同棒對齊嘅 EMA 10/20/50/89/250（用全段收市價計；歷史唔夠 p 棒就唔畫該條）"""
+    out = {"bars": [[round(float(x), 4) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
+    close = df["Close"].astype(float)
+    out["emas"] = {str(p_): [round(float(v), 4) for v in close.ewm(span=p_, adjust=False).mean().tail(n).values]
+                   for p_ in (10, 20, 50, 89, 250) if len(close) >= p_}
+    return out
+
+
 def _clean(data, batch, t):
     df = data[t].dropna(how="all") if len(batch) > 1 else data.dropna(how="all")
     return df.dropna(subset=["Close"])
@@ -323,14 +332,8 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     r["ema"] = [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in compute_ema_status(df.copy())["pills"]]
                 except Exception:  # noqa: BLE001
                     pass
-                try:   # 最近 40 棒日線 [o,h,l,c]（展開行迷你K線；merge 只保留有共振嘅股票）
-                    r["bars"] = [[round(float(x), 4) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(40).values.tolist()]
-                except Exception:  # noqa: BLE001
-                    pass
-                try:   # 同 40 棒對齊嘅 EMA 10/20/50/89/250 線（用全段收市價計，250 要夠歷史先出，唔夠就唔畫）
-                    close = df["Close"].astype(float)
-                    r["emas"] = {str(p_): [round(float(v), 4) for v in close.ewm(span=p_, adjust=False).mean().tail(40).values]
-                                 for p_ in (10, 20, 50, 89, 250) if len(close) >= p_}
+                try:   # 最近 40 棒 + EMA 線（展開行迷你圖；merge 只保留有共振嘅股票）
+                    r.update(chart_series(df))
                 except Exception:  # noqa: BLE001
                     pass
                 r["asof_date"] = str(df.index[-1].date())
@@ -339,6 +342,10 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                         dfk = _clean(d, batch, t)
                         if len(dfk) >= 15:
                             r[key] = tf_signals(dfk)
+                            try:
+                                r[key].update(chart_series(dfk))
+                            except Exception:  # noqa: BLE001
+                                pass
                     except Exception as ex:  # noqa: BLE001
                         print(f"Skip {t} {key}: {ex}", file=sys.stderr)
                 results[t] = r

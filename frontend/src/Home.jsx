@@ -427,13 +427,13 @@ function fmtBig(n, unit) {
   if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
-function MiniChart({ bars, emas, T }) {
+function MiniChart({ bars, emas, tf, T }) {
   const W = 168, H = 92, n = bars.length, step = (W - 12) / n;
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#ff9f43", 50: "#4da3ff", 89: "#b57cff", 250: "#e8eaec" };
   const y = (v) => 16 + ((hi - v) / (hi - lo || 1)) * (H - 24);
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", flexShrink: 0, borderRadius: 8, background: T.bg }} role="img" aria-label={`日線 ${n} 棒`}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", flexShrink: 0, borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
         const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
         return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.34} y={t} width={Math.max(1, step * 0.68)} height={Math.max(1, bt - t)} fill={c} /></g>;
@@ -444,7 +444,7 @@ function MiniChart({ bars, emas, T }) {
           <polyline key={p} stroke={EC[p]} points={emas[p].map((v, i) => `${(6 + i * step + step / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ")} />
         ))}
       </g>
-      <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">D · {n} bars</text>
+      <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
     </svg>
   );
 }
@@ -463,13 +463,15 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, bars: r.bars, emas: r.emas, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, bars: r.bars, emas: r.emas, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
   const shown = all ? rows : rows.slice(0, CONF_SHOW);
   const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
   const [open, setOpen] = useState(null);   // 展開咗邊隻（ticker）
+  const [tfMap, setTfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("os_conf_tf") || "{}") || {}; } catch (e) { return {}; } });   // ticker → D/W/M（同 My List 一樣：撳圖輪流切換）
+  const cycleTf = (t) => setTfMap((m) => { const v = m[t] || "D"; const n = { ...m, [t]: v === "D" ? "W" : v === "W" ? "M" : "D" }; try { localStorage.setItem("os_conf_tf", JSON.stringify(n)); } catch (e) { /* ignore */ } return n; });
   const names = STOCK_NAMES;
   const [lq, setLq] = useState({});   // Longbridge 即時：{ticker: {last, pct, ext, sess}}
   const symKey = shown.map((r) => r.ticker).join(",");
@@ -599,9 +601,16 @@ function ConfluenceSection({ wl, T, onNavigate }) {
               ];
               return (
                 <div style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
-                  {r.bars && r.bars.length > 5
-                    ? <MiniChart bars={r.bars} emas={r.emas} T={T} />
-                    : <div style={{ width: 168, height: 92, flexShrink: 0, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>日線圖待下次掃描</div>}
+                  {(() => {
+                    const tf = tfMap[r.ticker] || "D", src = tf === "D" ? r : r[tf], bars = src?.bars;
+                    return (
+                      <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" style={{ flexShrink: 0, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+                        {bars && bars.length > 5
+                          ? <MiniChart bars={bars} emas={src.emas} tf={tf} T={T} />
+                          : <div style={{ width: 168, height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{tf} 線待下次掃描</div>}
+                      </div>
+                    );
+                  })()}
                   <div style={{ flex: "1 1 0", minWidth: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gridAutoRows: 23, gap: "0 8px", alignContent: "space-between" }}>
                     {stats.map(([l, v, c]) => (
                       <div key={l} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4, minWidth: 0, borderBottom: `1px solid ${T.line}` }}>
@@ -624,7 +633,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         </div>
       )}
       <div style={{ marginTop: 10, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價、當日高低開收量額、市盈率（現價 ÷ EPS TTM）、總市值、40 bars 日線（疊 EMA 10/20/50/89/250 線）。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
+        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價、當日高低開收量額、市盈率（現價 ÷ EPS TTM）、總市值、40 bars K 線（疊 EMA 線），撳圖切換 D → W → M。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
       </div>
     </section>
   );
