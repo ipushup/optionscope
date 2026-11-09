@@ -278,9 +278,13 @@ def tf_signals(df: pd.DataFrame):
     return {"ut_bot": ut, "ut_days": ut_days, "supertrend": st, "st_days": st_days, "hv": hv, "tb_days": tb_days, "tb": tb}
 
 
-def chart_series(df: pd.DataFrame, n: int = 40):
+def _rp(x: float) -> float:
+    return round(x, 2) if abs(x) >= 10 else round(x, 4)   # 減細 JSON：>=10 取 2 位小數
+
+
+def chart_series(df: pd.DataFrame, n: int = 100):
     """最近 n 棒 [o,h,l,c] + 同棒對齊嘅 EMA 10/20/50/89/250（用全段收市價計；歷史唔夠 p 棒就唔畫該條）"""
-    out = {"bars": [[round(float(x), 4) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
+    out = {"bars": [[_rp(float(x)) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
     try:   # UT Bot 買／賣訊號棒（1 = 轉 long，-1 = 轉 short），同 40 棒對齊；圖上畫三角形
         pos = ut_pos_series(df)
         if pos is not None:
@@ -289,7 +293,7 @@ def chart_series(df: pd.DataFrame, n: int = 40):
     except Exception:  # noqa: BLE001
         pass
     close = df["Close"].astype(float)
-    out["emas"] = {str(p_): [round(float(v), 4) for v in close.ewm(span=p_, adjust=False).mean().tail(n).values]
+    out["emas"] = {str(p_): [_rp(float(v)) for v in close.ewm(span=p_, adjust=False).mean().tail(n).values]
                    for p_ in (10, 20, 50, 89, 250) if len(close) >= p_}
     return out
 
@@ -347,8 +351,8 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     r["ema"] = [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in compute_ema_status(df.copy())["pills"]]
                 except Exception:  # noqa: BLE001
                     pass
-                try:   # 最近 40 棒 + EMA 線（展開行迷你圖；merge 只保留有共振嘅股票）
-                    r.update(chart_series(df))
+                try:   # 最近 100 棒（W 80／M 60）+ EMA 線（展開行迷你圖，前端按闊度揀顯示幾多棒；merge 只保留有共振嘅股票）
+                    r.update(chart_series(df, 100))
                 except Exception:  # noqa: BLE001
                     pass
                 r["asof_date"] = str(df.index[-1].date())
@@ -358,7 +362,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                         if len(dfk) >= 15:
                             r[key] = tf_signals(dfk)
                             try:
-                                r[key].update(chart_series(dfk))
+                                r[key].update(chart_series(dfk, 80 if key == "W" else 60))
                             except Exception:  # noqa: BLE001
                                 pass
                     except Exception as ex:  # noqa: BLE001

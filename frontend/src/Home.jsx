@@ -436,8 +436,8 @@ function fmtBig(n, unit) {
   if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
-function MiniChart({ bars, emas, utf, tf, T }) {
-  // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高
+function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tf, T }) {
+  // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高；顯示棒數按闊度自動調整（手機 40，PC 最多用盡已儲存嘅棒數）
   const box = useRef(null), [W, setW] = useState(168);
   useEffect(() => {
     const el = box.current; if (!el) return undefined;
@@ -447,7 +447,10 @@ function MiniChart({ bars, emas, utf, tf, T }) {
     const ro = new ResizeObserver(fit); ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const H = W > 300 ? Math.round(92 + Math.min(40, (W - 300) / 6)) : 92, n = bars.length, step = (W - 12) / n;
+  const H = W > 300 ? Math.round(92 + Math.min(40, (W - 300) / 6)) : 92;
+  const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 3.9))), step = (W - 12) / n;
+  const bars = allBars.slice(-n), utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
+  const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 34);   // 上下留位畀 UT 三角形
@@ -669,7 +672,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         </div>
       )}
       <div style={{ marginTop: 10, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價、當日高低開收量額、市盈率（現價 ÷ EPS TTM）、總市值、40 bars K 線（疊 EMA 線），撳圖切換 D → W → M。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
+        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價、當日高低開收量額、市盈率（現價 ÷ EPS TTM）、總市值、K 線（疊 EMA 線、UT 三角形；bars 數按闊度自動調整），撳圖切換 D → W → M。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
       </div>
     </section>
   );
