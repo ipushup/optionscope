@@ -543,30 +543,19 @@ function ConfluenceSection({ wl, T, onNavigate }) {
               </div>
             </button>
             {isOpen && (
-              <div style={{ padding: "8px 2px 12px", display: "flex", flexDirection: "column", gap: 8, borderTop: `1px dashed ${T.line}` }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: T.sub, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{names[r.ticker] || r.ticker}<span style={{ fontFamily: M, fontSize: 11, fontWeight: 400, color: T.mute }}> · {r.ticker}</span></div>
-                  <button type="button" onClick={() => onNavigate && onNavigate("watchlist")} style={{ border: 0, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", padding: 0 }}>Data →</button>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 10px", padding: "6px 2px 9px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <span style={{ fontFamily: SANS, fontSize: 12, color: T.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{names[r.ticker] || r.ticker}</span>
+                  {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0 }}>
+                    {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
+                  </span>}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontFamily: M, fontSize: 10, color: T.mute, width: 30 }}>EMA</span>
-                  {r.ema ? (
-                    <span style={{ display: "flex", gap: 3 }}>
-                      {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 10, fontWeight: 600, padding: "1px 4px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
-                    </span>
-                  ) : <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>– （下次掃描後顯示）</span>}
-                </div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[["pre", "盤前"], ["post", "盤後"], ["overnight", "24h"]].map(([k, lb]) => {
-                    const x = q?.exts?.[k], c = x?.pct == null ? T.mute : x.pct >= 0 ? T.up : T.dn;
-                    return (
-                      <div key={k} style={{ flex: "1 1 0", minWidth: 0, border: `1px solid ${T.line}`, borderRadius: 8, padding: "6px 8px" }}>
-                        <div style={{ fontFamily: SANS, fontSize: 10.5, color: "#00b8a5" }}>{lb}</div>
-                        <div style={{ fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 13, color: x ? T.txt : T.mute, whiteSpace: "nowrap" }}>{x ? fmt(x.last, x.last >= 1000 ? 0 : 2) : "–"}</div>
-                        <div style={{ fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 11, color: c }}>{x?.pct != null ? pctText(x.pct) : ""}</div>
-                      </div>
-                    );
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontFamily: M, fontSize: 11, color: T.dim, minWidth: 0 }}>
+                  {["pre", "post", "overnight"].filter((k) => q?.exts?.[k]).map((k) => {
+                    const x = q.exts[k], c = x.pct == null ? T.mute : x.pct >= 0 ? T.up : T.dn;
+                    return <span key={k} style={{ whiteSpace: "nowrap" }}><SessBadge sess={k} T={T} size={9} /> {fmt(x.last, x.last >= 1000 ? 0 : 2)} {x.pct != null && <span style={{ color: c }}>{pctText(x.pct)}</span>}</span>;
                   })}
+                  {!q?.exts || !Object.keys(q.exts).length ? <span style={{ color: T.mute }}>–</span> : null}
                 </div>
               </div>
             )}
@@ -581,7 +570,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         </div>
       )}
       <div style={{ marginTop: 10, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊、盤前／盤後／24h 價。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
+        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
       </div>
     </section>
   );
