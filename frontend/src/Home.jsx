@@ -485,6 +485,14 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const rows = side === "B" ? bullRows : bearRows;
   const shown = all ? rows : rows.slice(0, CONF_SHOW);
   const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
+  const [mgn, setMgn] = useState({ data: null, stale: false });   // /margin.json：同 02 Triple Band 一樣直接讀，Data 頁改 margin 後即時更新（唔等完整掃描）
+  useEffect(() => {
+    fetch("/margin.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d || !d.data) return;
+      const age = d.as_of ? (Date.now() - new Date(d.as_of).getTime()) / 864e5 : 0;
+      setMgn({ data: d.data, stale: age > 30, asOf: d.as_of });
+    }).catch(() => {});
+  }, []);
   const [open, setOpen] = useState(null);   // 展開咗邊隻（ticker）
   const [tfMap, setTfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("os_conf_tf") || "{}") || {}; } catch (e) { return {}; } });   // ticker → D/W/M（同 My List 一樣：撳圖輪流切換）
   const cycleTf = (t) => setTfMap((m) => { const v = m[t] || "D"; const n = { ...m, [t]: v === "D" ? "W" : v === "W" ? "M" : "D" }; try { localStorage.setItem("os_conf_tf", JSON.stringify(n)); } catch (e) { /* ignore */ } return n; });
@@ -573,7 +581,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
             <div key={r.sym}>
             <button type="button" onClick={() => setOpen(open === r.ticker ? null : r.ticker)} aria-expanded={open === r.ticker} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
               style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
-              <div style={{ width: 56, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}{r.margin != null && <sup title={r.margin <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(r.margin)}%`} style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: T.txt, lineHeight: 0 }}>{r.margin <= 0 ? "✕" : Math.round(r.margin)}</sup>}</div>
+              <div style={{ width: 56, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}{(() => { const mv = mgn.data ? mgn.data[r.ticker] : r.margin; return mv != null && <sup title={(mv <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(mv)}%`) + (mgn.stale ? `（資料 ${mgn.asOf}，已過期）` : "")} style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: T.txt, opacity: mgn.stale ? 0.55 : 1, lineHeight: 0 }}>{mv <= 0 ? "✕" : Math.round(mv)}</sup>; })()}</div>
               <div style={{ display: "flex", gap: 4, width: 145 }}>
                 {[0, 3, 6].map((o) => (
                   <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 1 }}>
