@@ -1,7 +1,7 @@
 import { marketsClosed } from "./marketHours";
 import STOCK_NAMES from "./names.json";
 import FUND from "./fundamentals.json";   // {ticker: [總股本, EPS TTM]}（算市盈率／總市值）   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
 
@@ -437,12 +437,23 @@ function fmtBig(n, unit) {
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
 function MiniChart({ bars, emas, utf, tf, T }) {
-  const W = 168, H = 92, n = bars.length, step = (W - 12) / n;
+  // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高
+  const box = useRef(null), [W, setW] = useState(168);
+  useEffect(() => {
+    const el = box.current; if (!el) return undefined;
+    const fit = () => setW(Math.max(168, Math.round(el.clientWidth)));
+    fit();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(fit); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const H = W > 300 ? Math.round(92 + Math.min(40, (W - 300) / 6)) : 92, n = bars.length, step = (W - 12) / n;
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 34);   // 上下留位畀 UT 三角形
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", flexShrink: 0, borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
+    <div ref={box} style={{ width: "100%" }}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
         const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
         return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.34} y={t} width={Math.max(1, step * 0.68)} height={Math.max(1, bt - t)} fill={c} /></g>;
@@ -462,6 +473,7 @@ function MiniChart({ bars, emas, utf, tf, T }) {
       })}
       <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
     </svg>
+    </div>
   );
 }
 const SESS_NAME = { pre: "盤前", post: "盤後", overnight: "夜盤 24h" };
@@ -624,22 +636,22 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                 ["市盈率", pe, T.txt], ["總市值", f && px ? fmtBig(f[0] * px) : "–", T.txt],
               ];
               return (
-                <div style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
+                <div className="os-xwrap" style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
                   {(() => {
                     const tf = tfMap[r.ticker] || "D", src = tf === "D" ? r : r[tf], bars = src?.bars;
                     return (
-                      <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" style={{ flexShrink: 0, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+                      <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
                         {bars && bars.length > 5
                           ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tf={tf} T={T} />
-                          : <div style={{ width: 168, height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{tf} 線待下次掃描</div>}
+                          : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{tf} 線待下次掃描</div>}
                       </div>
                     );
                   })()}
-                  <div style={{ flex: "1 1 0", minWidth: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gridAutoRows: 23, gap: "0 8px", alignContent: "space-between" }}>
+                  <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
                     {stats.map(([l, v, c]) => (
                       <div key={l} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4, minWidth: 0, borderBottom: `1px solid ${T.line}` }}>
-                        <span style={{ fontFamily: SANS, fontSize: 10, color: T.mute, whiteSpace: "nowrap" }}>{l}</span>
-                        <span style={{ fontFamily: M, fontSize: 11, fontVariantNumeric: "tabular-nums", color: c, whiteSpace: "nowrap" }}>{v}</span>
+                        <span className="os-xl" style={{ fontFamily: SANS, color: T.mute, whiteSpace: "nowrap" }}>{l}</span>
+                        <span className="os-xv" style={{ fontFamily: M, fontVariantNumeric: "tabular-nums", color: c, whiteSpace: "nowrap" }}>{v}</span>
                       </div>
                     ))}
                   </div>
@@ -810,6 +822,16 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-spark{flex:1 1 0;min-width:0;min-height:44px}
     .os-tabs{display:none}
     .os-h1{font-size:34px}
+    .os-xchart{flex:0 0 168px;min-width:0}
+    .os-xstats{flex:1 1 0;min-width:0;grid-auto-rows:23px;gap:0 8px}
+    .os-xl{font-size:10px}
+    .os-xv{font-size:11px}
+    @media (min-width:760px){
+      .os-xchart{flex:3 1 0}
+      .os-xstats{flex:2 1 0;grid-auto-rows:28px;gap:0 24px}
+      .os-xl{font-size:12px}
+      .os-xv{font-size:13px}
+    }
     @media (max-width:1199px){
       .os-side{flex-basis:190px;width:190px}
       .os-main{padding:22px 24px 40px}
