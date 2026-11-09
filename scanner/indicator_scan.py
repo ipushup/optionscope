@@ -327,6 +327,12 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     r["bars"] = [[round(float(x), 4) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(40).values.tolist()]
                 except Exception:  # noqa: BLE001
                     pass
+                try:   # 同 40 棒對齊嘅 EMA 10/20/50/89/250 線（用全段收市價計，250 要夠歷史先出，唔夠就唔畫）
+                    close = df["Close"].astype(float)
+                    r["emas"] = {str(p_): [round(float(v), 4) for v in close.ewm(span=p_, adjust=False).mean().tail(40).values]
+                                 for p_ in (10, 20, 50, 89, 250) if len(close) >= p_}
+                except Exception:  # noqa: BLE001
+                    pass
                 r["asof_date"] = str(df.index[-1].date())
                 for key, d in tf_data.items():
                     try:

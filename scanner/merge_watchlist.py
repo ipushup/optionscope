@@ -246,6 +246,9 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
         bars = indicators.get(row["ticker"], {}).get("bars")
         if bars and _conf_n(row) >= 5:
             row["bars"] = bars
+            emas = indicators.get(row["ticker"], {}).get("emas")
+            if emas:
+                row["emas"] = emas
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
