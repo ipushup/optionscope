@@ -232,7 +232,13 @@ function BandSection({ band, bq, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
   const [mkt, setMkt] = useState(() => { try { return localStorage.getItem("os_band_mkt") === "HK" ? "HK" : "US"; } catch { return "US"; } });
-  const pickMkt = (m) => { setMkt(m); try { localStorage.setItem("os_band_mkt", m); } catch { /* */ } };
+  const [allConf, setAllConf] = useState(false), [allForm, setAllForm] = useState(false);   // 未展開前最多顯示 BAND_SHOW 隻
+  const pickMkt = (m) => { setMkt(m); setAllConf(false); setAllForm(false); try { localStorage.setItem("os_band_mkt", m); } catch { /* */ } };
+  const moreBtn = (all, setAll, total) => total > BAND_SHOW && (
+    <button type="button" onClick={() => setAll((v) => !v)} style={{ display: "block", width: "100%", padding: "10px 0", border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer" }}>
+      {all ? "收埋" : `展開全部 ${total} 隻`}
+    </button>
+  );
   const isHK = mkt === "HK";
   const [sigAt, setSigAt] = useState(null);
   const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
@@ -385,7 +391,8 @@ function BandSection({ band, bq, T }) {
           {confRows.length > 0 && (
             <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
               <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700 }}>Confirmed signals{isHK ? " · HK" : ""} <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>{isHK ? "observe only" : "buy next open"}</span></div>
-              <div>{confRows.map(renderCard)}</div>
+              <div>{(allConf ? confRows : confRows.slice(0, BAND_SHOW)).map(renderCard)}</div>
+              {moreBtn(allConf, setAllConf, confRows.length)}
             </div>
           )}
           <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
@@ -394,7 +401,8 @@ function BandSection({ band, bq, T }) {
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>{isHK ? (band?.forming_hk ? "No HK forming signals." : "HK forming not scanned yet — appears after the next full Triple Band scan.") : "No forming signals."}</div>
             ) : (
               <div>
-                {rows.map(renderCard)}
+                {(allForm ? rows : rows.slice(0, BAND_SHOW)).map(renderCard)}
+                {moreBtn(allForm, setAllForm, rows.length)}
               </div>
             )}
           </div>
@@ -410,6 +418,7 @@ function BandSection({ band, bq, T }) {
 
 // ── 訊號共振榜：Data 頁 D/W/M × UT/HV/TB 九格，最近 5 棒內同向訊號數 ≥ 5（唔加權，純數數）──
 const CONF_MIN = 5, CONF_BARS = 5, CONF_SHOW = 8;
+const BAND_SHOW = 8;   // 02 Triple Band：Confirmed／Forming 未展開前最多顯示幾隻
 const CONF_KEYS = ["UT", "HV", "TB"];
 function confSigs(r) {
   // 返回 9 格 [{s, n} | null]，次序 D UT/HV/TB, W …, M …
