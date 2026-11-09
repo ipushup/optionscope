@@ -434,12 +434,15 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, ticker: r.ticker, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
   const shown = all ? rows : rows.slice(0, CONF_SHOW);
   const noSell = wl?.rows && !wl.rows.some((r) => r.tb !== undefined);
+  const [open, setOpen] = useState(null);   // 展開咗邊隻（ticker）
+  const [names, setNames] = useState({});
+  useEffect(() => { fetch(`${BASE}/names.json`).then((r) => (r.ok ? r.json() : {})).then(setNames).catch(() => {}); }, []);
   const [lq, setLq] = useState({});   // Longbridge 即時：{ticker: {last, pct, ext, sess}}
   const symKey = shown.map((r) => r.ticker).join(",");
   useEffect(() => {
@@ -459,7 +462,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         const d = await r.json(), m = {};
         for (const q of d.quotes || []) {
           const t = back[q.symbol];
-          if (t && q.reg > 0) m[t] = { last: q.reg, pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct, sess: q.session };
+          if (t && q.reg > 0) m[t] = { last: q.reg, pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct, sess: q.session, exts: q.ext || {} };
         }
         if (alive && Object.keys(m).length) { setLq((o) => ({ ...o, ...m })); got = true; }
       } catch (e) { /* 冇即時價 → 顯示 – */ }
@@ -519,8 +522,10 @@ function ConfluenceSection({ wl, T, onNavigate }) {
           {shown.length === 0 && <div style={{ padding: "14px 0", fontFamily: M, fontSize: 12, color: T.dim }}>冇股票達到 {CONF_MIN}/9。</div>}
           {shown.map((r) => {
             const q = lq[r.ticker];
+            const isOpen = open === r.ticker;
             return (
-            <button key={r.sym} type="button" onClick={() => onNavigate && onNavigate("watchlist")} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
+            <div key={r.sym}>
+            <button type="button" onClick={() => setOpen(open === r.ticker ? null : r.ticker)} aria-expanded={open === r.ticker} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
               style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
               <div style={{ width: 48, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}</div>
               <div style={{ display: "flex", gap: 4, width: 145 }}>
@@ -537,6 +542,35 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                 <div style={{ width: 14, display: "flex", justifyContent: "center", color: q?.ext == null ? T.mute : q.ext >= 0 ? T.up : T.dn }} title={q?.ext != null ? `${SESS_NAME[q.sess] || q.sess} ${pctText(q.ext)}` : undefined}>{q?.ext != null ? sessIcon(q.sess) : null}</div>
               </div>
             </button>
+            {isOpen && (
+              <div style={{ padding: "8px 2px 12px", display: "flex", flexDirection: "column", gap: 8, borderTop: `1px dashed ${T.line}` }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: T.sub, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{names[r.ticker] || r.ticker}<span style={{ fontFamily: M, fontSize: 11, fontWeight: 400, color: T.mute }}> · {r.ticker}</span></div>
+                  <button type="button" onClick={() => onNavigate && onNavigate("watchlist")} style={{ border: 0, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", padding: 0 }}>Data →</button>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontFamily: M, fontSize: 10, color: T.mute, width: 30 }}>EMA</span>
+                  {r.ema ? (
+                    <span style={{ display: "flex", gap: 3 }}>
+                      {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 10, fontWeight: 600, padding: "1px 4px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
+                    </span>
+                  ) : <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>– （下次掃描後顯示）</span>}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[["pre", "盤前"], ["post", "盤後"], ["overnight", "24h"]].map(([k, lb]) => {
+                    const x = q?.exts?.[k], c = x?.pct == null ? T.mute : x.pct >= 0 ? T.up : T.dn;
+                    return (
+                      <div key={k} style={{ flex: "1 1 0", minWidth: 0, border: `1px solid ${T.line}`, borderRadius: 8, padding: "6px 8px" }}>
+                        <div style={{ fontFamily: SANS, fontSize: 10.5, color: "#00b8a5" }}>{lb}</div>
+                        <div style={{ fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 13, color: x ? T.txt : T.mute, whiteSpace: "nowrap" }}>{x ? fmt(x.last, x.last >= 1000 ? 0 : 2) : "–"}</div>
+                        <div style={{ fontFamily: M, fontVariantNumeric: "tabular-nums", fontSize: 11, color: c }}>{x?.pct != null ? pctText(x.pct) : ""}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            </div>
             );
           })}
           {rows.length > CONF_SHOW && (
@@ -547,7 +581,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         </div>
       )}
       <div style={{ marginTop: 10, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行去 Data 頁睇詳情。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
+        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊、盤前／盤後／24h 價。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
       </div>
     </section>
   );
