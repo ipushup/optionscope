@@ -350,7 +350,9 @@ async function handleQuotes(req, env, url) {
     // 盤前／盤後／夜盤：升跌用「常規收市價」做基準（同 Longbridge app 一樣）；常規時段先用昨收
     const reg = parseFloat(q.last_done ?? q.lastDone);
     const base = got.sess !== "regular" && reg > 0 ? reg : prev;
-    out.push({ symbol: q.symbol, last: got.last, prev_close: base, change: got.last - base,
+    const nf = (k) => { const v = parseFloat(q[k]); return v > 0 ? v : null; };   // 常規時段當日 高／低／開／量／額（展開行用）
+    out.push({ symbol: q.symbol, open: nf("open"), high: nf("high"), low: nf("low"), volume: nf("volume"), turnover: nf("turnover"), prev_reg: prev,
+               last: got.last, prev_close: base, change: got.last - base,
                pct: (got.last / base - 1) * 100,
                reg: reg > 0 ? reg : got.last, reg_pct: (reg > 0 ? reg / prev - 1 : got.last / prev - 1) * 100, asof: new Date(got.ts * 1000).toISOString(), session: got.sess,
                ext: Object.fromEntries(got.all.filter((c) => c.sess !== "regular").map((c) => [c.sess, { last: c.last, pct: reg > 0 ? (c.last / reg - 1) * 100 : null, ts: new Date(c.ts * 1000).toISOString() }])) });

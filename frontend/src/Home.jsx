@@ -1,5 +1,6 @@
 import { marketsClosed } from "./marketHours";
-import STOCK_NAMES from "./names.json";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
+import STOCK_NAMES from "./names.json";
+import FUND from "./fundamentals.json";   // {ticker: [總股本, EPS TTM]}（算市盈率／總市值）   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
@@ -420,6 +421,26 @@ function confSigs(r) {
   };
   return [...one(r), ...one(r.W || {}), ...one(r.M || {})];
 }
+// 展開行數據：億／萬／M 格式
+function fmtBig(n, unit) {
+  if (n == null || !isFinite(n)) return "–";
+  if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
+  return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
+}
+function MiniChart({ bars, T }) {
+  const W = 168, H = 92, n = bars.length, step = (W - 12) / n;
+  const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));
+  const y = (v) => 16 + ((hi - v) / (hi - lo || 1)) * (H - 24);
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", flexShrink: 0, borderRadius: 8, background: T.bg }} role="img" aria-label={`日線 ${n} 棒`}>
+      {bars.map((b, i) => {
+        const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
+        return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.34} y={t} width={Math.max(1, step * 0.68)} height={Math.max(1, bt - t)} fill={c} /></g>;
+      })}
+      <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">D · {n} 棒</text>
+    </svg>
+  );
+}
 const SESS_NAME = { pre: "盤前", post: "盤後", overnight: "夜盤 24h" };
 // pre = 日出、post = 月、overnight(24h) = 時鐘；顏色跟該時段升跌
 function sessIcon(sess) {
@@ -435,7 +456,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, bars: r.bars, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
@@ -462,7 +483,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         const d = await r.json(), m = {};
         for (const q of d.quotes || []) {
           const t = back[q.symbol];
-          if (t && q.reg > 0) m[t] = { last: q.reg, pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct, sess: q.session, exts: q.ext || {} };
+          if (t && q.reg > 0) m[t] = { last: q.reg, pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct, sess: q.session, exts: q.ext || {}, open: q.open, high: q.high, low: q.low, prev: q.prev_reg, vol: q.volume, tov: q.turnover };
         }
         if (alive && Object.keys(m).length) { setLq((o) => ({ ...o, ...m })); got = true; }
       } catch (e) { /* 冇即時價 → 顯示 – */ }
@@ -559,6 +580,32 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                 </div>
               </div>
             )}
+            {isOpen && (() => {
+              const hk = /\.HK$/.test(r.ticker), f = FUND[r.ticker], px = q?.last, pd = px >= 100 ? 2 : 3, pf3 = (v) => (v != null ? fmt(v, pd) : "–");
+              const vs = (v) => (v == null || q?.prev == null ? T.txt : v >= q.prev ? T.up : T.dn);   // 同昨收比較定顏色
+              const pe = f && px ? (f[1] > 0 ? (px / f[1]).toFixed(2) : "虧損") : "–";
+              const stats = [
+                ["最高", pf3(q?.high), vs(q?.high)], ["最低", pf3(q?.low), vs(q?.low)],
+                ["今開", pf3(q?.open), vs(q?.open)], ["昨收", pf3(q?.prev), T.txt],
+                ["成交量", fmtBig(q?.vol, hk ? "億" : "M"), T.txt], ["成交額", fmtBig(q?.tov), T.txt],
+                ["市盈率", pe, T.txt], ["總市值", f && px ? fmtBig(f[0] * px) : "–", T.txt],
+              ];
+              return (
+                <div style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
+                  {r.bars && r.bars.length > 5
+                    ? <MiniChart bars={r.bars} T={T} />
+                    : <div style={{ width: 168, height: 92, flexShrink: 0, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>日線圖待下次掃描</div>}
+                  <div style={{ flex: "1 1 0", minWidth: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gridAutoRows: 23, gap: "0 8px", alignContent: "space-between" }}>
+                    {stats.map(([l, v, c]) => (
+                      <div key={l} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4, minWidth: 0, borderBottom: `1px solid ${T.line}` }}>
+                        <span style={{ fontFamily: SANS, fontSize: 10, color: T.mute, whiteSpace: "nowrap" }}>{l}</span>
+                        <span style={{ fontFamily: M, fontSize: 11, fontVariantNumeric: "tabular-nums", color: c, whiteSpace: "nowrap" }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
             </div>
             );
           })}
@@ -570,7 +617,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
         </div>
       )}
       <div style={{ marginTop: 10, fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>
-        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
+        每組三格 = UT / HV / TB；亮色 = 該格最近 {CONF_BARS} 棒內出現同向訊號，格內數字 = 幾棒前（1 = 今日）。數據來自 Yahoo Finance K 線掃描（收市後更新），撳一行展開：股票名、EMA 疊（10/20/50/89/250）、盤前／盤後／24h 價、當日高低開收量額、市盈率（現價 ÷ EPS TTM）、總市值、40 棒日線。{noSell ? " TB 賣出訊號要等下一次完整掃描先會出現。" : ""}
       </div>
     </section>
   );
