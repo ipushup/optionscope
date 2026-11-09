@@ -479,7 +479,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, ticker: r.ticker, ema: r.ema, bars: r.bars, emas: r.emas, utf: r.utf, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, margin: r.margin, ema: r.ema, bars: r.bars, emas: r.emas, utf: r.utf, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
@@ -554,7 +554,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
       ) : (
         <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "6px 10px 10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, height: 24, fontFamily: SANS, fontSize: 10.5, color: T.mute }}>
-            <div style={{ width: 48 }}>Symbol</div>
+            <div style={{ width: 56 }}>Symbol</div>
             <div style={{ display: "flex", gap: 4, width: 145 }}>
               {["D", "W", "M"].map((t) => <div key={t} style={{ flex: "1 1 0", textAlign: "center" }}>{t}</div>)}
             </div>
@@ -573,7 +573,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
             <div key={r.sym}>
             <button type="button" onClick={() => setOpen(open === r.ticker ? null : r.ticker)} aria-expanded={open === r.ticker} title={r.hit.map((x, i) => x ? `${["D", "W", "M"][Math.floor(i / 3)]} ${CONF_KEYS[i % 3]} ${side}${x.n}` : null).filter(Boolean).join(" · ")}
               style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", height: 32, padding: 0, border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.txt, cursor: "pointer", textAlign: "left", font: "inherit" }}>
-              <div style={{ width: 48, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}</div>
+              <div style={{ width: 56, fontFamily: SANS, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.sym}{r.margin != null && <sup title={r.margin <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(r.margin)}%`} style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: T.txt, lineHeight: 0 }}>{r.margin <= 0 ? "✕" : Math.round(r.margin)}</sup>}</div>
               <div style={{ display: "flex", gap: 4, width: 145 }}>
                 {[0, 3, 6].map((o) => (
                   <div key={o} style={{ flex: "1 1 0", display: "flex", gap: 1 }}>
