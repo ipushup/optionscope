@@ -637,7 +637,7 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={tdSig}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
                 <td style={tdSig}>{sigCell((r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.s, (r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.n, "Triple Band：B = 買入確認（TB）、S = 賣出（TS），數字 = 幾多棒前（最近 20 棒）")}</td>
                 <td style={tdSig}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
+                <td style={{ padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
                   {N(r.last)}
                 </td>
                 <td style={{ padding: isMobile ? "7px 1px 7px 6px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
