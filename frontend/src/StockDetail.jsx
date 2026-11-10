@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { marketsClosed, hkClosed } from "./marketHours";
 import STOCK_NAMES from "./names.json";
+import { chartSeries } from "./indicators";
 import FUND from "./fundamentals.json";   // {ticker: [總股本, EPS TTM]}（算市盈率／總市值）
 
 /**
@@ -74,14 +75,45 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tf, T }) {
   );
 }
 
+// ticker → Longbridge symbol（0700.HK → 700.HK；NVDA → NVDA.US）；唔識就 null
+function lbSym(ticker) {
+  let m;
+  if ((m = ticker.match(/^(\d{1,5})\.HK$/))) return `${parseInt(m[1], 10)}.HK`;
+  return /^[A-Z]{1,5}$/.test(ticker) ? `${ticker}.US` : null;
+}
+
+// 掃描冇帶 K 線嘅股票：展開時先經 Worker /api/candles 拉，前端計 EMA／UT（5 分鐘內同一隻唔重拉）
+const CANDLE_CACHE = new Map();   // "sym|tf" -> {at, data}
+const SHOW_N = { D: 100, W: 80, M: 60 };
+function useCandles(ticker, tf, enabled) {
+  const key = `${lbSym(ticker)}|${tf}`;
+  const [st, setSt] = useState(() => { const h = CANDLE_CACHE.get(key); return h && Date.now() - h.at < 3e5 ? { key, data: h.data } : { key, data: null }; });
+  useEffect(() => {
+    const sym = lbSym(ticker);
+    if (!enabled || !sym) return undefined;
+    const h = CANDLE_CACHE.get(key);
+    if (h && Date.now() - h.at < 3e5) { setSt({ key, data: h.data }); return undefined; }
+    let alive = true;
+    setSt({ key, data: null, loading: true });
+    fetch(`/api/candles?symbol=${encodeURIComponent(sym)}&tf=${tf}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const data = d && d.bars && d.bars.length > 5 ? chartSeries(d.bars, SHOW_N[tf]) : false;
+        if (data) CANDLE_CACHE.set(key, { at: Date.now(), data });
+        if (alive) setSt({ key, data });
+      })
+      .catch(() => { if (alive) setSt({ key, data: false }); });
+    return () => { alive = false; };
+  }, [key, enabled, ticker, tf]);
+  return st.key === key ? st : { key, data: null, loading: enabled };
+}
+
 // Longbridge 即時報價（只喺未由外面傳入 q 時用，例如 Data 頁）：每 15 秒，休市拉一次就停
 function useLiveQuote(ticker, enabled) {
   const [q, setQ] = useState(null);
   useEffect(() => {
     if (!enabled || !ticker) return undefined;
-    let sym = null, m;
-    if ((m = ticker.match(/^(\d{1,5})\.HK$/))) sym = `${parseInt(m[1], 10)}.HK`;
-    else if (/^[A-Z]{1,5}$/.test(ticker)) sym = `${ticker}.US`;
+    const sym = lbSym(ticker);
     if (!sym) return undefined;
     const hk = sym.endsWith(".HK");
     let alive = true, got = false;
@@ -118,7 +150,9 @@ export default function StockDetail({ r, q: qProp, T }) {
     ["成交量", fmtBig(q?.vol, hk ? "億" : "M"), T.txt], ["成交額", fmtBig(q?.tov), T.txt],
     ["市盈率", pe, T.txt], ["總市值", f && px ? fmtBig(f[0] * px) : "–", T.txt],
   ];
-  const tf = tfMap[r.ticker] || "D", src = tf === "D" ? r : r[tf], bars = src?.bars;
+  const tf = tfMap[r.ticker] || "D", own0 = tf === "D" ? r : r[tf];
+  const cd = useCandles(r.ticker, tf, !(own0?.bars && own0.bars.length > 5));   // 掃描有就用掃描，冇先即時拉
+  const src = own0?.bars && own0.bars.length > 5 ? own0 : cd.data || null, bars = src?.bars;
   return (
     <div>
       <style>{`
@@ -152,7 +186,7 @@ export default function StockDetail({ r, q: qProp, T }) {
         <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
           {bars && bars.length > 5
             ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tf={tf} T={T} />
-            : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{r.bars || r.W?.bars || r.M?.bars ? `${tf} 線待下次掃描` : "K 線只提供共振 ≥5/9 嘅股票"}</div>}
+            : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : lbSym(r.ticker) ? "K 線暫時攞唔到" : "呢隻股票冇 K 線"}</div>}
         </div>
         <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
           {stats.map(([l, v, c]) => (

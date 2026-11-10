@@ -306,6 +306,11 @@ export default function Watchlist({ isMobile, light }) {
   // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 彈個3色揀色
   // popup，㩒邊個色就即刻confirm用嗰隻色（唔使再多撳一次OK），避免手滑
   // 㩒錯就整到成行變色。
+  // 保證金率直接讀 /margin.json（同主頁 02／03 同一份，唔用 merged 檔入面烘死嘅值）
+  const [mgn, setMgn] = useState({});
+  useEffect(() => {
+    fetch("/margin.json", { cache: "no-store" }).then((x) => (x.ok ? x.json() : null)).then((d) => { if (d && d.data) setMgn(d.data); }).catch(() => {});
+  }, []);
   const [openT, setOpenT] = useState(null);   // 展開緊邊隻（一次一隻）
   const wrapRef = useRef(null);
   const [wrapW, setWrapW] = useState(0);
@@ -621,9 +626,9 @@ export default function Watchlist({ isMobile, light }) {
                       }}>└</span>
                     )}
                     {r.symbol}
-                    {r.margin != null && (
-                      <sup title={marginTitle(r.margin)} style={{ marginLeft: 2, lineHeight: 0, fontSize: "0.68em", fontWeight: 700, color: marginColor(r.margin) }}>
-                        {marginGlyph(r.margin)}
+                    {mgn[r.ticker] != null && (
+                      <sup title={marginTitle(mgn[r.ticker])} style={{ marginLeft: 2, lineHeight: 0, fontSize: "0.68em", fontWeight: 700, color: marginColor(mgn[r.ticker]) }}>
+                        {marginGlyph(mgn[r.ticker])}
                       </sup>
                     )}
                   </span>
