@@ -174,14 +174,14 @@ export default function StockDetail({ r, q: qProp, T }) {
           .os-xv{font-size:13px}
         }
       `}</style>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 10px", padding: "6px 2px 9px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ fontFamily: SANS, fontSize: 12, color: T.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{STOCK_NAMES[r.ticker] || r.ticker}</span>
+      <div style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 2px 9px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 0" }}>
+          <span title={STOCK_NAMES[r.ticker] || r.ticker} style={{ fontFamily: SANS, fontSize: 12, color: T.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "0 1 auto" }}>{STOCK_NAMES[r.ticker] || r.ticker}</span>
           {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0 }}>
             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
           </span>}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontFamily: M, fontSize: 11, color: T.dim, minWidth: 0 }}>
+        <div style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", gap: 8, fontFamily: M, fontSize: 11, color: T.dim, flexShrink: 0, whiteSpace: "nowrap" }}>
           {(q?.sess && q.sess !== "regular" ? [q.sess] : []).filter((k) => q?.exts?.[k]).map((k) => {   // 只顯示而家呢個時段（夜盤時唔顯示舊嘅盤前／盤後）
             const x = q.exts[k], c = x.pct == null ? T.mute : x.pct >= 0 ? T.up : T.dn;
             return <span key={k} style={{ whiteSpace: "nowrap" }}>{fmt(x.last, x.last >= 1000 ? 0 : 2)} {x.pct != null && <span style={{ color: c }}>{pctText(x.pct)}</span>} <SessBadge sess={k} T={T} size={9} /></span>;
