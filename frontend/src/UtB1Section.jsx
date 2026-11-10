@@ -81,7 +81,7 @@ export default function UtB1Section({ wl, T }) {
   return (
     <section aria-labelledby="s5">
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 14 }}>
-        <div id="s5" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>05 / UT B1 · S1 · 30D</div>
+        <div id="s5" style={{ fontFamily: M, fontSize: 11, letterSpacing: "0.06em", color: T.mute, whiteSpace: "nowrap" }}>05 / UT B1 · S1 · 60D</div>
         <div style={{ display: "flex", gap: 10, fontFamily: M, fontSize: 11, color: T.dim }}>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: T.up }} />B1</span>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: T.dn }} />S1</span>
@@ -118,7 +118,7 @@ export default function UtB1Section({ wl, T }) {
                     {days.map((dt, i) => {
                       const x = d[k]?.[i];
                       if (!x) return null;
-                      const bw = Math.max(2, Math.min(9, slot - 3));
+                      const bw = Math.max(1.5, Math.min(9, slot - 1.2));
                       const hb = Math.max(1, (x[0] / ymax) * (PH / 2));
                       const hs = x[3] != null ? Math.max(1, (x[3] / ymax) * (PH / 2)) : 0;
                       return (
@@ -134,6 +134,8 @@ export default function UtB1Section({ wl, T }) {
                 {days.map((dt, i) => {
                   const mo = parseInt(dt.slice(5, 7), 10), dd = parseInt(dt.slice(8, 10), 10);
                   const newMonth = i === 0 || dt.slice(5, 7) !== days[i - 1].slice(5, 7);
+                  if (!(newMonth || i % 5 === 0 || i === days.length - 1 || i === cur)) return null;   // 60 日：每 5 日標一次，換月加月份
+                  if (!newMonth && !(i === days.length - 1 || i === cur) && i > days.length - 4) return null;   // 避免尾段同最新日期擠埋一齊
                   return (
                     <g key={dt}>
                       <text x={X(i)} y={H - 18} textAnchor="middle" fontSize="7.5" letterSpacing="-0.3" fontFamily={M} fill={i === cur ? T.txt : T.mute}>{dd}</text>

@@ -352,7 +352,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     if pos is not None:
                         idx = [str(d.date()) for d in df.index]
                         ut_hist[t] = [(idx[i], 1 if (pos[i] == 1 and pos[i - 1] != 1) else 0, 1 if pos[i] != 0 else 0, 1 if (pos[i] == -1 and pos[i - 1] != -1) else 0)
-                                      for i in range(max(1, len(pos) - 45), len(pos))]
+                                      for i in range(max(1, len(pos) - 75), len(pos))]
                 except Exception:  # noqa: BLE001
                     pass
                 r["last_close"] = round(float(df["Close"].iloc[-1]), 4)
@@ -396,7 +396,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
             **r,
         }
 
-    # 05 / UT B1：每日「當日轉多」嘅股票佔有效股票％，US／HK 分開；最近 30 個交易日（兩邊日期聯集）
+    # 05 / UT B1：每日「當日轉多」嘅股票佔有效股票％，US／HK 分開；最近 60 個交易日（兩邊日期聯集）
     agg = {"US": {}, "HK": {}}
     for t, rows in ut_hist.items():
         mk = "HK" if t.endswith(".HK") else "US"
@@ -406,7 +406,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                 a[0] += flip
                 a[1] += 1
                 a[2] += sflip
-    all_days = sorted(set(agg["US"]) | set(agg["HK"]))[-30:]
+    all_days = sorted(set(agg["US"]) | set(agg["HK"]))[-60:]
     ut_b1 = {"days": all_days}
     for mk in ("US", "HK"):
         ut_b1[mk] = [[round(agg[mk][d][0] / agg[mk][d][1] * 100, 2), agg[mk][d][0], agg[mk][d][1], round(agg[mk][d][2] / agg[mk][d][1] * 100, 2), agg[mk][d][2]] if d in agg[mk] and agg[mk][d][1] >= 20 else None for d in all_days]
@@ -414,7 +414,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     try:   # 指數收市（SPX／恒指）對齊同一批日子，05 圖做背景線
         ix = {}
         for mk, sym in (("US", "^GSPC"), ("HK", "^HSI")):
-            px = yf.download(sym, period="6mo", interval="1d", progress=False, auto_adjust=False)["Close"].squeeze().dropna()
+            px = yf.download(sym, period="1y", interval="1d", progress=False, auto_adjust=False)["Close"].squeeze().dropna()
             m = {str(d.date()): round(float(v), 2) for d, v in px.items()}
             ix[mk] = [m.get(d) for d in all_days]
         ut_b1["idx"] = ix
