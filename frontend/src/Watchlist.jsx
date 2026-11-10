@@ -1,6 +1,7 @@
 import { marketsClosed } from "./marketHours";
 import { Fragment, useEffect, useState, useRef } from "react";
 import WatchlistEditor from "./WatchlistEditor";
+import StockDetail from "./StockDetail";
 
 /**
  * Watchlist.jsx — 你原本 TradingView watchlist 加埋 Triple Band / UT Bot /
@@ -305,6 +306,16 @@ export default function Watchlist({ isMobile, light }) {
   // 㩒一行：已highlight → 直接取消，唔使問。未highlight → 彈個3色揀色
   // popup，㩒邊個色就即刻confirm用嗰隻色（唔使再多撳一次OK），避免手滑
   // 㩒錯就整到成行變色。
+  const [openT, setOpenT] = useState(null);   // 展開緊邊隻（一次一隻）
+  const wrapRef = useRef(null);
+  const [wrapW, setWrapW] = useState(0);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(() => setWrapW(el.clientWidth));
+    ro.observe(el); setWrapW(el.clientWidth);
+    return () => ro.disconnect();
+  });
   const toggleHighlight = (ticker, symbol) => {
     if (highlighted[ticker]) applyHighlightChange(ticker, null);
     else setPicker({ ticker, symbol });
@@ -405,6 +416,7 @@ export default function Watchlist({ isMobile, light }) {
       const lv = live(r.ticker);
       return {
         ...r,
+        base: r0,   // 展開詳情用（永遠係日線欄位 + bars/emas/W/M）
         last: lv?.last ?? r.last,
         chg_pct: lv?.chg_pct ?? r.chg_pct,
         ext_chg_pct: lv?.ext_chg_pct ?? r.ext_chg_pct,
@@ -560,7 +572,7 @@ export default function Watchlist({ isMobile, light }) {
         </select>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <div ref={wrapRef} style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", minWidth: 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
           {/* 固定欄寬：排序／篩選／active 標示都唔會令欄位郁 */}
           <colgroup>
@@ -589,10 +601,10 @@ export default function Watchlist({ isMobile, light }) {
                 </td></tr>
               )}
               <tr
-                onClick={() => toggleHighlight(r.ticker, r.symbol)}
+                onClick={() => setOpenT(openT === r.ticker ? null : r.ticker)}
                 style={{ height: 32, cursor: "pointer", background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}
               >
-                <td style={{
+                <td title="撳 Symbol 揀顏色標記" onClick={(e) => { e.stopPropagation(); toggleHighlight(r.ticker, r.symbol); }} style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
                   fontWeight: 500, fontSize: 14, whiteSpace: "nowrap", fontFamily: SANS,
                   position: "sticky", left: 0, zIndex: 1,
@@ -630,6 +642,13 @@ export default function Watchlist({ isMobile, light }) {
                   {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}
                 </td>
               </tr>
+              {openT === r.ticker && (
+                <tr><td colSpan={COLS.length} style={{ padding: 0, borderBottom: `1px solid ${C.line}`, background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}>
+                  <div style={{ position: "sticky", left: 0, width: wrapW || "100%", boxSizing: "border-box", padding: "2px 6px 4px" }}>
+                    <StockDetail r={r.base} T={C} />
+                  </div>
+                </td></tr>
+              )}
               </Fragment>
             ))}
           </tbody>
