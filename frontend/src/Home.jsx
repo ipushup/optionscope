@@ -1,6 +1,6 @@
 import { marketsClosed, hkClosed } from "./marketHours";
 import STOCK_NAMES from "./names.json";
-import FUND from "./fundamentals.json";   // {ticker: [總股本, EPS TTM]}（算市盈率／總市值）   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
+import StockDetail, { SessBadge } from "./StockDetail";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useRef, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
@@ -77,15 +77,6 @@ function ageText(iso) {
   if (m < 60) return `${m} min ago`;
   if (m < 60 * 36) return `${Math.round(m / 60)} h ago`;
   return `${Math.round(m / 1440)} d ago`;
-}
-
-const SESS_BADGE = { pre: "Pre", post: "Post", overnight: "24h", 盤前: "Pre", 盤後: "Post", 夜盤: "24h" };
-const SESS_TITLE = { Pre: "盤前 Pre-market", Post: "盤後 Post-market", "24h": "夜盤 24h overnight" };
-// Longbridge 式斜體灰色小徽章
-function SessBadge({ sess, T, size = 9.5 }) {
-  const t = SESS_BADGE[sess];
-  if (!t) return null;
-  return <span title={SESS_TITLE[t]} style={{ display: "inline-block", transform: "skewX(-12deg)", background: T.line, color: T.sub, fontFamily: M, fontSize: size, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
 }
 
 function stamp(q) {
@@ -471,55 +462,6 @@ function confSigs(r) {
   };
   return [...one(r), ...one(r.W || {}), ...one(r.M || {})];
 }
-// 展開行數據：億／萬／M 格式
-function fmtBig(n, unit) {
-  if (n == null || !isFinite(n)) return "–";
-  if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
-  return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
-}
-function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tf, T }) {
-  // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高；顯示棒數按闊度自動調整（手機 40，PC 最多用盡已儲存嘅棒數）
-  const box = useRef(null), [W, setW] = useState(168);
-  useEffect(() => {
-    const el = box.current; if (!el) return undefined;
-    const fit = () => setW(Math.max(168, Math.round(el.clientWidth)));
-    fit();
-    if (typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(fit); ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  const H = W > 300 ? Math.round(92 + Math.min(40, (W - 300) / 6)) : 92;
-  const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 3.9))), step = (W - 12) / n;
-  const bars = allBars.slice(-n), utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
-  const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
-  const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
-  const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
-  const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 34);   // 上下留位畀 UT 三角形
-  return (
-    <div ref={box} style={{ width: "100%" }}>
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
-      {bars.map((b, i) => {
-        const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
-        return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.34} y={t} width={Math.max(1, step * 0.68)} height={Math.max(1, bt - t)} fill={c} /></g>;
-      })}
-      <clipPath id="mc-clip"><rect x="0" y="14" width={W} height={H - 14} /></clipPath>
-      <g clipPath="url(#mc-clip)" fill="none" strokeWidth="1" strokeLinejoin="round" opacity="0.9">
-        {Object.keys(EC).filter((p) => emas?.[p]?.length === n).map((p) => (
-          <polyline key={p} stroke={EC[p]} points={emas[p].map((v, i) => `${(6 + i * step + step / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ")} />
-        ))}
-      </g>
-      {utf && utf.length === n && utf.map((f, i) => {   // UT Bot：買 = 低位下面向上三角，賣 = 高位上面向下三角（同 01 Market Snapshot 一樣）
-        if (!f) return null;
-        const x = 6 + i * step + step / 2;
-        return f > 0
-          ? <path key={`u${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5).toFixed(1)} l-3 5.2 h6z`} fill={T.txt} />
-          : <path key={`u${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][1]) - 2.5).toFixed(1)} l-3 -5.2 h6z`} fill={T.txt} />;
-      })}
-      <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
-    </svg>
-    </div>
-  );
-}
 const SESS_NAME = { pre: "盤前", post: "盤後", overnight: "夜盤 24h" };
 // pre = 日出、post = 月、overnight(24h) = 時鐘；顏色跟該時段升跌
 function sessIcon(sess) {
@@ -550,8 +492,6 @@ function ConfluenceSection({ wl, T, onNavigate }) {
     }).catch(() => {});
   }, []);
   const [open, setOpen] = useState(null);   // 展開咗邊隻（ticker）
-  const [tfMap, setTfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("os_conf_tf") || "{}") || {}; } catch (e) { return {}; } });   // ticker → D/W/M（同 My List 一樣：撳圖輪流切換）
-  const cycleTf = (t) => setTfMap((m) => { const v = m[t] || "D"; const n = { ...m, [t]: v === "D" ? "W" : v === "W" ? "M" : "D" }; try { localStorage.setItem("os_conf_tf", JSON.stringify(n)); } catch (e) { /* ignore */ } return n; });
   const names = STOCK_NAMES;
   const [lq, setLq] = useState({});   // Longbridge 即時：{ticker: {last, pct, ext, sess}}
   const symKey = shown.map((r) => r.ticker).join(",");
@@ -652,56 +592,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                 <div style={{ width: 14, display: "flex", justifyContent: "center", color: q?.ext == null ? T.mute : q.ext >= 0 ? T.up : T.dn }} title={q?.ext != null ? `${SESS_NAME[q.sess] || q.sess} ${pctText(q.ext)}` : undefined}>{q?.ext != null ? sessIcon(q.sess) : null}</div>
               </div>
             </button>
-            {isOpen && (
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 10px", padding: "6px 2px 9px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                  <span style={{ fontFamily: SANS, fontSize: 12, color: T.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{names[r.ticker] || r.ticker}</span>
-                  {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0 }}>
-                    {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
-                  </span>}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontFamily: M, fontSize: 11, color: T.dim, minWidth: 0 }}>
-                  {(q?.sess && q.sess !== "regular" ? [q.sess] : []).filter((k) => q?.exts?.[k]).map((k) => {   // 只顯示而家呢個時段（夜盤時唔顯示舊嘅盤前／盤後）
-                    const x = q.exts[k], c = x.pct == null ? T.mute : x.pct >= 0 ? T.up : T.dn;
-                    return <span key={k} style={{ whiteSpace: "nowrap" }}>{fmt(x.last, x.last >= 1000 ? 0 : 2)} {x.pct != null && <span style={{ color: c }}>{pctText(x.pct)}</span>} <SessBadge sess={k} T={T} size={9} /></span>;
-                  })}
-                  {!q || (q.sess && q.sess !== "regular" && !q.exts?.[q.sess]) ? <span style={{ color: T.mute }}>–</span> : null}
-                </div>
-              </div>
-            )}
-            {isOpen && (() => {
-              const hk = /\.HK$/.test(r.ticker), f = FUND[r.ticker], px = q?.last, pd = px >= 100 ? 2 : 3, pf3 = (v) => (v != null ? fmt(v, pd) : "–");
-              const vs = (v) => (v == null || q?.prev == null ? T.txt : v >= q.prev ? T.up : T.dn);   // 同昨收比較定顏色
-              const pe = f && px ? (f[1] > 0 ? (px / f[1]).toFixed(2) : "虧損") : "–";
-              const stats = [
-                ["最高", pf3(q?.high), vs(q?.high)], ["最低", pf3(q?.low), vs(q?.low)],
-                ["今開", pf3(q?.open), vs(q?.open)], ["昨收", pf3(q?.prev), T.txt],
-                ["成交量", fmtBig(q?.vol, hk ? "億" : "M"), T.txt], ["成交額", fmtBig(q?.tov), T.txt],
-                ["市盈率", pe, T.txt], ["總市值", f && px ? fmtBig(f[0] * px) : "–", T.txt],
-              ];
-              return (
-                <div className="os-xwrap" style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
-                  {(() => {
-                    const tf = tfMap[r.ticker] || "D", src = tf === "D" ? r : r[tf], bars = src?.bars;
-                    return (
-                      <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
-                        {bars && bars.length > 5
-                          ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tf={tf} T={T} />
-                          : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{tf} 線待下次掃描</div>}
-                      </div>
-                    );
-                  })()}
-                  <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
-                    {stats.map(([l, v, c]) => (
-                      <div key={l} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 4, minWidth: 0, borderBottom: `1px solid ${T.line}` }}>
-                        <span className="os-xl" style={{ fontFamily: SANS, color: T.mute, whiteSpace: "nowrap" }}>{l}</span>
-                        <span className="os-xv" style={{ fontFamily: M, fontVariantNumeric: "tabular-nums", color: c, whiteSpace: "nowrap" }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+            {isOpen && <StockDetail r={r} q={q} T={T} />}
             </div>
             );
           })}
@@ -866,16 +757,6 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     .os-spark{flex:1 1 0;min-width:0;min-height:44px}
     .os-tabs{display:none}
     .os-h1{font-size:34px}
-    .os-xchart{flex:0 0 168px;min-width:0}
-    .os-xstats{flex:1 1 0;min-width:0;grid-auto-rows:23px;gap:0 8px}
-    .os-xl{font-size:10px}
-    .os-xv{font-size:11px}
-    @media (min-width:760px){
-      .os-xchart{flex:3 1 0}
-      .os-xstats{flex:2 1 0;grid-auto-rows:28px;gap:0 24px}
-      .os-xl{font-size:12px}
-      .os-xv{font-size:13px}
-    }
     @media (max-width:1199px){
       .os-side{flex-basis:190px;width:190px}
       .os-main{padding:22px 24px 40px}
