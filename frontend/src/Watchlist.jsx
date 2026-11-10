@@ -1,7 +1,7 @@
 import { marketsClosed } from "./marketHours";
 import { Fragment, useEffect, useState, useRef } from "react";
 import WatchlistEditor from "./WatchlistEditor";
-import StockDetail from "./StockDetail";
+import StockDetail, { sessIcon } from "./StockDetail";
 
 /**
  * Watchlist.jsx — 你原本 TradingView watchlist 加埋 Triple Band / UT Bot /
@@ -488,7 +488,7 @@ export default function Watchlist({ isMobile, light }) {
     { key: "st_k", label: "ST" },
     { key: "last", label: "Last" },
     { key: "chg_pct", label: "%Chg" },
-    { key: "ext_chg_pct", label: "E%Chg" },
+    { key: "ext_chg_pct", label: isMobile ? "E" : "E%Chg" },
   ];
   // 訊號：5 棒內綠／紅底白字（同 My List 一樣），之後綠／紅字；冇訊號 –
   const sigCell = (s, n, tip) => {
@@ -498,7 +498,7 @@ export default function Watchlist({ isMobile, light }) {
       ? <span title={tip} style={{ background: col, color: "#fff", padding: "0 4px", borderRadius: 3, fontSize: 11, lineHeight: "13px", display: "inline-block" }}>{txt}</span>
       : <span title={tip} style={{ color: col }}>{txt}</span>;
   };
-  const tdSig = { padding: "7px 4px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, whiteSpace: "nowrap" };
+  const tdSig = { padding: isMobile ? "7px 2px" : "7px 4px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, whiteSpace: "nowrap" };
 
   return (
     <div style={{
@@ -578,10 +578,10 @@ export default function Watchlist({ isMobile, light }) {
       </div>
 
       <div ref={wrapRef} style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", minWidth: 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
+        <table style={{ width: "100%", minWidth: isMobile ? 0 : 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
           {/* 固定欄寬：排序／篩選／active 標示都唔會令欄位郁 */}
           <colgroup>
-            {[74, 44, 44, 44, 44, 62, 60, 58].map((w, i) => <col key={i} style={{ width: w }} />)}
+            {(isMobile ? [62, 34, 34, 34, 34, 58, 56, 26] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={{ width: w }} />)}
           </colgroup>
           <thead>
             <tr style={{ color: C.mute, fontSize: 11 }}>
@@ -643,8 +643,10 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
                   {P(r.chg_pct)}
                 </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
-                  {isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct)}
+                <td title={isMobile && r.ext_chg_pct != null ? `${{ pre: "盤前", post: "盤後", overnight: "夜盤 24h" }[r.ext_sess] || "延長時段"} ${P(r.ext_chg_pct)}` : undefined} style={{ padding: isMobile ? "7px 2px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: isMobile ? "center" : "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
+                  {isMobile
+                    ? (!isHK(r.ticker) && r.ext_chg_pct != null ? <span style={{ display: "inline-flex", verticalAlign: "middle" }}>{sessIcon(r.ext_sess)}</span> : null)
+                    : (isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct))}
                 </td>
               </tr>
               {openT === r.ticker && (
