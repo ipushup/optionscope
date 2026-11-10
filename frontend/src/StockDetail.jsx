@@ -86,16 +86,15 @@ function lbSym(ticker) {
 const CANDLE_CACHE = new Map();   // "sym|tf" -> {at, data}
 const SHOW_N = { D: 100, W: 80, M: 60 };
 function useCandles(ticker, tf, enabled) {
-  const key = `${lbSym(ticker)}|${tf}`;
+  const key = `${ticker}|${tf}`;
   const [st, setSt] = useState(() => { const h = CANDLE_CACHE.get(key); return h && Date.now() - h.at < 3e5 ? { key, data: h.data } : { key, data: null }; });
   useEffect(() => {
-    const sym = lbSym(ticker);
-    if (!enabled || !sym) return undefined;
+    if (!enabled || !ticker) return undefined;
     const h = CANDLE_CACHE.get(key);
     if (h && Date.now() - h.at < 3e5) { setSt({ key, data: h.data }); return undefined; }
     let alive = true;
     setSt({ key, data: null, loading: true });
-    fetch(`/api/candles?symbol=${encodeURIComponent(sym)}&tf=${tf}`, { cache: "no-store" })
+    fetch(`/api/candles?symbol=${encodeURIComponent(ticker)}&tf=${tf}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const data = d && d.bars && d.bars.length > 5 ? chartSeries(d.bars, SHOW_N[tf]) : false;
@@ -193,7 +192,7 @@ export default function StockDetail({ r, q: qProp, T }) {
         <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
           {bars && bars.length > 5
             ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tf={tf} T={T} />
-            : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : lbSym(r.ticker) ? "K 線暫時攞唔到" : "呢隻股票冇 K 線"}</div>}
+            : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : "K 線暫時攞唔到"}</div>}
         </div>
         <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
           {stats.map(([l, v, c]) => (
