@@ -32,18 +32,14 @@ export default function UtB1Section({ wl, T }) {
   const H = 190, L = 30, R = 8, Tp = 10, B = 34, iw = w - L - R, ih = H - Tp - B;
   const vals = has ? ["US", "HK"].flatMap((k) => (d[k] || []).filter(Boolean).map((x) => x[0])) : [];
   const ymax = niceMax(vals.length ? Math.max(...vals) : 0);
-  const X = (i) => L + (days.length > 1 ? (i / (days.length - 1)) * iw : 0);
+  const slot = days.length ? iw / days.length : iw;
+  const X = (i) => L + slot * (i + 0.5);   // 每日一格，兩支柱（US／HK）並排
   const Y = (v) => Tp + ih - (v / ymax) * ih;
-  const path = (k) => {
-    let s = "";   // 休市日冇數據：跳過嗰日，前後兩點直接連埋，線唔斷開
-    (d[k] || []).forEach((x, i) => { if (!x) return; s += `${s ? "L" : "M"}${X(i).toFixed(1)},${Y(x[0]).toFixed(1)}`; });
-    return s;
-  };
   const lastOf = (k) => { const a = (d && d[k]) || []; for (let i = a.length - 1; i >= 0; i--) if (a[i]) return { i, x: a[i] }; return null; };
   const md = (s) => s.slice(5);
   const pick = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
-    const i = Math.round(((e.clientX - r.left - L) / iw) * (days.length - 1));
+    const i = Math.floor((e.clientX - r.left - L) / slot);
     setSel(Math.min(days.length - 1, Math.max(0, i)));
   };
   const cur = has ? (sel != null ? sel : days.length - 1) : null;
@@ -88,9 +84,13 @@ export default function UtB1Section({ wl, T }) {
                     </g>
                   );
                 })}
-                {["US", "HK"].map((k) => <path key={k} d={path(k)} fill="none" stroke={COL[k]} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />)}
-                <line x1={X(cur)} x2={X(cur)} y1={Tp} y2={Tp + ih} stroke={T.mute} strokeDasharray="2 3" strokeWidth="1" />
-                {["US", "HK"].map((k) => { const x = d[k]?.[cur]; return x ? <circle key={k} cx={X(cur)} cy={Y(x[0])} r="3.2" fill={COL[k]} stroke={T.card} strokeWidth="1.2" /> : null; })}
+                <rect x={X(cur) - slot / 2} y={Tp} width={slot} height={ih} fill={T.mute} opacity="0.16" rx="2" />
+                {days.map((dt, i) => ["US", "HK"].map((k, j) => {
+                  const x = d[k]?.[i];
+                  if (!x) return null;
+                  const bw = Math.max(2, Math.min(7, (slot - 2) / 2)), h = Math.max(1, (x[0] / ymax) * ih);
+                  return <rect key={dt + k} x={X(i) - bw + j * bw} y={Tp + ih - h} width={bw - 0.6} height={h} rx="1" fill={COL[k]} />;
+                }))}
               </svg>
             </div>
             <div style={{ fontFamily: M, fontSize: 10.5, color: T.mute, marginTop: 6 }}>
