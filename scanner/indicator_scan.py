@@ -315,7 +315,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     print(f"Parsed {len(entries)} watchlist entries -> {len(valid)} resolvable, {len(skipped)} skipped", file=sys.stderr)
 
     results = {}
-    ut_hist = {}   # ticker -> [(日期, 轉向(1=B1 當日轉多), 有效)]，最近 45 棒（主頁 05「UT B1 出現率」用）
+    ut_hist = {}   # ticker -> [(日期, B1 當日轉多, 有效, S1 當日轉空)]，最近 45 棒（主頁 05「UT B1 出現率」用）
     tickers_all = [e["ticker"] for e in valid]
 
     for batch in chunked(tickers_all, chunk_size):
@@ -351,7 +351,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                     pos = ut_pos_series(df)
                     if pos is not None:
                         idx = [str(d.date()) for d in df.index]
-                        ut_hist[t] = [(idx[i], 1 if (pos[i] == 1 and pos[i - 1] != 1) else 0, 1 if pos[i] != 0 else 0)
+                        ut_hist[t] = [(idx[i], 1 if (pos[i] == 1 and pos[i - 1] != 1) else 0, 1 if pos[i] != 0 else 0, 1 if (pos[i] == -1 and pos[i - 1] != -1) else 0)
                                       for i in range(max(1, len(pos) - 45), len(pos))]
                 except Exception:  # noqa: BLE001
                     pass
@@ -400,15 +400,16 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     agg = {"US": {}, "HK": {}}
     for t, rows in ut_hist.items():
         mk = "HK" if t.endswith(".HK") else "US"
-        for d, flip, ok in rows:
+        for d, flip, ok, sflip in rows:
             if ok:
-                a = agg[mk].setdefault(d, [0, 0])
+                a = agg[mk].setdefault(d, [0, 0, 0])
                 a[0] += flip
                 a[1] += 1
+                a[2] += sflip
     all_days = sorted(set(agg["US"]) | set(agg["HK"]))[-30:]
     ut_b1 = {"days": all_days}
     for mk in ("US", "HK"):
-        ut_b1[mk] = [[round(agg[mk][d][0] / agg[mk][d][1] * 100, 2), agg[mk][d][0], agg[mk][d][1]] if d in agg[mk] and agg[mk][d][1] >= 20 else None for d in all_days]
+        ut_b1[mk] = [[round(agg[mk][d][0] / agg[mk][d][1] * 100, 2), agg[mk][d][0], agg[mk][d][1], round(agg[mk][d][2] / agg[mk][d][1] * 100, 2), agg[mk][d][2]] if d in agg[mk] and agg[mk][d][1] >= 20 else None for d in all_days]
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
