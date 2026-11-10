@@ -581,7 +581,7 @@ export default function Watchlist({ isMobile, light }) {
         <table style={{ width: "100%", minWidth: isMobile ? 0 : 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
           {/* 固定欄寬：排序／篩選／active 標示都唔會令欄位郁 */}
           <colgroup>
-            {(isMobile ? [62, 33, 33, 33, 33, 62, 58, 22] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={{ width: w }} />)}
+            {(isMobile ? [62, 33, 33, 33, 33, 60, 60, 22] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={{ width: w }} />)}
           </colgroup>
           <thead>
             <tr style={{ color: C.mute, fontSize: 11 }}>
