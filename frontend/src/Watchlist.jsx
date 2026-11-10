@@ -204,7 +204,7 @@ function BandPicker({ value, onChange, isMobile, style }) {
     <div ref={box} style={{ position: "relative", ...style }}>
       <button type="button" onClick={() => setOpen(o => !o)} style={{
         width: "100%", textAlign: "left", background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-        padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: isMobile ? "system-ui,-apple-system,sans-serif" : M, fontSize: isMobile ? 16 : 12, // 手機同原生 select 一樣 16px（index.html 全域規則）
+        padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M, fontWeight: 400, fontSize: isMobile ? 16 : 12, // 手機同原生 select 一樣 16px（index.html 全域規則）
         cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4, whiteSpace: "nowrap", overflow: "hidden",
       }}><span>{label}</span><svg width="12" height="16" viewBox="0 0 12 16" fill="none" stroke={C.txt} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true"><path d="M2 6l4-4 4 4M2 10l4 4 4-4" /></svg></button>
       {open && (
@@ -252,6 +252,7 @@ export default function Watchlist({ isMobile, light }) {
   const [sigSide, setSigSide] = useState("");   // "" | B | B2 | B5 | S | S2 | S5
   // null = 跟 Watchlists.txt 原本section次序(INDICES → SECTION 1 → … → HONGKONG),
   // 美股喺前、港股喺最尾。揀咗column先會改做按該column排序。
+  const [sumMode, setSumMode] = useState("");   // "" | "B" | "S"：UT+HV+TB 該方向嘅日數總和排序（細者排前）
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(1);
   const [highlighted, setHighlighted] = useState(loadHighlights); // {ticker: colorKey}；local cache先行，GitHub fetch返嚟先覆蓋
@@ -408,6 +409,10 @@ export default function Watchlist({ isMobile, light }) {
   // 分開兩個檔案輪詢，唔使成個merge file連tband都要15分鐘一次重寫。
   const live = ticker => (apiQ[ticker] || sigQ[ticker]) ? { ...quotes[ticker], ...(apiQ[ticker] || sigQ[ticker]) } : quotes[ticker];   // Longbridge /api/quotes → signals.json → yfinance
 
+  const ctl = {
+    background: C.chip, border: `1px solid ${C.line}`, color: C.txt, borderRadius: 6,
+    fontFamily: M, fontWeight: 400, fontSize: isMobile ? 16 : 12, boxSizing: "border-box", minWidth: 0,
+  };
   const sections = [...new Set(status.rows.map(r => r.section))].sort();
   const query = q.trim().toUpperCase();
   const rows = status.rows
@@ -443,6 +448,18 @@ export default function Watchlist({ isMobile, light }) {
       return keys.some(k => r[k] && r[k].s === want && r[k].n <= max);
     })
     .sort((a, b) => {
+      if (sumMode) {
+        const want = sumMode === "B" ? 1 : -1;
+        const f = r => {
+          let c = 0, t = 0;
+          for (const k of ["ut_k", "hv_k", "tb_k"]) if (r[k] && r[k].s === want) { c++; t += r[k].n; }
+          return { c, t };
+        };
+        const fa = f(a), fb = f(b);
+        if (fa.c === 0 && fb.c === 0) return 0;
+        if (fa.c !== fb.c) return fb.c - fa.c;   // 三個都同方向嘅排先
+        return fa.t - fb.t;
+      }
       if (sortKey == null) return 0; // 保持原本section次序(Array.sort係stable)
       const av = a[sortKey], bv = b[sortKey];
       if (av == null && bv == null) return 0;
@@ -532,15 +549,11 @@ export default function Watchlist({ isMobile, light }) {
         <input
           value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "search…" : "search symbol…"}
           style={{
-            background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-            padding: isMobile ? "6px 6px" : "6px 9px", borderRadius: 6, fontFamily: M,
-            fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
+            ...ctl, padding: isMobile ? "6px 6px" : "6px 9px", flex: "1 1 0%",
           }}
         />
         <select value={section} onChange={e => setSection(e.target.value)} style={{
-          background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
+          ...ctl, padding: isMobile ? "6px 3px" : "6px 9px", flex: "1 1 0%",
           appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "Section" : "All sections"}</option>
@@ -550,9 +563,7 @@ export default function Watchlist({ isMobile, light }) {
       </div>
       <div style={{ display: "flex", gap: isMobile ? 4 : 6, flexWrap: "nowrap", alignItems: "center", marginBottom: 8 }}>
         <select value={sigKind} onChange={e => setSigKind(e.target.value)} style={{
-          background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
+          ...ctl, padding: isMobile ? "6px 3px" : "6px 9px", flex: "1 1 0%",
           appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "Signal" : "Signal: all"}</option>
@@ -562,9 +573,7 @@ export default function Watchlist({ isMobile, light }) {
           <option value="st">ST</option>
         </select>
         <select value={sigSide} onChange={e => setSigSide(e.target.value)} style={{
-          background: C.chip, border: `1px solid ${C.line}`, color: C.txt,
-          padding: isMobile ? "6px 3px" : "6px 9px", borderRadius: 6, fontFamily: M,
-          fontSize: isMobile ? 11 : 12, flex: "1 1 0%", minWidth: 0, boxSizing: "border-box",
+          ...ctl, padding: isMobile ? "6px 3px" : "6px 9px", flex: "1 1 0%",
           appearance: "none", WebkitAppearance: "none", backgroundImage: chevronBg(C.txt), backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: 22,
         }}>
           <option value="">{isMobile ? "B/S" : "B/S: any"}</option>
@@ -575,6 +584,13 @@ export default function Watchlist({ isMobile, light }) {
           <option value="S2">S ≤2</option>
           <option value="S5">S ≤5</option>
         </select>
+        <button type="button" onClick={() => setSumMode(m => m === "" ? "B" : m === "B" ? "S" : "")}
+          title="UT+HV+TB 日數總和排序（細者排前）：第一下 B，第二下 S，第三下關"
+          style={{ ...ctl, flex: "0 0 auto", padding: isMobile ? "6px 8px" : "6px 11px", cursor: "pointer",
+            color: sumMode === "B" ? C.up : sumMode === "S" ? C.dn : C.mute,
+            borderColor: sumMode === "B" ? C.up : sumMode === "S" ? C.dn : C.line }}>
+          {sumMode ? `Σ${sumMode}` : "Σ"}
+        </button>
       </div>
 
       <div ref={wrapRef} style={{ overflowX: "auto" }}>
@@ -601,7 +617,7 @@ export default function Watchlist({ isMobile, light }) {
           <tbody>
             {rows.map((r, ri) => (
               <Fragment key={r.ticker}>
-              {sortKey == null && (ri === 0 || rows[ri - 1].section !== r.section) && (
+              {sortKey == null && !sumMode && (ri === 0 || rows[ri - 1].section !== r.section) && (
                 <tr style={{ height: 32 }}><td colSpan={COLS.length} style={{ padding: "0 6px", verticalAlign: "middle", fontFamily: M, fontSize: 10.5, letterSpacing: "0.08em", color: C.mute, borderBottom: `1px solid ${C.line}`, textAlign: "left", whiteSpace: "nowrap" }}>
                   <span style={{ position: "sticky", left: 6 }}>{r.section.replace(/^SECTION\s+/i, "")} <span style={{ opacity: 0.7 }}>· {rows.filter(x => x.section === r.section).length}</span></span>
                 </td></tr>
