@@ -29,7 +29,7 @@ export default function UtB1Section({ wl, T }) {
   });
   const has = d && d.days && d.days.length > 1;
   const days = has ? d.days : [];
-  const H = 190, L = 30, R = 8, Tp = 10, B = 22, iw = w - L - R, ih = H - Tp - B;
+  const H = 190, L = 30, R = 8, Tp = 10, B = 34, iw = w - L - R, ih = H - Tp - B;
   const vals = has ? ["US", "HK"].flatMap((k) => (d[k] || []).filter(Boolean).map((x) => x[0])) : [];
   const ymax = niceMax(vals.length ? Math.max(...vals) : 0);
   const X = (i) => L + (days.length > 1 ? (i / (days.length - 1)) * iw : 0);
@@ -48,7 +48,6 @@ export default function UtB1Section({ wl, T }) {
   };
   const cur = has ? (sel != null ? sel : days.length - 1) : null;
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => +(ymax * f).toFixed(0));
-  const lbl = has ? [0, Math.floor((days.length - 1) / 2), days.length - 1] : [];
   const row = (k) => { const x = has ? d[k]?.[cur] : null; return x ? `${x[0].toFixed(1)}%（${x[1]}/${x[2]}）` : "休市／冇數據"; };
 
   return (
@@ -79,7 +78,16 @@ export default function UtB1Section({ wl, T }) {
                     <text x={L - 5} y={Y(t) + 3} textAnchor="end" fontSize="9.5" fontFamily={M} fill={T.mute}>{t}%</text>
                   </g>
                 ))}
-                {lbl.map((i, k) => <text key={i} x={X(i)} y={H - 6} textAnchor={k === 0 ? "start" : k === 2 ? "end" : "middle"} fontSize="9.5" fontFamily={M} fill={T.mute}>{md(days[i])}</text>)}
+                {days.map((dt, i) => {   // 30 個交易日逐日列出：第一行日、換月嗰日第二行加月份
+                  const mo = parseInt(dt.slice(5, 7), 10), dd = parseInt(dt.slice(8, 10), 10);
+                  const newMonth = i === 0 || dt.slice(5, 7) !== days[i - 1].slice(5, 7);
+                  return (
+                    <g key={dt}>
+                      <text x={X(i)} y={H - 18} textAnchor="middle" fontSize="7.5" letterSpacing="-0.3" fontFamily={M} fill={i === cur ? T.txt : T.mute}>{dd}</text>
+                      {newMonth && <text x={X(i)} y={H - 6} textAnchor={i === 0 ? "start" : "middle"} fontSize="8.5" fontFamily={M} fill={T.dim}>{mo}月</text>}
+                    </g>
+                  );
+                })}
                 {["US", "HK"].map((k) => <path key={k} d={path(k)} fill="none" stroke={COL[k]} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />)}
                 <line x1={X(cur)} x2={X(cur)} y1={Tp} y2={Tp + ih} stroke={T.mute} strokeDasharray="2 3" strokeWidth="1" />
                 {["US", "HK"].map((k) => { const x = d[k]?.[cur]; return x ? <circle key={k} cx={X(cur)} cy={Y(x[0])} r="3.2" fill={COL[k]} stroke={T.card} strokeWidth="1.2" /> : null; })}
