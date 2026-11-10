@@ -581,7 +581,7 @@ export default function Watchlist({ isMobile, light }) {
         <table style={{ width: "100%", minWidth: isMobile ? 0 : 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
           {/* 固定欄寬：排序／篩選／active 標示都唔會令欄位郁 */}
           <colgroup>
-            {(isMobile ? [undefined, 40, 40, 40, 40, 56, 52, 22] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={w ? { width: w } : undefined} />)}
+            {(isMobile ? [62, 34, 34, 34, 34, 58, 58, 22] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={{ width: w }} />)}
           </colgroup>
           <thead>
             <tr style={{ color: C.mute, fontSize: 11 }}>
@@ -589,6 +589,7 @@ export default function Watchlist({ isMobile, light }) {
                 <th key={col.key} onClick={() => toggleSort(col.key)} title={LB_KEYS.includes(col.key) ? "Longbridge 即時報價" : SIG_KEYS.includes(col.key) || col.key === "ut_k" ? "Yahoo Finance K 線（掃描計算）" : undefined} style={{
                   padding: isMobile ? (col.key === "chg_pct" ? "6px 1px 6px 3px" : col.key === "ext_chg_pct" ? "6px 0 6px 2px" : "6px 3px") : "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
                   textAlign: i === 0 ? "left" : isMobile && col.key === "ext_chg_pct" ? "center" : "right", whiteSpace: "nowrap", cursor: "pointer",
+                  ...(isMobile && col.key === "last" ? { position: "relative", left: 8 } : {}),
                   ...(i === 0 ? { position: "sticky", left: 0, zIndex: 2, background: C.bg } : {}),
                   color: LB_KEYS.includes(col.key) ? "#00b8a5" : light ? "#6b7580" : "#75777a",   // 其餘同 Daily Table / Signal Board 表頭一致；Longbridge 即時欄用 Longbridge 綠
                 }}>{col.label}{sortKey === col.key
@@ -637,7 +638,7 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={tdSig}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
                 <td style={tdSig}>{sigCell((r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.s, (r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.n, "Triple Band：B = 買入確認（TB）、S = 賣出（TS），數字 = 幾多棒前（最近 20 棒）")}</td>
                 <td style={tdSig}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
-                <td style={{ padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
+                <td style={{ padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", ...(isMobile ? { position: "relative", left: 8 } : {}) }}>
                   {N(r.last)}
                 </td>
                 <td style={{ padding: isMobile ? "7px 1px 7px 6px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
