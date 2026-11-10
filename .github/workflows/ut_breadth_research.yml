@@ -1,0 +1,20 @@
+name: UT breadth research (one-off)
+on:
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas numpy
+      - run: python scanner/ut_breadth_research.py scanner/Watchlists.txt | tee research.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ut-breadth
+          path: |
+            research.md
+            ut_breadth_research.json
+            ut_breadth_*.csv
