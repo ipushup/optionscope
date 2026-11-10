@@ -237,7 +237,7 @@ function BandSection({ band, bq, T }) {
   const [allConf, setAllConf] = useState(false), [allForm, setAllForm] = useState(false);   // 未展開前最多顯示 BAND_SHOW 隻
   const pickMkt = (m) => { setMkt(m); setAllConf(false); setAllForm(false); try { localStorage.setItem("os_band_mkt", m); } catch { /* */ } };
   const moreBtn = (all, setAll, total) => total > BAND_SHOW && (
-    <button type="button" onClick={() => setAll((v) => !v)} style={{ display: "block", width: "100%", padding: "10px 0", border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer" }}>
+    <button type="button" onClick={() => setAll((v) => !v)} style={{ display: "block", width: "calc(100% - 20px)", margin: "0 10px", padding: "10px 0", border: 0, borderTop: `1px solid ${T.line}`, background: "transparent", color: T.acc, fontFamily: SANS, fontSize: 12, cursor: "pointer" }}>
       {all ? "收埋" : `展開全部 ${total} 隻`}
     </button>
   );
@@ -354,7 +354,8 @@ function BandSection({ band, bq, T }) {
                   const g = sig[r.symbol];
                   const par = PARENTS[r.symbol];
                   return (
-                    <div key={r.symbol} style={{ padding: "0 14px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
+                    <div key={r.symbol} style={{ padding: "0 10px", opacity: r.st === "BROKE" ? 0.5 : 1 }}>
+                    <div style={{ padding: "0 4px", borderTop: `1px solid ${T.line}` }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, height: 32 }}>
                         <div style={{ display: "flex", alignItems: "center", minWidth: 0, gap: 4, overflow: "hidden", padding: "0 1px" }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
@@ -381,6 +382,7 @@ function BandSection({ band, bq, T }) {
                         {r.ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
                           {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span> <SessBadge sess={g.sess} T={T} /></div>}
                       </div>
+                    </div>
                     </div>
                   );
   };
