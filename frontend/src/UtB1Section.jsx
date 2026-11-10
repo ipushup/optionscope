@@ -35,8 +35,8 @@ export default function UtB1Section({ wl, T }) {
   const X = (i) => L + (days.length > 1 ? (i / (days.length - 1)) * iw : 0);
   const Y = (v) => Tp + ih - (v / ymax) * ih;
   const path = (k) => {
-    let s = "", pen = false;
-    (d[k] || []).forEach((x, i) => { if (!x) { pen = false; return; } s += `${pen ? "L" : "M"}${X(i).toFixed(1)},${Y(x[0]).toFixed(1)}`; pen = true; });
+    let s = "";   // 休市日冇數據：跳過嗰日，前後兩點直接連埋，線唔斷開
+    (d[k] || []).forEach((x, i) => { if (!x) return; s += `${s ? "L" : "M"}${X(i).toFixed(1)},${Y(x[0]).toFixed(1)}`; });
     return s;
   };
   const lastOf = (k) => { const a = (d && d[k]) || []; for (let i = a.length - 1; i >= 0; i--) if (a[i]) return { i, x: a[i] }; return null; };
