@@ -315,6 +315,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     print(f"Parsed {len(entries)} watchlist entries -> {len(valid)} resolvable, {len(skipped)} skipped", file=sys.stderr)
 
     results = {}
+    tb_hist = {}   # ticker -> {日期: [TB 買入確認, TS 賣出]}，最近 75 棒（05 圖 TB 模式用；TBskip 唔計）
     ut_hist = {}   # ticker -> [(日期, B1 當日轉多, 有效, S1 當日轉空)]，最近 45 棒（主頁 05「UT B1 出現率」用）
     tickers_all = [e["ticker"] for e in valid]
 
@@ -353,6 +354,17 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                         idx = [str(d.date()) for d in df.index]
                         ut_hist[t] = [(idx[i], 1 if (pos[i] == 1 and pos[i - 1] != 1) else 0, 1 if pos[i] != 0 else 0, 1 if (pos[i] == -1 and pos[i - 1] != -1) else 0)
                                       for i in range(max(1, len(pos) - 75), len(pos))]
+                except Exception:  # noqa: BLE001
+                    pass
+                try:
+                    import intraday_signals as _S
+                    idx2 = [str(d.date()) for d in df.index]
+                    lo = max(1, len(df) - 75)
+                    h = {}
+                    for e in _S.triple_band(df):
+                        if e["kind"] in ("TB", "TS") and e["i"] >= lo:
+                            h.setdefault(idx2[e["i"]], [0, 0])[0 if e["kind"] == "TB" else 1] += 1
+                    tb_hist[t] = h
                 except Exception:  # noqa: BLE001
                     pass
                 r["last_close"] = round(float(df["Close"].iloc[-1]), 4)
@@ -410,6 +422,26 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     ut_b1 = {"days": all_days}
     for mk in ("US", "HK"):
         ut_b1[mk] = [[round(agg[mk][d][0] / agg[mk][d][1] * 100, 2), agg[mk][d][0], agg[mk][d][1], round(agg[mk][d][2] / agg[mk][d][1] * 100, 2), agg[mk][d][2]] if d in agg[mk] and agg[mk][d][1] >= 20 else None for d in all_days]
+
+    # TB 模式：每日 TB（買入確認）／TS（賣出）嘅股票數，分母同 UT 一樣（有效股票）
+    tb_agg = {"US": {}, "HK": {}}
+    for t, h in tb_hist.items():
+        mk = "HK" if t.endswith(".HK") else "US"
+        for d, (b, sv) in h.items():
+            a = tb_agg[mk].setdefault(d, [0, 0])
+            a[0] += b
+            a[1] += sv
+    ut_b1["tb"] = {}
+    for mk in ("US", "HK"):
+        row = []
+        for d in all_days:
+            tot = agg[mk][d][1] if d in agg[mk] else 0
+            if tot < 20:
+                row.append(None)
+                continue
+            b, sv = tb_agg[mk].get(d, [0, 0])
+            row.append([round(b / tot * 100, 2), b, tot, round(sv / tot * 100, 2), sv])
+        ut_b1["tb"][mk] = row
 
     try:   # 指數收市（SPX／恒指）對齊同一批日子，05 圖做背景線
         ix = {}
