@@ -581,14 +581,14 @@ export default function Watchlist({ isMobile, light }) {
         <table style={{ width: "100%", minWidth: isMobile ? 0 : 430, borderCollapse: "collapse", tableLayout: "fixed", fontSize: 12.5 }}>
           {/* 固定欄寬：排序／篩選／active 標示都唔會令欄位郁 */}
           <colgroup>
-            {(isMobile ? [62, 34, 34, 34, 34, 58, 56, 26] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={{ width: w }} />)}
+            {(isMobile ? [62, 34, 34, 34, 34, 58, 58, 22] : [74, 44, 44, 44, 44, 62, 60, 58]).map((w, i) => <col key={i} style={{ width: w }} />)}
           </colgroup>
           <thead>
             <tr style={{ color: C.mute, fontSize: 11 }}>
               {COLS.map((col, i) => (
                 <th key={col.key} onClick={() => toggleSort(col.key)} title={LB_KEYS.includes(col.key) ? "Longbridge 即時報價" : SIG_KEYS.includes(col.key) || col.key === "ut_k" ? "Yahoo Finance K 線（掃描計算）" : undefined} style={{
-                  padding: isMobile ? "6px 3px" : "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
-                  textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap", cursor: "pointer",
+                  padding: isMobile ? (col.key === "chg_pct" ? "6px 1px 6px 3px" : col.key === "ext_chg_pct" ? "6px 0 6px 2px" : "6px 3px") : "6px", borderBottom: `1px solid ${C.line}`, fontWeight: 500, fontFamily: SANS,
+                  textAlign: i === 0 ? "left" : isMobile && col.key === "ext_chg_pct" ? "center" : "right", whiteSpace: "nowrap", cursor: "pointer",
                   ...(i === 0 ? { position: "sticky", left: 0, zIndex: 2, background: C.bg } : {}),
                   color: LB_KEYS.includes(col.key) ? "#00b8a5" : light ? "#6b7580" : "#75777a",   // 其餘同 Daily Table / Signal Board 表頭一致；Longbridge 即時欄用 Longbridge 綠
                 }}>{col.label}{sortKey === col.key
@@ -640,10 +640,10 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
                   {N(r.last)}
                 </td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
+                <td style={{ padding: isMobile ? "7px 1px 7px 6px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
                   {P(r.chg_pct)}
                 </td>
-                <td title={isMobile && r.ext_chg_pct != null ? `${{ pre: "盤前", post: "盤後", overnight: "夜盤 24h" }[r.ext_sess] || "延長時段"} ${P(r.ext_chg_pct)}` : undefined} style={{ padding: isMobile ? "7px 2px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: isMobile ? "center" : "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
+                <td title={isMobile && r.ext_chg_pct != null ? `${{ pre: "盤前", post: "盤後", overnight: "夜盤 24h" }[r.ext_sess] || "延長時段"} ${P(r.ext_chg_pct)}` : undefined} style={{ padding: isMobile ? "7px 0 7px 2px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: isMobile ? "center" : "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
                   {isMobile
                     ? (!isHK(r.ticker) && r.ext_chg_pct != null ? <span style={{ display: "inline-flex", verticalAlign: "middle" }}>{sessIcon(r.ext_sess)}</span> : null)
                     : (isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct))}
