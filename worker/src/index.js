@@ -363,47 +363,41 @@ async function handleQuotes(req, env, url) {
 }
 
 
-// ───────────── Longbridge K 線（Data 頁展開時先拉；前端自己計 EMA／UT）─────────────
-// GET /v1/quote/candlesticks?symbol=700.HK&period=1000(日)/2000(週)/3000(月)&count=N&adjust_type=1(前復權)
-const CANDLE_PERIOD = { D: 1000, W: 2000, M: 3000 };
-const CANDLE_COUNT = { D: 400, W: 300, M: 200 };   // 日線 400 棒夠計 EMA250
+// ───────────── K 線（Data 頁展開時先拉；前端自己計 EMA／UT）─────────────
+// Longbridge 嘅 K 線只有 SDK／socket，冇 REST，所以用 Yahoo chart（掃描器都係用 Yahoo）。
+// ticker 直接用 watchlist 嘅 Yahoo ticker（^GSPC、0700.HK、BTC-USD …）
+const CANDLE_CFG = { D: { interval: "1d", range: "2y" }, W: { interval: "1wk", range: "6y" }, M: { interval: "1mo", range: "20y" } };
+const CANDLE_SYM_RE = /^[\^A-Za-z0-9.=\-]{1,16}$/;
 async function handleCandles(req, env, url) {
-  if (!env.LB_APP_KEY || !env.LB_APP_SECRET || !env.LB_ACCESS_TOKEN) return json({ error: "Longbridge not configured" }, 503);
   const symbol = (url.searchParams.get("symbol") || "").trim();
   const tf = url.searchParams.get("tf") || "D";
   const debug = url.searchParams.get("debug") === "1";
-  if (!SYMBOL_RE.test(symbol) || !CANDLE_PERIOD[tf]) return json({ error: "Bad params" }, 400);
+  if (!CANDLE_SYM_RE.test(symbol) || !CANDLE_CFG[tf]) return json({ error: "Bad params" }, 400);
 
   const cache = caches.default;
-  const cacheKey = new Request(`https://cache.invalid/candles?s=${symbol}&tf=${tf}`);
+  const cacheKey = new Request(`https://cache.invalid/candles?s=${encodeURIComponent(symbol)}&tf=${tf}`);
   if (!debug) { const hit = await cache.match(cacheKey); if (hit) return withSec(new Response(hit.body, hit)); }
 
-  const path = "/v1/quote/candlesticks";
-  const query = `adjust_type=1&count=${CANDLE_COUNT[tf]}&period=${CANDLE_PERIOD[tf]}&symbol=${symbol}`;
-  const ts = Math.floor(Date.now() / 1000);
-  const sig = await lbSign("GET", path, query, "", env.LB_APP_KEY, env.LB_APP_SECRET, env.LB_ACCESS_TOKEN, ts);
-  const region = env.LB_APP_KEY.startsWith("us_") || env.LB_ACCESS_TOKEN.startsWith("us_") ? "us" : "ap";
+  const { interval, range } = CANDLE_CFG[tf];
   let up, text;
   try {
-    up = await fetch(`${LB_BASE}${path}?${query}`, {
-      headers: { "X-Api-Key": env.LB_APP_KEY, Authorization: env.LB_ACCESS_TOKEN, "X-Timestamp": String(ts), "X-Api-Signature": sig, "x-dc-region": region },
+    up = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}&includePrePost=false`, {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "application/json" },
     });
     text = await up.text();
   } catch (e) { return json({ error: "Upstream unreachable", detail: String(e) }, 502); }
   let parsed = null;
   try { parsed = JSON.parse(text); } catch { /* 下面處理 */ }
-  if (!up.ok || !parsed || (parsed.code != null && parsed.code !== 0)) {
-    return json({ error: "Longbridge error", status: up.status, ...(debug ? { upstream: text.slice(0, 500) } : { code: parsed?.code, message: parsed?.message }) }, 502);
-  }
-  const data = parsed.data ?? parsed;
-  const list = data.candlesticks ?? data.candlestick ?? [];
+  const r0 = parsed?.chart?.result?.[0];
+  if (!up.ok || !r0) return json({ error: "Yahoo error", status: up.status, ...(debug ? { upstream: text.slice(0, 500) } : {}) }, 502);
+  const q = r0.indicators?.quote?.[0] || {};
   const bars = [];
-  for (const c of list) {
-    const o = parseFloat(c.open), h = parseFloat(c.high), l = parseFloat(c.low), cl = parseFloat(c.close);
-    if (o > 0 && h > 0 && l > 0 && cl > 0) bars.push([o, h, l, cl]);
+  for (let i = 0; i < (r0.timestamp || []).length; i++) {
+    const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i];
+    if (o > 0 && h > 0 && l > 0 && c > 0) bars.push([o, h, l, c]);
   }
-  const res = json({ symbol, tf, bars, fetched_at: new Date().toISOString(), ...(debug ? { raw_sample: list.slice(-1) } : {}) }, 200, { "Cache-Control": "public, max-age=60" });
-  if (!debug) await cache.put(cacheKey, res.clone());
+  const res = json({ symbol, tf, bars, fetched_at: new Date().toISOString() }, 200, { "Cache-Control": "public, max-age=300" });
+  if (!debug && bars.length) await cache.put(cacheKey, res.clone());
   return res;
 }
 
