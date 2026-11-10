@@ -1,6 +1,6 @@
 import { marketsClosed, hkClosed } from "./marketHours";
 import STOCK_NAMES from "./names.json";
-import StockDetail, { SessBadge } from "./StockDetail";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
+import StockDetail, { SessBadge, sessIcon } from "./StockDetail";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useRef, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
@@ -464,12 +464,6 @@ function confSigs(r) {
 }
 const SESS_NAME = { pre: "盤前", post: "盤後", overnight: "夜盤 24h" };
 // pre = 日出、post = 月、overnight(24h) = 時鐘；顏色跟該時段升跌
-function sessIcon(sess) {
-  const p = { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
-  if (sess === "pre") return <svg {...p}><path d="M5 18a7 7 0 0 1 14 0M12 4v4M4.5 9.5l2 2M19.5 9.5l-2 2M2 21h20" /></svg>;
-  if (sess === "post") return <svg {...p}><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" /></svg>;
-  return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
-}
 function ConfluenceSection({ wl, T, onNavigate }) {
   const [side, setSide] = useState(() => { try { return localStorage.getItem("os_conf_side") === "S" ? "S" : "B"; } catch (e) { return "B"; } });
   const [all, setAll] = useState(false);
