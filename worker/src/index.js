@@ -362,6 +362,51 @@ async function handleQuotes(req, env, url) {
   return res;
 }
 
+
+// ───────────── Longbridge K 線（Data 頁展開時先拉；前端自己計 EMA／UT）─────────────
+// GET /v1/quote/candlesticks?symbol=700.HK&period=1000(日)/2000(週)/3000(月)&count=N&adjust_type=1(前復權)
+const CANDLE_PERIOD = { D: 1000, W: 2000, M: 3000 };
+const CANDLE_COUNT = { D: 400, W: 300, M: 200 };   // 日線 400 棒夠計 EMA250
+async function handleCandles(req, env, url) {
+  if (!env.LB_APP_KEY || !env.LB_APP_SECRET || !env.LB_ACCESS_TOKEN) return json({ error: "Longbridge not configured" }, 503);
+  const symbol = (url.searchParams.get("symbol") || "").trim();
+  const tf = url.searchParams.get("tf") || "D";
+  const debug = url.searchParams.get("debug") === "1";
+  if (!SYMBOL_RE.test(symbol) || !CANDLE_PERIOD[tf]) return json({ error: "Bad params" }, 400);
+
+  const cache = caches.default;
+  const cacheKey = new Request(`https://cache.invalid/candles?s=${symbol}&tf=${tf}`);
+  if (!debug) { const hit = await cache.match(cacheKey); if (hit) return withSec(new Response(hit.body, hit)); }
+
+  const path = "/v1/quote/candlesticks";
+  const query = `adjust_type=1&count=${CANDLE_COUNT[tf]}&period=${CANDLE_PERIOD[tf]}&symbol=${symbol}`;
+  const ts = Math.floor(Date.now() / 1000);
+  const sig = await lbSign("GET", path, query, "", env.LB_APP_KEY, env.LB_APP_SECRET, env.LB_ACCESS_TOKEN, ts);
+  const region = env.LB_APP_KEY.startsWith("us_") || env.LB_ACCESS_TOKEN.startsWith("us_") ? "us" : "ap";
+  let up, text;
+  try {
+    up = await fetch(`${LB_BASE}${path}?${query}`, {
+      headers: { "X-Api-Key": env.LB_APP_KEY, Authorization: env.LB_ACCESS_TOKEN, "X-Timestamp": String(ts), "X-Api-Signature": sig, "x-dc-region": region },
+    });
+    text = await up.text();
+  } catch (e) { return json({ error: "Upstream unreachable", detail: String(e) }, 502); }
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch { /* 下面處理 */ }
+  if (!up.ok || !parsed || (parsed.code != null && parsed.code !== 0)) {
+    return json({ error: "Longbridge error", status: up.status, ...(debug ? { upstream: text.slice(0, 500) } : { code: parsed?.code, message: parsed?.message }) }, 502);
+  }
+  const data = parsed.data ?? parsed;
+  const list = data.candlesticks ?? data.candlestick ?? [];
+  const bars = [];
+  for (const c of list) {
+    const o = parseFloat(c.open), h = parseFloat(c.high), l = parseFloat(c.low), cl = parseFloat(c.close);
+    if (o > 0 && h > 0 && l > 0 && cl > 0) bars.push([o, h, l, cl]);
+  }
+  const res = json({ symbol, tf, bars, fetched_at: new Date().toISOString(), ...(debug ? { raw_sample: list.slice(-1) } : {}) }, 200, { "Cache-Control": "public, max-age=60" });
+  if (!debug) await cache.put(cacheKey, res.clone());
+  return res;
+}
+
 // ── 排程：GitHub Actions 自己嘅 cron 唔準時（成日幾個鐘唔跑），
 //    所以由 Cloudflare Cron Trigger 每 5 分鐘睇一次：冇循環 job 喺度跑就 dispatch 一個。
 //    循環 job 每個跑 ~55 分鐘；快完（>40 分鐘）而又未有人排緊隊，就預先排一個接力（concurrency 唔取消，會排隊）。
@@ -461,6 +506,7 @@ export default {
     if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "Read only" }, 405);
 
     if (path === "/api/quotes") return handleQuotes(req, env, url);
+    if (path === "/api/candles") return handleCandles(req, env, url);
 
     const m = path.match(/^\/([A-Za-z0-9_-]{1,64}\.json)$/);
     if (m) {
