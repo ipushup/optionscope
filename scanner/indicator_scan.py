@@ -411,6 +411,16 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     for mk in ("US", "HK"):
         ut_b1[mk] = [[round(agg[mk][d][0] / agg[mk][d][1] * 100, 2), agg[mk][d][0], agg[mk][d][1], round(agg[mk][d][2] / agg[mk][d][1] * 100, 2), agg[mk][d][2]] if d in agg[mk] and agg[mk][d][1] >= 20 else None for d in all_days]
 
+    try:   # 指數收市（SPX／恒指）對齊同一批日子，05 圖做背景線
+        ix = {}
+        for mk, sym in (("US", "^GSPC"), ("HK", "^HSI")):
+            px = yf.download(sym, period="6mo", interval="1d", progress=False, auto_adjust=False)["Close"].squeeze().dropna()
+            m = {str(d.date()): round(float(v), 2) for d, v in px.items()}
+            ix[mk] = [m.get(d) for d in all_days]
+        ut_b1["idx"] = ix
+    except Exception as ex:  # noqa: BLE001
+        print(f"index closes failed: {ex}", file=sys.stderr)
+
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "ut_b1": ut_b1,

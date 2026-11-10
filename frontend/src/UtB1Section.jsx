@@ -56,8 +56,21 @@ export default function UtB1Section({ wl, T }) {
         <span style={{ color: T.up }}>B1 {x[0].toFixed(1)}%（{x[1]}）</span>
         {x[3] != null && <span style={{ color: T.dn, marginLeft: 8 }}>S1 {x[3].toFixed(1)}%（{x[4]}）</span>}
         {net != null && <span style={{ color: T.txt, marginLeft: 8 }}>淨 {net >= 0 ? "+" : "−"}{Math.abs(net).toFixed(1)}</span>}
+        {ixText(k)}
       </>
     );
+  };
+  const IDXN = { US: "SPX", HK: "HSI" };
+  const ix = (d && d.idx) || {};
+  const ixVals = (k) => (ix[k] || []).filter((v) => v != null);
+  const ixY = (k, pi, v) => { const a = ixVals(k), lo = Math.min(...a), hi = Math.max(...a); return top(pi) + 6 + (1 - (hi === lo ? 0.5 : (v - lo) / (hi - lo))) * (PH - 12); };   // 每格自己 min–max 拉伸，只睇形態
+  const ixPath = (k, pi) => { let s = ""; (ix[k] || []).forEach((v, i) => { if (v == null) return; s += `${s ? "L" : "M"}${X(i).toFixed(1)},${ixY(k, pi, v).toFixed(1)}`; }); return s; };
+  const ixText = (k) => {
+    const a = ix[k] || [], v = a[cur];
+    if (v == null) return null;
+    let prev = null; for (let j = cur - 1; j >= 0; j--) if (a[j] != null) { prev = a[j]; break; }
+    const c = prev ? ((v / prev - 1) * 100) : null;
+    return <span style={{ color: T.dim, marginLeft: 8 }}>{IDXN[k]} {v.toLocaleString("en-US", { maximumFractionDigits: 0 })}{c != null && <span style={{ color: c >= 0 ? T.up : T.dn }}> {c >= 0 ? "+" : "−"}{Math.abs(c).toFixed(2)}%</span>}</span>;
   };
   const netPath = (k, pi) => {
     let s = "";   // 休市日冇數據：前後兩點直接連埋
@@ -73,6 +86,7 @@ export default function UtB1Section({ wl, T }) {
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: T.up }} />B1</span>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: T.dn }} />S1</span>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 2, background: T.txt }} />淨值</span>
+          {d && d.idx && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 12, height: 0, borderTop: `2px dashed ${T.acc || T.dim}` }} />指數</span>}
         </div>
       </div>
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "14px 12px 10px" }}>
@@ -81,10 +95,10 @@ export default function UtB1Section({ wl, T }) {
         ) : (
           <>
             <div style={{ fontFamily: SANS, fontSize: 12, color: T.dim, lineHeight: 1.5, marginBottom: 8 }}>
-              每日 UT 當日轉多（B1，向上）／轉空（S1，向下）嘅股票，佔該市場有效股票％；白線 = B1 − S1。撳／掃圖睇逐日數字。
+              每日 UT 當日轉多（B1，向上）／轉空（S1，向下）嘅股票，佔該市場有效股票％；白線 = B1 − S1，虛線 = 指數（SPX／恒指，只睇形態）。撳／掃圖睇逐日數字。
               {!hasS && <span style={{ color: T.mute }}>（S1 要等下次完整掃描先有）</span>}
             </div>
-            <div style={{ fontFamily: M, fontSize: 11.5, lineHeight: 1.6, marginBottom: 6, minHeight: 56 }}>
+            <div style={{ fontFamily: M, fontSize: 11.5, lineHeight: 1.6, marginBottom: 6, minHeight: 90 }}>
               <div style={{ color: T.mute }}>{md(days[cur])}</div>
               {["US", "HK"].map((k) => <div key={k}><span style={{ color: T.dim, marginRight: 6 }}>{k}</span>{rowText(k)}</div>)}
             </div>
@@ -99,6 +113,7 @@ export default function UtB1Section({ wl, T }) {
                         <text x={L - 5} y={Y(pi, t) + 3} textAnchor="end" fontSize="9" fontFamily={M} fill={T.mute}>{t > 0 ? "+" : t < 0 ? "−" : ""}{Math.abs(t)}%</text>
                       </g>
                     ))}
+                    {ixVals(k).length > 1 && <path d={ixPath(k, pi)} fill="none" stroke={T.acc || T.dim} strokeWidth="1.4" strokeDasharray="3 2" strokeLinejoin="round" opacity="0.75" />}
                     <text x={L + 4} y={top(pi) + 11} fontSize="10" fontFamily={M} fontWeight="700" fill={T.dim}>{k}</text>
                     {days.map((dt, i) => {
                       const x = d[k]?.[i];
