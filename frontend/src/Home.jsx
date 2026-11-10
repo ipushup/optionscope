@@ -354,9 +354,9 @@ function BandSection({ band, bq, T }) {
                   const g = sig[r.symbol];
                   const par = PARENTS[r.symbol];
                   return (
-                    <div key={r.symbol} style={{ padding: "9px 14px 8px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", minWidth: 0, gap: 4, overflow: "hidden", padding: "3px 1px" }}>
+                    <div key={r.symbol} style={{ padding: "0 14px", borderTop: `1px solid ${T.line}`, opacity: r.st === "BROKE" ? 0.5 : 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, height: 32 }}>
+                        <div style={{ display: "flex", alignItems: "center", minWidth: 0, gap: 4, overflow: "hidden", padding: "0 1px" }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
                           <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}{marginSup(r.symbol)}</span>
                         <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 3 }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
@@ -369,7 +369,7 @@ function BandSection({ band, bq, T }) {
                           {r.chg != null && <span style={{ fontFamily: M, fontSize: 12, fontWeight: 600, minWidth: 60, textAlign: "right", padding: "2px 4px", borderRadius: 4, background: cc(r.chg), color: "#fff" }}>{pf(r.chg)}</span>}
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, minHeight: 20 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, height: 32 }}>
                         <div style={{ display: "flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
                           {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0, marginLeft: 0 }}>
                             {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
@@ -423,13 +423,13 @@ function BandSection({ band, bq, T }) {
           </div>
           {confRows.length > 0 && (
             <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-              <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Confirmed signals{isHK ? " · HK" : ""} {!isHK && <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>buy next open</span>}</span> {liveStamp}</div>
+              <div style={{ height: 24, boxSizing: "content-box", padding: "6px 14px 0", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Confirmed signals{isHK ? " · HK" : ""} {!isHK && <span style={{ fontFamily: M, fontSize: 11, color: T.mute, fontWeight: 400 }}>buy next open</span>}</span> {liveStamp}</div>
               <div>{(allConf ? confRows : confRows.slice(0, BAND_SHOW)).map(renderCard)}</div>
               {moreBtn(allConf, setAllConf, confRows.length)}
             </div>
           )}
           <div style={{ marginTop: 14, background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ padding: "12px 14px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> {liveStamp}</div>
+            <div style={{ height: 24, boxSizing: "content-box", padding: "6px 14px 0", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}><span>Forming signals{isHK ? " · HK" : ""}</span> {liveStamp}</div>
             {rows.length === 0 ? (
               <div style={{ padding: "0 14px 14px", fontFamily: M, fontSize: 12, color: T.dim }}>{isHK ? (band?.forming_hk ? "No HK forming signals." : "HK forming not scanned yet — appears after the next full Triple Band scan.") : "No forming signals."}</div>
             ) : (
