@@ -1,6 +1,7 @@
 import { marketsClosed, hkClosed } from "./marketHours";
 import STOCK_NAMES from "./names.json";
-import StockDetail, { SessBadge, sessIcon } from "./StockDetail";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
+import StockDetail, { SessBadge, sessIcon } from "./StockDetail";
+import UtB1Section from "./UtB1Section";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useRef, useState } from "react";
 import { PARENTS, groupRows } from "./parents";
 import AppHeader from "./AppHeader";
@@ -845,6 +846,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         <ConfluenceSection wl={wl} T={T} onNavigate={onNavigate} />
 
         <SummarySection sm={sm} T={T} />
+
+        <UtB1Section wl={wl} T={T} />
 
         <div style={{ fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>Read-only. No orders can be placed here. Quotes may be delayed. Not investment advice.</div>
       </main>

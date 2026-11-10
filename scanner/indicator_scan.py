@@ -315,6 +315,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
     print(f"Parsed {len(entries)} watchlist entries -> {len(valid)} resolvable, {len(skipped)} skipped", file=sys.stderr)
 
     results = {}
+    ut_hist = {}   # ticker -> [(日期, 轉向(1=B1 當日轉多), 有效)]，最近 45 棒（主頁 05「UT B1 出現率」用）
     tickers_all = [e["ticker"] for e in valid]
 
     for batch in chunked(tickers_all, chunk_size):
@@ -346,6 +347,14 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                 if df.empty:
                     continue
                 r = tf_signals(df)
+                try:
+                    pos = ut_pos_series(df)
+                    if pos is not None:
+                        idx = [str(d.date()) for d in df.index]
+                        ut_hist[t] = [(idx[i], 1 if (pos[i] == 1 and pos[i - 1] != 1) else 0, 1 if pos[i] != 0 else 0)
+                                      for i in range(max(1, len(pos) - 45), len(pos))]
+                except Exception:  # noqa: BLE001
+                    pass
                 r["last_close"] = round(float(df["Close"].iloc[-1]), 4)
                 try:   # EMA 疊（10/20/50/89/250，收市價 vs EMA）畀主頁共振榜展開行用
                     r["ema"] = [{"p": e["period"], "above": bool(e["above"]), "valid": bool(e["valid"])} for e in compute_ema_status(df.copy())["pills"]]
@@ -387,8 +396,23 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
             **r,
         }
 
+    # 05 / UT B1：每日「當日轉多」嘅股票佔有效股票％，US／HK 分開；最近 30 個交易日（兩邊日期聯集）
+    agg = {"US": {}, "HK": {}}
+    for t, rows in ut_hist.items():
+        mk = "HK" if t.endswith(".HK") else "US"
+        for d, flip, ok in rows:
+            if ok:
+                a = agg[mk].setdefault(d, [0, 0])
+                a[0] += flip
+                a[1] += 1
+    all_days = sorted(set(agg["US"]) | set(agg["HK"]))[-30:]
+    ut_b1 = {"days": all_days}
+    for mk in ("US", "HK"):
+        ut_b1[mk] = [[round(agg[mk][d][0] / agg[mk][d][1] * 100, 2), agg[mk][d][0], agg[mk][d][1]] if d in agg[mk] and agg[mk][d][1] >= 20 else None for d in all_days]
+
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "ut_b1": ut_b1,
         "params": {"ut_bot": {"key_value": 2, "atr_period": 1}, "supertrend": {"period": 10, "multiplier": 3}},
         "count": len(signals),
         "skipped_exchanges": sorted({e["exchange"] for e in skipped}),

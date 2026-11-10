@@ -133,8 +133,11 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
     full_universe = load_full_universe(band_scan_path)
 
     indicators = {}
+    ut_b1 = None
     if indicators_path.exists():
-        indicators = json.loads(indicators_path.read_text(encoding="utf-8")).get("signals", {})
+        _ij = json.loads(indicators_path.read_text(encoding="utf-8"))
+        indicators = _ij.get("signals", {})
+        ut_b1 = _ij.get("ut_b1")
 
     quotes = {}
     if quotes_path.exists():
@@ -265,6 +268,7 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
         "band_scanned_at": band_json.get("scanned_at"),
         "band_bar_date": band_json.get("bar_date"),
         "count": len(merged),
+        "ut_b1": ut_b1,   # 主頁 05：每日 UT B1（當日轉多）佔比，{days, US, HK}
         "rows": merged,
     }
     out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
