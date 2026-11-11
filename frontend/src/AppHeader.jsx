@@ -18,11 +18,11 @@ const TH = {
 // tab = 顯示喺第二行；其餘只喺 ☰ 選單
 export const PAGES = [
   { id: "home", label: "Home", tab: true },
+  { id: "mylist", label: "My List", tab: true },
+  { id: "watchlist", label: "Data", tab: true },
   { id: "signals", label: "Signal Board", tab: true },
   { id: "daily", label: "Daily Table", tab: true },
   { id: "band", label: "Triple Band", tab: true },
-  { id: "watchlist", label: "Data", tab: true },
-  { id: "mylist", label: "My List", tab: true },
   { id: "radar", label: "Radar", tab: true },
   { id: "brief", label: "Daily brief", note: "soon", off: true },
   { id: "premium", label: "Premium", note: "paused" },
