@@ -49,7 +49,7 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
   const stacked = !!(tbf && utf && tbf.some((f, i) => f && utf[i] > 0));   // 有 UT + TB 疊埋先留兩層位
-  const pb = stacked ? 26 : 16;
+  const pb = stacked ? 22 : 16;
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 20 - pb);   // 上留位畀標題／賣出三角，下留位畀買入三角
   return (
     <div ref={box} style={{ width: "100%" }}>
@@ -73,7 +73,7 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
       })}
       {tbf && tbf.length === n && tbf.map((f, i) => {   // Triple Band 買入確認：另一色向上三角；同棒有 UT 買就畫喺 UT 三角下面
         if (!f) return null;
-        const x = 6 + i * step + step / 2, off = utf && utf[i] > 0 ? 8.5 : 0;
+        const x = 6 + i * step + step / 2, off = utf && utf[i] > 0 ? 5.4 : 0;
         return <path key={`t${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5 + off).toFixed(1)} l-3 5.2 h6z`} fill="#ff9f0a" />;
       })}
       <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
