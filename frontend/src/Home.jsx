@@ -330,15 +330,15 @@ function BandSection({ band, bq, wl, T }) {
     const chg = lb ? (g.reg / g.pc - 1) * 100 : isHKrow ? (q.prev_close > 0 && px != null ? (px / q.prev_close - 1) * 100 : null) : (q.chg_pct ?? null);
     const ext = lb && g.sess !== "盤中" ? (g.px / g.reg - 1) * 100 : null;
     const dd = dly[r.symbol] || {};
-    // 固定三格：TB / UT / Heavy。最近 5 日有訊號 → 彩色 tag（1 = 最新一棒）；冇 → 灰色 "–"
+    // 固定三格：UT / HV / TB（同 03 共振榜次序一致）。最近 5 日有訊號 → 彩色 tag（1 = 最新一棒）；冇 → 灰色 "–"
     // daily.json 嘅 ut.pos 係 'L'（long）/ 'S'（short）字串，唔係 +1/-1
     const utLong = dd.ut ? (dd.ut.pos === "L" || dd.ut.pos === 1 ? true : dd.ut.pos === "S" || dd.ut.pos === -1 ? false : null) : null;
     const utN = dd.ut && dd.ut.days != null ? dd.ut.days + 1 : null;   // daily_table 嘅 days 由 0 起算
     const hvN = dd.heavy && dd.heavy.days != null ? dd.heavy.days + 1 : null;
     const tags = [
-      tbMap[r.symbol] != null ? { t: `TB${tbMap[r.symbol]}`, c: T.up } : { t: "TB–" },
       utN != null && utN <= 5 && utLong != null ? { t: `${utLong ? "B" : "S"}${utN}`, c: utLong ? T.up : T.dn } : { t: "UT–" },
       hvN != null && hvN <= 5 ? { t: `${dd.heavy.k}${hvN}`, c: dd.heavy.k === "HB" ? T.up : T.dn } : { t: "HV–" },
+      tbMap[r.symbol] != null ? { t: `TB${tbMap[r.symbol]}`, c: T.up } : { t: "TB–" },
     ];
     return { ...r, tags, bandExt: r.ext, px, low, st, last, chg, ext, utPos: dd.ut ? dd.ut.pos : null, hv: dd.heavy ? dd.heavy.k : null, ema: isHKrow ? (q.ema ? q.ema.map((e) => ({ p: e.p, valid: e.valid, above: px != null && px > e.v })) : null) : dd.ema };
   };
