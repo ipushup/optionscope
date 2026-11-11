@@ -42,16 +42,18 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
     const ro = new ResizeObserver(fit); ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const H = W > 300 ? Math.round(92 + Math.min(40, (W - 300) / 6)) : 92;
+  const H = W > 300 ? Math.round(112 + Math.min(40, (W - 300) / 6)) : 112;
   const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 2.9))), step = (W - 12) / n;
   const bars = allBars.slice(-n), tbf = allTbf && allTbf.length === allBars.length ? allTbf.slice(-n) : null, utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
   const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
-  const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 40);   // 上下留位畀 UT + TB 兩層三角形
+  const stacked = !!(tbf && utf && tbf.some((f, i) => f && utf[i] > 0));   // 有 UT + TB 疊埋先留兩層位
+  const pb = stacked ? 26 : 16;
+  const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 20 - pb);   // 上留位畀標題／賣出三角，下留位畀買入三角
   return (
     <div ref={box} style={{ width: "100%" }}>
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8 }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
         const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
         return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.4} y={t} width={Math.max(1, step * 0.8)} height={Math.max(1, bt - t)} fill={c} /></g>;
@@ -197,7 +199,7 @@ export default function StockDetail({ r, q: qProp, T }) {
         <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
           {bars && bars.length > 5
             ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tbf={src.tbf} tf={tf} T={T} />
-            : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : "K 線暫時攞唔到"}</div>}
+            : <div style={{ width: "100%", height: 112, borderRadius: 8, background: T.soft || T.chip, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : "K 線暫時攞唔到"}</div>}
         </div>
         <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
           {stats.map(([l, v, c]) => (
