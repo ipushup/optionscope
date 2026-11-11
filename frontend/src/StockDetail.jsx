@@ -31,7 +31,7 @@ function fmtBig(n, unit) {
   if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
-function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tf, T }) {
+function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf, T }) {
   // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高；顯示棒數按闊度自動調整（手機 40，PC 最多用盡已儲存嘅棒數）
   const box = useRef(null), [W, setW] = useState(168);
   useEffect(() => {
@@ -43,18 +43,18 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tf, T }) {
     return () => ro.disconnect();
   }, []);
   const H = W > 300 ? Math.round(92 + Math.min(40, (W - 300) / 6)) : 92;
-  const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 3.9))), step = (W - 12) / n;
-  const bars = allBars.slice(-n), utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
+  const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 2.9))), step = (W - 12) / n;
+  const bars = allBars.slice(-n), tbf = allTbf && allTbf.length === allBars.length ? allTbf.slice(-n) : null, utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
   const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
-  const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 34);   // 上下留位畀 UT 三角形
+  const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 40);   // 上下留位畀 UT + TB 兩層三角形
   return (
     <div ref={box} style={{ width: "100%" }}>
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
         const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
-        return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.34} y={t} width={Math.max(1, step * 0.68)} height={Math.max(1, bt - t)} fill={c} /></g>;
+        return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.4} y={t} width={Math.max(1, step * 0.8)} height={Math.max(1, bt - t)} fill={c} /></g>;
       })}
       <clipPath id="mc-clip"><rect x="0" y="14" width={W} height={H - 14} /></clipPath>
       <g clipPath="url(#mc-clip)" fill="none" strokeWidth="1" strokeLinejoin="round" opacity="0.9">
@@ -68,6 +68,11 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tf, T }) {
         return f > 0
           ? <path key={`u${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5).toFixed(1)} l-3 5.2 h6z`} fill={T.txt} />
           : <path key={`u${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][1]) - 2.5).toFixed(1)} l-3 -5.2 h6z`} fill={T.txt} />;
+      })}
+      {tbf && tbf.length === n && tbf.map((f, i) => {   // Triple Band 買入確認：另一色向上三角；同棒有 UT 買就畫喺 UT 三角下面
+        if (!f) return null;
+        const x = 6 + i * step + step / 2, off = utf && utf[i] > 0 ? 8.5 : 0;
+        return <path key={`t${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5 + off).toFixed(1)} l-3 5.2 h6z`} fill="#ff9f0a" />;
       })}
       <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
     </svg>
@@ -191,7 +196,7 @@ export default function StockDetail({ r, q: qProp, T }) {
       <div style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
         <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
           {bars && bars.length > 5
-            ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tf={tf} T={T} />
+            ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tbf={src.tbf} tf={tf} T={T} />
             : <div style={{ width: "100%", height: 92, borderRadius: 8, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : "K 線暫時攞唔到"}</div>}
         </div>
         <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
