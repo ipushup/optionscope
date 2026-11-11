@@ -53,7 +53,7 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 20 - pb);   // 上留位畀標題／賣出三角，下留位畀買入三角
   return (
     <div ref={box} style={{ width: "100%" }}>
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.soft || T.chip }} role="img" aria-label={`${tf} 線 ${n} bars`}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
         const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
         return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.4} y={t} width={Math.max(1, step * 0.8)} height={Math.max(1, bt - t)} fill={c} /></g>;
