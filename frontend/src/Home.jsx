@@ -230,7 +230,7 @@ const hktStamp = (iso, withDate = true) => {
   } catch { return "—"; }
 };
 
-function BandSection({ band, bq, T }) {
+function BandSection({ band, bq, wl, T }) {
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
   const [mkt, setMkt] = useState(() => { try { return localStorage.getItem("os_band_mkt") === "HK" ? "HK" : "US"; } catch { return "US"; } });
@@ -242,6 +242,8 @@ function BandSection({ band, bq, T }) {
     </button>
   );
   const isHK = mkt === "HK";
+  const [openSym, setOpenSym] = useState(null);   // 02 展開咗邊隻（symbol）；展開內容同 03 共用 StockDetail
+  const wlMap = Object.fromEntries((wl?.rows || []).map((x) => [x.ticker, x]));
   const [sigAt, setSigAt] = useState(null);
   const [hkLive, setHkLive] = useState({ q: {}, at: null });   // 港股 Longbridge 即時（/api/quotes）：{ "0700.HK": {price, day_low, prev_close} }
   const [sig, setSig] = useState({});   // Longbridge 即時 (signals.json): sym -> row
@@ -351,37 +353,28 @@ function BandSection({ band, bq, T }) {
   const renderCard = (r) => {
                   const pf = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`;
                   const cc = (v) => (v >= 0 ? T.up : T.dn);
-                  const g = sig[r.symbol];
                   const par = PARENTS[r.symbol];
                   return (
                     <div key={r.symbol} style={{ padding: "0 10px", opacity: r.st === "BROKE" ? 0.5 : 1 }}>
                     <div style={{ padding: "0 4px", borderTop: `1px solid ${T.line}` }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, height: 32 }}>
+                      <div role="button" tabIndex={0} aria-expanded={openSym === r.symbol} onClick={() => setOpenSym(openSym === r.symbol ? null : r.symbol)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenSym(openSym === r.symbol ? null : r.symbol); } }}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, height: 32, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
                         <div style={{ display: "flex", alignItems: "center", minWidth: 0, gap: 4, overflow: "hidden", padding: "0 1px" }}>
                           {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
                           <span style={{ fontWeight: 500, fontSize: 16, color: T.txt, flexShrink: 0 }}>{isHK ? r.symbol.replace(/\.HK$/, "") : r.symbol}{marginSup(r.symbol)}</span>
-                        <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 3 }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
-                          <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 6px", fontSize: 10, lineHeight: 1.3, display: "inline-block", marginRight: 4 }}>{r.st}</span>
-                          {r.st === "ENTRY" ? <><span style={{ color: T.mute }}>ext</span> {r.bandExt != null ? r.bandExt.toFixed(2) : "—"}</> : <><span style={{ color: T.mute }}>kill</span> {fmt(r.kill_low)}</>}
-                        </div>
+                          <div style={{ fontFamily: M, fontSize: 12, color: T.dim, whiteSpace: "nowrap", flexShrink: 0, marginLeft: 3 }} title={`day low ${r.low != null ? fmt(r.low) : "N/A"}${r.kill_low != null ? ` · kill low ${fmt(r.kill_low)}` : ""}${r.kill_close != null ? ` · kill close ${fmt(r.kill_close)}` : ""}`}>
+                            <span style={{ color: pill[r.st], border: `1px solid ${pill[r.st]}`, borderRadius: 999, padding: "1px 6px", fontSize: 10, lineHeight: 1.3, display: "inline-block" }}>{r.st}</span>
+                          </div>
+                          {r.tags && <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, marginLeft: 3 }}>
+                            {r.tags.map((x) => <span key={x.t} style={{ fontFamily: M, fontSize: 10, fontWeight: x.c ? 600 : 400, color: x.c || T.mute, opacity: x.c ? 1 : 0.7, whiteSpace: "nowrap" }}>{x.t}</span>)}
+                          </span>}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, whiteSpace: "nowrap" }}>
                           <span style={{ fontFamily: M, fontSize: 14.5, fontWeight: 600 }}>{r.last != null ? fmt(r.last) : "N/A"}</span>
                           {r.chg != null && <span style={{ fontFamily: M, fontSize: 12, fontWeight: 600, minWidth: 60, textAlign: "right", padding: "2px 4px", borderRadius: 4, background: cc(r.chg), color: "#fff" }}>{pf(r.chg)}</span>}
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, height: 32 }}>
-                        <div style={{ display: "flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
-                          {r.ema && <span style={{ display: "flex", gap: 1, flexShrink: 0, marginLeft: 0 }}>
-                            {r.ema.map((e) => { const c = !e.valid ? T.mute : e.above ? T.up : T.dn; return <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 2px", borderRadius: 3, background: c + "26", color: c }}>{e.p}</span>; })}
-                          </span>}
-                          {r.tags && <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, marginLeft: 9, paddingLeft: 9, borderLeft: `2px solid ${T.mute}` }}>
-                            {r.tags.map((x) => <span key={x.t} style={{ fontFamily: M, fontSize: 10, fontWeight: x.c ? 600 : 400, color: x.c || T.mute, opacity: x.c ? 1 : 0.7, whiteSpace: "nowrap" }}>{x.t}</span>)}
-                          </span>}
-                        </div>
-                        {r.ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          {g.px.toFixed(2)} <span style={{ color: cc(r.ext) }}>{pf(r.ext)}</span> <SessBadge sess={g.sess} T={T} /></div>}
-                      </div>
+                      {openSym === r.symbol && <StockDetail r={{ ...(wlMap[r.symbol] || {}), ticker: r.symbol }} T={T} />}
                     </div>
                     </div>
                   );
@@ -843,7 +836,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
           )}
         </section>
 
-        <BandSection band={band} bq={bq} T={T} />
+        <BandSection band={band} bq={bq} wl={wl} T={T} />
 
         <ConfluenceSection wl={wl} T={T} onNavigate={onNavigate} />
 
