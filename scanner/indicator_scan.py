@@ -292,6 +292,13 @@ def chart_series(df: pd.DataFrame, n: int = 100):
             out["utf"] = flips[-n:]
     except Exception:  # noqa: BLE001
         pass
+    try:   # Triple Band 買入確認棒（TB，1 = 該棒；TBskip／TS 唔畫），同 bars 對齊
+        import intraday_signals as _S
+        tbi = {e["i"] for e in _S.triple_band(df) if e["kind"] == "TB"}
+        if tbi:
+            out["tbf"] = [1 if i in tbi else 0 for i in range(len(df))][-n:]
+    except Exception:  # noqa: BLE001
+        pass
     close = df["Close"].astype(float)
     out["emas"] = {str(p_): [_rp(float(v)) for v in close.ewm(span=p_, adjust=False).mean().tail(n).values]
                    for p_ in (10, 20, 50, 89, 250) if len(close) >= p_}

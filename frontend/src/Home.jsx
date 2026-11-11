@@ -474,7 +474,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
   const want = side === "B" ? 1 : -1, col = side === "B" ? T.up : T.dn;
   const calc = (w) => (wl?.rows || []).map((r) => {
     const hit = confSigs(r).map((x) => (x && x.s === w ? x : null));
-    return { sym: r.symbol || r.ticker, ticker: r.ticker, margin: r.margin, ema: r.ema, bars: r.bars, emas: r.emas, utf: r.utf, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
+    return { sym: r.symbol || r.ticker, ticker: r.ticker, margin: r.margin, ema: r.ema, bars: r.bars, emas: r.emas, utf: r.utf, tbf: r.tbf, W: r.W, M: r.M, hit, n: hit.filter(Boolean).length, fresh: hit.reduce((a, x) => a + (x ? x.n : 0), 0) };
   }).filter((r) => r.n >= CONF_MIN).sort((a, b) => b.n - a.n || a.fresh - b.fresh);
   const bullRows = calc(1), bearRows = calc(-1);
   const rows = side === "B" ? bullRows : bearRows;
