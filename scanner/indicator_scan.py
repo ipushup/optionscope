@@ -282,7 +282,7 @@ def _rp(x: float) -> float:
     return round(x, 2) if abs(x) >= 10 else round(x, 4)   # 減細 JSON：>=10 取 2 位小數
 
 
-def chart_series(df: pd.DataFrame, n: int = 100):
+def chart_series(df: pd.DataFrame, n: int = 100, hk: bool = False):
     """最近 n 棒 [o,h,l,c] + 同棒對齊嘅 EMA 10/20/50/89/250（用全段收市價計；歷史唔夠 p 棒就唔畫該條）"""
     out = {"bars": [[_rp(float(x)) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
     try:   # UT Bot 買／賣訊號棒（1 = 轉 long，-1 = 轉 short），同 40 棒對齊；圖上畫三角形
@@ -292,11 +292,20 @@ def chart_series(df: pd.DataFrame, n: int = 100):
             out["utf"] = flips[-n:]
     except Exception:  # noqa: BLE001
         pass
-    try:   # Triple Band 買入確認棒（TB，1 = 該棒；TBskip／TS 唔畫），同 bars 對齊
-        import intraday_signals as _S
-        tbi = {e["i"] for e in _S.triple_band(df) if e["kind"] == "TB"}
-        if tbi:
-            out["tbf"] = [1 if i in tbi else 0 for i in range(len(df))][-n:]
+    try:   # 真正會入市嘅 TB：同回測引擎一樣——一次一倉，持倉期間嘅 TB 唔計；UT 賣出轉向先平倉（同棒先平後入）；港股只觀察冇真倉
+        if not hk:
+            import intraday_signals as _S
+            tbi = {e["i"] for e in _S.triple_band(df) if e["kind"] == "TB"}
+            pos = ut_pos_series(df)
+            if tbi and pos is not None:
+                real, in_pos = set(), False
+                for i in range(len(df)):
+                    if in_pos and i > 0 and pos[i] == -1 and pos[i - 1] != -1:
+                        in_pos = False
+                    if i in tbi and not in_pos:
+                        real.add(i); in_pos = True
+                if real:
+                    out["tbf"] = [1 if i in real else 0 for i in range(len(df))][-n:]
     except Exception:  # noqa: BLE001
         pass
     close = df["Close"].astype(float)
@@ -380,7 +389,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                 except Exception:  # noqa: BLE001
                     pass
                 try:   # 最近 100 棒（W 80／M 60）+ EMA 線（展開行迷你圖，前端按闊度揀顯示幾多棒；merge 只保留有共振嘅股票）
-                    r.update(chart_series(df, 100))
+                    r.update(chart_series(df, 100, t.endswith(".HK")))
                 except Exception:  # noqa: BLE001
                     pass
                 r["asof_date"] = str(df.index[-1].date())
@@ -390,7 +399,7 @@ def run(watchlist_path: Path, out_path: Path, chunk_size: int = 80, sleep_s: flo
                         if len(dfk) >= 15:
                             r[key] = tf_signals(dfk)
                             try:
-                                r[key].update(chart_series(dfk, 80 if key == "W" else 60))
+                                r[key].update(chart_series(dfk, 80 if key == "W" else 60, t.endswith(".HK")))
                             except Exception:  # noqa: BLE001
                                 pass
                     except Exception as ex:  # noqa: BLE001
