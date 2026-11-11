@@ -177,18 +177,20 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
         ind = indicators.get(ticker, {})
         q = quotes.get(ticker, {})
 
-        if b and b.get("ut_pos") is not None:
-            ut = "long" if b["ut_pos"] == 1 else "short"
-        else:
+        # UT 方向同持續棒數一定要出自同一個掃描（同一組棒）。
+        # 以前方向取 band.json 嘅 ut_pos、棒數取 indicator_scan，兩次掃描唔係同一刻
+        # （band.json 可能係美股盤中掃嘅），BABA 2026-11-10 就出現「方向 long（舊）+
+        # 棒數 1（新，其實係剛轉 short）」= 顯示 B1 但實際係 S1。
+        # 所以 indicator_scan 有數就一律用佢嘅方向 + 棒數；冇先退回 band.json 嘅 ut_pos（無棒數）。
+        if ind.get("ut_bot") is not None and ind.get("ut_days") is not None:
             ut = ind.get("ut_bot")
-        # UT streak length always comes from indicator_scan.py's own count --
-        # band.json has no equivalent "days in this UT direction" field.
-        # Assumes indicator_scan's direction agrees with band.json's ut_pos
-        # when both exist (validated true for the overlap you checked
-        # earlier); if they ever disagree for a symbol, this days count
-        # would describe indicator_scan's own streak, not necessarily one
-        # that matches the ut value actually shown.
-        ut_days = ind.get("ut_days")
+            ut_days = ind.get("ut_days")
+        else:
+            if b and b.get("ut_pos") is not None:
+                ut = "long" if b["ut_pos"] == 1 else "short"
+            else:
+                ut = ind.get("ut_bot")
+            ut_days = ind.get("ut_days")
 
         if b:
             tband = b["status"]
