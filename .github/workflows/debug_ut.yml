@@ -1,0 +1,35 @@
+name: Debug UT (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      ticker:
+        default: "BABA"
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas numpy
+      - name: Show scan values
+        working-directory: scanner
+        run: |
+          python - <<'PY'
+          import yfinance as yf, pandas as pd, indicator_scan as I
+          t = "${{ inputs.ticker }}"
+          df = yf.download(t, period="1y", interval="1d", progress=False, auto_adjust=False)
+          if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
+          df = df.dropna(subset=["Close"])
+          print(df.tail(8)[["Open","High","Low","Close"]])
+          pos = I.ut_pos_series(df)
+          print("pos tail", list(pos[-8:]))
+          print("ut_bot_status", I.ut_bot_status(df))
+          r = I.tf_signals(df)
+          print({k: r[k] for k in ("ut_bot","ut_days","supertrend","st_days","hv","tb_days","tb")})
+          c = I.chart_series(df, 40)
+          print("utf tail", c["utf"][-8:])
+          d2 = df.iloc[:-1]
+          print("without last bar:", I.ut_bot_status(d2))
+          PY
