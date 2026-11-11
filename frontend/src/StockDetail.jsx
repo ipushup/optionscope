@@ -74,7 +74,7 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
       {tbf && tbf.length === n && tbf.map((f, i) => {   // Triple Band 買入確認：另一色向上三角；同棒有 UT 買就畫喺 UT 三角下面
         if (!f) return null;
         const x = 6 + i * step + step / 2, off = utf && utf[i] > 0 ? 5.4 : 0;
-        return <path key={`t${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5 + off).toFixed(1)} l-3 5.2 h6z`} fill="#3d8bff" />;
+        return <path key={`t${i}`} d={`M${x.toFixed(1)} ${(y(bars[i][2]) + 2.5 + off).toFixed(1)} l-3 5.2 h6z`} fill="#ff9f0a" />;
       })}
       <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
     </svg>
