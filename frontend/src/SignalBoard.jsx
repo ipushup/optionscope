@@ -207,6 +207,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
     if (!g || !g.t0) return null;
+    const padR = Math.round(Math.min(typeof window !== "undefined" ? window.innerWidth : 390, 900) * 0.22);   // 右邊留白：現時線喺中間偏右（約 70–75%）
     const G_N = g.n || 72, W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
     // 時段分段（按美東分鐘計；窗口內 DST 轉換忽略）
     const segs = []; let cur = null;
@@ -219,7 +220,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     return (
       <div ref={el => { if (el && !el.__init) { el.scrollLeft = el.scrollWidth; el.__init = 1; } }}
         style={{ marginTop: 6, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content", paddingRight: padR }}>
           {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
             {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
           </div></>}
