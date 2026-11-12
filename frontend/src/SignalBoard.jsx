@@ -193,48 +193,64 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
-  // 5m 為基礎尺寸嘅時間格（mtf.json rows[sym].grid）：一行 = 一個時間級別，今日 9:30–16:00 = 78 個 5m 格
-  const G_TFS = [["5m", 1], ["15m", 3], ["1h", 12], ["2h", 24], ["4h", 48]];
-  const G_UNIT = isMobile ? 4 : 8;      // 每個 5m 格闊度 px（格闊 < 9px 時用細圓點代替字母）
-  const G_BLUE = "#3b9eff";
-  // 先試 10 隻指定股票有時段格；其餘仍用舊紅綠燈
   const gridOf = sym => (TEST_SYMS.has(sym) ? mtf?.rows?.[sym]?.grid : null);
+  // 24 小時連續時間格（mtf.json rows[sym].grid = {t0, cl, tf:[[slot,len,flags],...]}）：最近 24h = 288 個 5m 格，
+  // 夜盤 / 盤前 / 正規 / 盤後（美東）用顏色分段；一開頁自動捲到最近 1 小時，可左右拉開睇更早
+  const G_TFS = ["5m", "15m", "1h", "2h", "4h"];
+  const G_UNIT = isMobile ? 20 : 14;      // 每個 5m 格闊度 px
+  const G_N = 288;
+  const G_BLUE = "#3b9eff";
+  const SESS = [[0, 240, "夜盤"], [240, 570, "盤前"], [570, 960, "正規"], [960, 1200, "盤後"], [1200, 1440, "夜盤"]];
+  const etFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const etMinOf = ts => { const p = etFmt.formatToParts(new Date(ts * 1000)); return +p.find(x => x.type === "hour").value * 60 + +p.find(x => x.type === "minute").value; };
+  const hh = m => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
-    if (!g) return null;
-    const total = 78, W = total * G_UNIT, cl = (g.closed_min || 0) / 5;
+    if (!g || !g.t0) return null;
+    const W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
+    // 時段分段（按美東分鐘計；窗口內 DST 轉換忽略）
+    const segs = []; let cur = null;
+    for (let s = 0; s < G_N; s++) {
+      const m = (m0 + s * 5) % 1440, sg = SESS.find(x => m >= x[0] && m < x[1])[2] + (m >= 570 && m < 960 ? "" : "");
+      const key = sg + "@" + (m >= 570 && m < 960 ? "R" : m >= 240 && m < 570 ? "P" : m >= 960 && m < 1200 ? "A" : "N");
+      if (!cur || cur.key !== key) { cur = { key, name: sg, from: s, to: s + 1, reg: m >= 570 && m < 960 }; segs.push(cur); } else cur.to = s + 1;
+    }
+    const ticks = []; for (let s = 0; s < G_N; s++) if ((m0 + s * 5) % 60 === 0) ticks.push([s, (m0 + s * 5) % 1440]);
     return (
-      <div style={{ marginTop: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
+      <div ref={el => { if (el && !el.__init) { el.scrollLeft = el.scrollWidth; el.__init = 1; } }}
+        style={{ marginTop: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 2, alignItems: "center", width: "max-content" }}>
-          {head && <><span /><div style={{ position: "relative", height: 10 }}>
-            {[0, 12, 24, 36, 48, 60, 72].map(k => <span key={k} style={{ position: "absolute", left: k * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{`${9 + Math.floor((30 + k * 5) / 60)}:${String((30 + k * 5) % 60).padStart(2, "0")}`}</span>)}
+          {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
+            {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
           </div></>}
-          {G_TFS.map(([tf, len]) => {
+          <span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 11 }}>
+            {segs.map(sg => <div key={sg.from} style={{ position: "absolute", left: sg.from * G_UNIT, width: (sg.to - sg.from) * G_UNIT, height: 11, boxSizing: "border-box",
+              background: sg.reg ? "transparent" : T.soft, borderBottom: `2px solid ${sg.reg ? T.acc : T.line}`, fontFamily: M, fontSize: 8, color: sg.reg ? T.acc : T.mute,
+              whiteSpace: "nowrap", lineHeight: "9px" }}><span style={{ position: "sticky", left: 28, paddingLeft: 3 }}>{(sg.to - sg.from) * G_UNIT >= 40 ? sg.name : ""}</span></div>)}
+          </div>
+          {G_TFS.map(tf => {
             const rows = g[tf];
-            const sig = Object.fromEntries((rows || []).map(([sl, fl]) => [sl, fl]));
-            const blocks = [];
-            for (let sl = 0; sl < total; sl += len) blocks.push([sl, Math.min(len, total - sl)]);
             return (
               <Fragment key={tf}>
-                <span style={{ fontFamily: M, fontSize: 8.5, color: T.mute }}>{tf}</span>
+                <span style={{ fontFamily: M, fontSize: 8.5, color: T.mute, position: "sticky", left: 0, zIndex: 2, background: T.card, alignSelf: "stretch", display: "flex", alignItems: "center" }}>{tf}</span>
                 <div style={{ position: "relative", height: 16, width: W, opacity: rows ? 1 : 0.35 }} title={rows ? undefined : `${tf} 數據不足`}>
-                  {blocks.map(([sl, ln]) => {
-                    const fl = sig[sl] || 0, w = ln * G_UNIT, done = sl + ln <= cl;
+                  {(rows || []).map(([sl, ln, fl]) => {
+                    const w = ln * G_UNIT, done = sl + ln <= cl;
                     const ub = !!(fl & 1), us = !!(fl & 2), hb = !!(fl & 4), hs = !!(fl & 8), tb = !!(fl & 16);
                     const bg = hb ? T.up + "59" : hs ? T.dn + "59" : "transparent";
                     const label = [ub && "UT 買", us && "UT 賣", hb && "Heavy 買", hs && "Heavy 賣", tb && "TB 真入市"].filter(Boolean).join(" + ");
+                    const col = ub ? T.up : T.dn;
                     return (
-                      <div key={sl} title={fl ? `${tf} · ${label}` : undefined}
+                      <div key={sl} title={fl ? `${tf} · ${hh((m0 + sl * 5) % 1440)} ET · ${label}` : undefined}
                         style={{ position: "absolute", left: sl * G_UNIT, width: w, height: 16, boxSizing: "border-box", background: bg,
                           border: `1px ${done ? "solid" : "dashed"} ${tb ? G_BLUE : T.line}`, boxShadow: tb ? `inset 0 0 0 1px ${G_BLUE}` : undefined,
                           opacity: done ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center",
-                          fontFamily: M, fontSize: 9, fontWeight: 700, lineHeight: 1, color: ub ? T.up : T.dn, overflow: "hidden" }}>
-                        {(ub || us) ? (w >= 9 ? (ub ? "B" : "S")
-                          : <span style={{ width: 4, height: 4, borderRadius: "50%", background: ub ? T.up : T.dn }} />) : null}
+                          fontFamily: M, fontSize: 9, fontWeight: 700, lineHeight: 1, color: col, overflow: "hidden" }}>
+                        {(ub || us) ? (tf !== "5m" && w >= 9 ? (ub ? "B" : "S") : <span style={{ width: 4, height: 4, borderRadius: "50%", background: col }} />) : null}
                       </div>
                     );
                   })}
-                  {cl > 0 && cl < total && <div style={{ position: "absolute", left: cl * G_UNIT, top: -1, width: 1, height: 18, background: T.warn }} />}
+                  {cl > 0 && cl < G_N && <div style={{ position: "absolute", left: cl * G_UNIT, top: -1, width: 1, height: 18, background: T.warn }} />}
                 </div>
               </Fragment>
             );
@@ -327,7 +343,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅底 = Heavy 買／賣、藍框 = TB 真入市（日內未驗證）、虛線 = 未收市、黃線 = 現時
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅底 = Heavy 買／賣、藍框 = TB 真入市（日內未驗證）、虛線 = 未收市、黃線 = 現時 · 時間軸 = 最近 24 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
