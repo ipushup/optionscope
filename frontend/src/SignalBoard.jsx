@@ -281,7 +281,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                 {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
               </span>}
             </div>
-            {!gridOf(r.sym) && <Matrix sym={r.sym} head />}
           </div>
           <div style={{ flexShrink: 0, whiteSpace: "nowrap", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -351,7 +350,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                     {r.sym}
                     <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
                     <SessBadge s={r.sess} />
-                    {mtf?.rows?.[r.sym] && !gridOf(r.sym) && <div><Matrix sym={r.sym} head /></div>}
                     {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
                   </td>
                   <td style={td}><Cell r={r} grp="TB" /></td>
