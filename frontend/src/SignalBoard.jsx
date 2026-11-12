@@ -247,7 +247,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                           borderLeft: `1px ${done ? "solid" : "dashed"} ${T.line}`, boxShadow: hvc ? `inset 0 0 0 2px ${hvc}` : undefined,
                           opacity: done ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center",
                           fontFamily: M, fontSize: 9, fontWeight: 700, lineHeight: 1, color: col, overflow: "hidden" }}>
-                        {(ub || us) ? (tf !== "5m" && w >= 9 ? (ub ? "B" : "S") : <span style={{ width: 4, height: 4, borderRadius: "50%", background: col }} />) : null}
+                        {(ub || us) ? <span style={{ width: 5, height: 5, borderRadius: "50%", background: col }} /> : null}
                       </div>
                     );
                   })}
@@ -344,7 +344,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：綠／紅點 = UT 轉向（買／賣）、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
