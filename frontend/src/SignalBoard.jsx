@@ -217,7 +217,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const ticks = []; for (let s = 0; s < G_N; s++) if ((m0 + s * 5) % 60 === 0) ticks.push([s, (m0 + s * 5) % 1440]);
     return (
       <div ref={el => { if (el && !el.__init) { el.scrollLeft = el.scrollWidth; el.__init = 1; } }}
-        style={{ marginTop: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
+        style={{ marginTop: 6, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content" }}>
           {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
             {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
