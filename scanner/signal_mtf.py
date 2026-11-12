@@ -117,8 +117,9 @@ def grid_flags(df, S):
     return fl
 
 
-GRID_HOURS = 6
-GRID_N = GRID_HOURS * 12             # 最近 6 小時 ÷ 5m = 72 格
+GRID_HOURS = 6                         # 過去 6 小時
+GRID_FUTURE_H = 2                      # 加未來 2 小時空格（現時線約 75% 位置）
+GRID_N = (GRID_HOURS + GRID_FUTURE_H) * 12   # 96 格
 SESS_B = [0, 240, 570, 960, 1200, 1440]   # 美東分鐘：夜盤→盤前 4:00→正規 9:30→盤後 16:00→夜盤 20:00
 GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]
 
@@ -139,7 +140,7 @@ def aggregate_clock(df, k):
 
 def grid_for(frames, S, now_utc=None):
     """frames: 5m/15m/1h（全時段：夜盤+盤前+正規+盤後）、2h/4h（1h 按美東整點合併）。
-    回 {t0, cl, tf: [[slot, len, flags], ...]}：最近 6 小時 = 72 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
+    回 {t0, cl, tf: [[slot, len, flags], ...]}：過去 6 小時 + 未來 2 小時 = 96 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
     每個時間級別每支棒一個區塊（len = 佔幾多個 5m 格；盤前盤後邊界會截短，例如 9:00 嗰支 1h 棒只佔 30 分鐘）；
     未收市區塊嘅 flags 係暫時訊號（前端畫虛線淡色）。"""
     now_utc = now_utc or pd.Timestamp.now(tz="UTC")
@@ -179,6 +180,34 @@ def grid_for(frames, S, now_utc=None):
             if l5 <= 0 or s0 >= GRID_N:
                 continue
             rows.append([s0, min(l5, GRID_N - s0), int(fl[i])])
+        # 未來空格：由「現時 5m 格」開始、df 冇嘅區塊，按同一套邊界生成（flags = 0）
+        have = {r[0] for r in rows}
+        cl = out["cl"]
+        for s0 in range(cl, GRID_N):
+            if s0 in have:
+                continue
+            ts = t0 + pd.Timedelta(minutes=5 * s0)
+            et = ts.tz_convert(ET)
+            m = et.hour * 60 + et.minute
+            if tf == "5m":
+                ln_m = 5
+            elif tf == "15m":
+                if m % 15:
+                    continue
+                ln_m = 15
+            elif tf == "1h":
+                if (m - 570) % 60 if 570 <= m < 960 else m % 60:
+                    continue
+                ln_m = min(60, min(b for b in SESS_B if b > m) - m)
+            else:
+                k = 2 if tf == "2h" else 4
+                if m % (k * 60):
+                    continue
+                ln_m = k * 60
+            l5 = min(ln_m // 5, GRID_N - s0)
+            if l5 > 0:
+                rows.append([s0, l5, 0])
+        rows.sort(key=lambda r: r[0])
         out[tf] = rows
         any_ok = True
     return out if any_ok else None

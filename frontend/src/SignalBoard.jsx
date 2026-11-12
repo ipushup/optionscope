@@ -207,8 +207,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
     if (!g || !g.t0) return null;
-    const padR = Math.round(Math.min(typeof window !== "undefined" ? window.innerWidth : 390, 900) * 0.22);   // 右邊留白：現時線喺中間偏右（約 70–75%）
-    const G_N = g.n || 72, W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
+    const G_N = g.n || 96, W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
     // 時段分段（按美東分鐘計；窗口內 DST 轉換忽略）
     const segs = []; let cur = null;
     for (let s = 0; s < G_N; s++) {
@@ -218,9 +217,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     }
     const ticks = []; for (let s = 0; s < G_N; s++) if ((m0 + s * 5) % 60 === 0) ticks.push([s, (m0 + s * 5) % 1440]);
     return (
-      <div ref={el => { if (el && !el.__init) { el.scrollLeft = el.scrollWidth; el.__init = 1; } }}
+      <div ref={el => { if (el && !el.__init) { el.scrollLeft = Math.max(0, 24 + cl * G_UNIT - el.clientWidth * 0.72); el.__init = 1; } }}
         style={{ marginTop: 6, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content", paddingRight: padR }}>
+        <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content" }}>
           {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
             {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
           </div></>}
@@ -345,7 +344,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 最近 6 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
