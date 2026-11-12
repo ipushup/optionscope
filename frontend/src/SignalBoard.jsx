@@ -198,7 +198,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   // 夜盤 / 盤前 / 正規 / 盤後（美東）用顏色分段；一開頁自動捲到最近 1 小時，可左右拉開睇更早
   const G_TFS = ["5m", "15m", "1h", "2h", "4h"];
   const G_UNIT = isMobile ? 20 : 14;      // 每個 5m 格闊度 px
-  const G_N = 288;
   const G_BLUE = "#3b9eff";
   const SESS = [[0, 240, "夜盤"], [240, 570, "盤前"], [570, 960, "正規"], [960, 1200, "盤後"], [1200, 1440, "夜盤"]];
   const etFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
@@ -207,7 +206,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
     if (!g || !g.t0) return null;
-    const W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
+    const G_N = g.n || 72, W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
     // 時段分段（按美東分鐘計；窗口內 DST 轉換忽略）
     const segs = []; let cur = null;
     for (let s = 0; s < G_N; s++) {
@@ -344,7 +343,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 最近 24 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 最近 6 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
