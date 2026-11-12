@@ -39,7 +39,7 @@ const stamp = iso => {
 };
 
 // 測試階段：Signal Board 只列呢 10 隻（有時段格）
-const TEST_ORDER = ["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"];
+const TEST_ORDER = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX"];
 const TEST_SYMS = new Set(TEST_ORDER);
 
 export default function SignalBoard({ isMobile, light, onBack }) {

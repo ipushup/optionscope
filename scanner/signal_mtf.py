@@ -121,7 +121,7 @@ GRID_HOURS = 6                         # 過去 6 小時
 GRID_FUTURE_H = 2                      # 加未來 2 小時空格（現時線約 75% 位置）
 GRID_N = (GRID_HOURS + GRID_FUTURE_H) * 12   # 96 格
 SESS_B = [0, 240, 570, 960, 1200, 1440]   # 美東分鐘：夜盤→盤前 4:00→正規 9:30→盤後 16:00→夜盤 20:00
-GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]
+GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX"]
 
 
 def aggregate_clock(df, k):
