@@ -117,47 +117,71 @@ def grid_flags(df, S):
     return fl
 
 
+GRID_N = 288                          # 24h ÷ 5m
+SESS_B = [0, 240, 570, 960, 1200, 1440]   # 美東分鐘：夜盤→盤前 4:00→正規 9:30→盤後 16:00→夜盤 20:00
+GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]
+
+
+def aggregate_clock(df, k):
+    """1h（全時段）→ k 小時：按美東整點鐘 bucket（2h = 0,2,4…；4h = 0,4,8…20 點）合併 OHLCV；index = bucket 起點（naive UTC）"""
+    if df is None or df.empty:
+        return df
+    et = _et(df.index)
+    bs = pd.DatetimeIndex(df.index).floor("h") - pd.to_timedelta(np.asarray(et.hour) % k, unit="h")   # 美東與 UTC 差整數小時，喺 UTC 上 floor 避開 DST 歧義
+    d = df.copy()
+    d["_b"] = bs
+    g = d.groupby("_b", sort=True)
+    out = pd.DataFrame({"Open": g["Open"].first(), "High": g["High"].max(), "Low": g["Low"].min(),
+                        "Close": g["Close"].last(), "Volume": g["Volume"].sum()})
+    return out.sort_index()
+
+
 def grid_for(frames, S, now_utc=None):
-    """frames: 5m/15m（可含盤前盤後）、1h/2h/4h（正規盤）→ {date, closed_min, tf: [[slot, flags], ...]}（只列有訊號嘅棒）"""
+    """frames: 5m/15m/1h（全時段：夜盤+盤前+正規+盤後）、2h/4h（1h 按美東整點合併）。
+    回 {t0, cl, tf: [[slot, len, flags], ...]}：最近 24 小時 = 288 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
+    每個時間級別每支棒一個區塊（len = 佔幾多個 5m 格；盤前盤後邊界會截短，例如 9:00 嗰支 1h 棒只佔 30 分鐘）；
+    flags 只喺「已收市」嘅棒計，未收市區塊 flags = 0（前端畫虛線）。"""
     now_utc = now_utc or pd.Timestamp.now(tz="UTC")
-    b5 = frames.get("5m")
-    if b5 is None or b5.empty:
-        return None
-    e5 = _et(b5.index)
-    m5 = e5.hour * 60 + e5.minute
-    reg5 = (m5 >= OPEN_MIN) & (m5 < CLOSE_MIN)
-    if not reg5.any():
-        return None
-    sdate = e5[reg5][-1].date()
-    now_et = now_utc.tz_convert(ET)
-    if now_et.date() > sdate or now_et.hour * 60 + now_et.minute >= CLOSE_MIN:
-        closed_min = CLOSE_MIN - OPEN_MIN
-    else:
-        closed_min = max(0, now_et.hour * 60 + now_et.minute - OPEN_MIN)
-    out = {"date": str(sdate), "closed_min": int(closed_min)}
+    now5 = now_utc.floor("5min")
+    t0 = now5 + pd.Timedelta(minutes=5) - pd.Timedelta(hours=24)
+    t0n = t0.tz_localize(None)
+    nown = now_utc.tz_localize(None)
+    out = {"t0": int(t0.timestamp()), "cl": int((now5 - t0) / pd.Timedelta(minutes=5))}
+    any_ok = False
     for tf in GRID_TFS:
         df = frames.get(tf)
         if df is None or df.empty:
             out[tf] = None
             continue
-        et = _et(df.index)
-        sm = et.hour * 60 + et.minute
-        keep = (sm >= OPEN_MIN) & (sm < CLOSE_MIN)
-        df, et, sm = df[keep], et[keep], sm[keep]
-        if df.empty:
+        start = pd.DatetimeIndex(df.index)
+        if tf in ("2h", "4h"):
+            ln = np.full(len(df), GRID_LEN[tf])
+        else:
+            sm = np.asarray(_et(start).hour) * 60 + np.asarray(_et(start).minute)
+            nb = np.array([min(b for b in SESS_B if b > m) for m in sm])
+            ln = np.minimum(GRID_LEN[tf], nb - sm)
+        end = start + pd.to_timedelta(ln, unit="m")
+        closed = np.asarray(end <= nown)
+        dc = df[closed]
+        if len(dc) < MIN_BARS:
             out[tf] = None
             continue
-        L = GRID_LEN[tf]
-        end_et = et + pd.to_timedelta(np.minimum(L, CLOSE_MIN - np.asarray(sm)), unit="m")
-        closed = np.asarray(end_et.tz_convert("UTC") <= now_utc)
-        df, et, sm = df[closed], et[closed], np.asarray(sm)[closed]
-        if len(df) < MIN_BARS:
-            out[tf] = None
-            continue
-        fl = grid_flags(df, S)
-        rows = [[int((sm[i] - OPEN_MIN) // 5), int(fl[i])] for i in range(len(df)) if fl[i] and et[i].date() == sdate]
+        fl_c = grid_flags(dc, S)
+        fl = np.zeros(len(df), int)
+        fl[closed] = fl_c
+        rows = []
+        for i in range(len(df)):
+            s0 = int(round((start[i] - t0n) / pd.Timedelta(minutes=5)))
+            l5 = int(ln[i] // 5)
+            if s0 < 0:
+                l5 += s0
+                s0 = 0
+            if l5 <= 0 or s0 >= GRID_N:
+                continue
+            rows.append([s0, min(l5, GRID_N - s0), int(fl[i])])
         out[tf] = rows
-    return out
+        any_ok = True
+    return out if any_ok else None
 
 
 def states(df, S):
@@ -226,7 +250,7 @@ def main():
     from concurrent.futures import ThreadPoolExecutor
     sb.RATE = float(os.getenv("MTF_RATE", "6"))
     only = [x.strip().upper() for x in (os.getenv("SB_MTF_SYMS") or "").split(",") if x.strip()]
-    syms = only or [u["sym"] for u in sb.universe()]
+    syms = only or GRID_DEFAULT      # 測試階段：只掃 10 隻有時間格嘅股票（其餘舊紅綠燈已隱藏）
     print(f"{len(syms)} symbols", flush=True)
     ctx = QuoteContext(Config.from_apikey_env())
 
@@ -256,7 +280,9 @@ def main():
             f["1D"] = pull(s, Period.Day, 300, AdjustType.ForwardAdjust, TradeSessions.Intraday)
             r = compute_symbol(f, S)
             try:
-                g = grid_for(f, S)
+                h1a = pull(s, Period.Min_60, 700, AdjustType.NoAdjust, TradeSessions.All)   # 24h 時間格用：全時段 1h
+                g = grid_for({"5m": f["5m"], "15m": f["15m"], "1h": h1a,
+                              "2h": aggregate_clock(h1a, 2), "4h": aggregate_clock(h1a, 4)}, S)
                 if g:
                     r["grid"] = g
             except Exception as e:  # noqa: BLE001
