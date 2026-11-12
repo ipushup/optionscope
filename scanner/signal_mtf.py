@@ -140,7 +140,7 @@ def grid_for(frames, S, now_utc=None):
     """frames: 5m/15m/1h（全時段：夜盤+盤前+正規+盤後）、2h/4h（1h 按美東整點合併）。
     回 {t0, cl, tf: [[slot, len, flags], ...]}：最近 24 小時 = 288 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
     每個時間級別每支棒一個區塊（len = 佔幾多個 5m 格；盤前盤後邊界會截短，例如 9:00 嗰支 1h 棒只佔 30 分鐘）；
-    flags 只喺「已收市」嘅棒計，未收市區塊 flags = 0（前端畫虛線）。"""
+    未收市區塊嘅 flags 係暫時訊號（前端畫虛線淡色）。"""
     now_utc = now_utc or pd.Timestamp.now(tz="UTC")
     now5 = now_utc.floor("5min")
     t0 = now5 + pd.Timedelta(minutes=5) - pd.Timedelta(hours=24)
@@ -162,13 +162,12 @@ def grid_for(frames, S, now_utc=None):
             ln = np.minimum(GRID_LEN[tf], nb - sm)
         end = start + pd.to_timedelta(ln, unit="m")
         closed = np.asarray(end <= nown)
-        dc = df[closed]
-        if len(dc) < MIN_BARS:
+        if int(closed.sum()) < MIN_BARS:
             out[tf] = None
             continue
-        fl_c = grid_flags(dc, S)
-        fl = np.zeros(len(df), int)
-        fl[closed] = fl_c
+        # 連未收市（forming）嗰條一齊計：已收市棒嘅訊號只靠過去數據（因果），唔受最後一棒影響；
+        # forming 棒嘅訊號係「暫時」，前端虛線淡色顯示，收市前可能消失
+        fl = grid_flags(df, S)
         rows = []
         for i in range(len(df)):
             s0 = int(round((start[i] - t0n) / pd.Timedelta(minutes=5)))
