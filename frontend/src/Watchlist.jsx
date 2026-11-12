@@ -515,6 +515,7 @@ export default function Watchlist({ isMobile, light }) {
       ? <span title={tip} style={{ background: col, color: "#fff", padding: "0 4px", borderRadius: 3, fontSize: 11, lineHeight: "13px", display: "inline-block" }}>{txt}</span>
       : <span title={tip} style={{ color: col }}>{txt}</span>;
   };
+  const hbOf = (t) => (highlighted[t] ? hlBg(highlighted[t]) : undefined);   // highlight 畫喺每格，唔靠 <tr> 底色（窄屏＋sticky 欄會斷縫）
   const tdSig = { padding: isMobile ? "7px 2px" : "7px 4px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, whiteSpace: "nowrap" };
 
   return (
@@ -624,7 +625,7 @@ export default function Watchlist({ isMobile, light }) {
               )}
               <tr
                 onClick={() => setOpenT(openT === r.ticker ? null : r.ticker)}
-                style={{ height: 32, cursor: "pointer", background: highlighted[r.ticker] ? hlBg(highlighted[r.ticker]) : undefined }}
+                style={{ height: 32, cursor: "pointer" }}
               >
                 <td title="撳 Symbol 揀顏色標記" onClick={(e) => { e.stopPropagation(); toggleHighlight(r.ticker, r.symbol); }} style={{
                   padding: "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "left",
@@ -650,17 +651,17 @@ export default function Watchlist({ isMobile, light }) {
                     )}
                   </span>
                 </td>
-                <td style={tdSig}>{sigCell(r.ut === "long" ? 1 : r.ut === "short" ? -1 : null, r.ut_days, `UT Bot（${TF_NAME[tf]}）：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒`)}</td>
-                <td style={tdSig}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
-                <td style={tdSig}>{sigCell((r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.s, (r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.n, "Triple Band：B = 買入確認（TB）、S = 賣出（TS），數字 = 幾多棒前（最近 20 棒）")}</td>
-                <td style={tdSig}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
-                <td style={{ padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", ...(isMobile ? { position: "relative", left: 8 } : {}) }}>
+                <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell(r.ut === "long" ? 1 : r.ut === "short" ? -1 : null, r.ut_days, `UT Bot（${TF_NAME[tf]}）：B = 買方向、S = 賣方向，數字 = 持續咗幾多棒`)}</td>
+                <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
+                <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell((r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.s, (r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.n, "Triple Band：B = 買入確認（TB）、S = 賣出（TS），數字 = 幾多棒前（最近 20 棒）")}</td>
+                <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
+                <td style={{ background: hbOf(r.ticker), padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", ...(isMobile ? { position: "relative", left: 8 } : {}) }}>
                   {N(r.last)}
                 </td>
-                <td style={{ padding: isMobile ? "7px 1px 7px 6px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
+                <td style={{ background: hbOf(r.ticker), padding: isMobile ? "7px 1px 7px 6px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
                   {P(r.chg_pct)}
                 </td>
-                <td title={isMobile && r.ext_chg_pct != null ? `${{ pre: "盤前", post: "盤後", overnight: "夜盤 24h" }[r.ext_sess] || "延長時段"} ${P(r.ext_chg_pct)}` : undefined} style={{ padding: isMobile ? "7px 0 7px 2px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: isMobile ? "center" : "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
+                <td title={isMobile && r.ext_chg_pct != null ? `${{ pre: "盤前", post: "盤後", overnight: "夜盤 24h" }[r.ext_sess] || "延長時段"} ${P(r.ext_chg_pct)}` : undefined} style={{ background: hbOf(r.ticker), padding: isMobile ? "7px 0 7px 2px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: isMobile ? "center" : "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: isHK(r.ticker) ? C.mute : pctC(r.ext_chg_pct) }}>
                   {isMobile
                     ? (!isHK(r.ticker) && r.ext_chg_pct != null ? <span style={{ display: "inline-flex", verticalAlign: "middle" }}>{sessIcon(r.ext_sess)}</span> : null)
                     : (isHK(r.ticker) ? "n/a" : P(r.ext_chg_pct))}
