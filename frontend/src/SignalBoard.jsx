@@ -290,10 +290,10 @@ export default function SignalBoard({ isMobile, light, onBack }) {
               {chg != null && <span style={{ fontFamily: M, fontSize: 12.5, fontWeight: 600, minWidth: 66, textAlign: "right", padding: "2px 5px", borderRadius: 4, background: cc(chg), color: "#fff" }}>{pf(chg)}</span>}
             </div>
             {ext != null && <div style={{ fontFamily: M, fontSize: 12.5, color: T.dim }}>
-              {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span><SessBadge s={r.sess} ml={4} /></div>}
+              {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span>{SessBadge({ s: r.sess, ml: 4 })}</div>}
           </div>
         </div>
-        <Grid sym={r.sym} head />
+        {Grid({ sym: r.sym, head: true })}
       </div>
     );
   };
@@ -333,7 +333,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
         {isMobile ? (
           <div>
-            {shown.map(r => <Card key={r.sym} r={r} />)}
+            {shown.map(r => <Fragment key={r.sym}>{Card({ r })}</Fragment>)}
             {data && !shown.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
           </div>
         ) : (
@@ -351,15 +351,15 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                   <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>
                     {r.sym}
                     <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
-                    <SessBadge s={r.sess} />
+                    {SessBadge({ s: r.sess })}
                     {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
                   </td>
-                  <td style={td}><Cell r={r} grp="TB" /></td>
-                  <td style={td}><Cell r={r} grp="UT" /></td>
-                  <td style={td}><Cell r={r} grp="HEAVY" /></td>
+                  <td style={td}>{Cell({ r, grp: "TB" })}</td>
+                  <td style={td}>{Cell({ r, grp: "UT" })}</td>
+                  <td style={td}>{Cell({ r, grp: "HEAVY" })}</td>
                   {!isMobile && <td style={{ ...td, textAlign: "right", color: r.chg >= 0 ? T.up : T.dn }}>{r.px?.toFixed(2)} <span style={{ fontSize: 11 }}>{r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</span></td>}
                 </tr>
-                {gridOf(r.sym) && <tr><td colSpan={5} style={{ ...td, paddingTop: 0 }}><Grid sym={r.sym} head /></td></tr>}
+                {gridOf(r.sym) && <tr><td colSpan={5} style={{ ...td, paddingTop: 0 }}>{Grid({ sym: r.sym, head: true })}</td></tr>}
               </Fragment>);
             })}
             {data && !shown.length && <tr><td colSpan={5} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
