@@ -195,7 +195,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
 
   // 5m 為基礎尺寸嘅時間格（mtf.json rows[sym].grid）：一行 = 一個時間級別，今日 9:30–16:00 = 78 個 5m 格
   const G_TFS = [["5m", 1], ["15m", 3], ["1h", 12], ["2h", 24], ["4h", 48]];
-  const G_UNIT = isMobile ? 4 : 8;      // 每個 5m 格闊度 px（格闊 < 9px 時用三角標記代替字母）
+  const G_UNIT = isMobile ? 4 : 8;      // 每個 5m 格闊度 px（格闊 < 9px 時用細圓點代替字母）
   const G_BLUE = "#3b9eff";
   // 先試 10 隻指定股票有時段格；其餘仍用舊紅綠燈
   const gridOf = sym => (TEST_SYMS.has(sym) ? mtf?.rows?.[sym]?.grid : null);
@@ -230,7 +230,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                           opacity: done ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center",
                           fontFamily: M, fontSize: 9, fontWeight: 700, lineHeight: 1, color: ub ? T.up : T.dn, overflow: "hidden" }}>
                         {(ub || us) ? (w >= 9 ? (ub ? "B" : "S")
-                          : <span style={{ width: 0, height: 0, borderLeft: "2px solid transparent", borderRight: "2px solid transparent", ...(ub ? { borderBottom: `4px solid ${T.up}` } : { borderTop: `4px solid ${T.dn}` }) }} />) : null}
+                          : <span style={{ width: 4, height: 4, borderRadius: "50%", background: ub ? T.up : T.dn }} />) : null}
                       </div>
                     );
                   })}
