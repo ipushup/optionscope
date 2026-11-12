@@ -194,11 +194,8 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const G_TFS = [["5m", 1], ["15m", 3], ["1h", 12], ["2h", 24], ["4h", 48]];
   const G_UNIT = isMobile ? 4 : 8;      // 每個 5m 格闊度 px（格闊 < 9px 時用三角標記代替字母）
   const G_BLUE = "#3b9eff";
-  // 先試 10 隻最熱（今日升跌幅絕對值最大）股票；其餘仍用舊紅綠燈
-  const hotSet = useMemo(() => {
-    const a = (data?.rows || []).map(r => { const last = r.reg > 0 ? r.reg : r.px; return [r.sym, r.pc > 0 && last > 0 ? Math.abs(last / r.pc - 1) : 0]; });
-    return new Set(a.sort((x, y) => y[1] - x[1]).slice(0, 10).map(x => x[0]));
-  }, [data]);
+  // 先試 10 隻指定股票有時段格；其餘仍用舊紅綠燈
+  const hotSet = useMemo(() => new Set(["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]), []);
   const gridOf = sym => (hotSet.has(sym) ? mtf?.rows?.[sym]?.grid : null);
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
