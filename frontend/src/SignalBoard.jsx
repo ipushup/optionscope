@@ -197,7 +197,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   // 24 小時連續時間格（mtf.json rows[sym].grid = {t0, cl, tf:[[slot,len,flags],...]}）：最近 24h = 288 個 5m 格，
   // 夜盤 / 盤前 / 正規 / 盤後（美東）用顏色分段；一開頁自動捲到最近 1 小時，可左右拉開睇更早
   const G_TFS = ["5m", "15m", "1h", "2h", "4h"];
-  const G_UNIT = isMobile ? 20 : 14;      // 每個 5m 格闊度 px
+  const G_UNIT = isMobile ? 13 : 9;      // 每個 5m 格闊度 px
   const G_BLUE = "#3b9eff";
   const SESS = [[0, 240, "夜盤"], [240, 570, "盤前"], [570, 960, "正規"], [960, 1200, "盤後"], [1200, 1440, "夜盤"]];
   const etFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
