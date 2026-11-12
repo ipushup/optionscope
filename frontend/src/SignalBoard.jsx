@@ -38,6 +38,9 @@ const stamp = iso => {
   } catch { return ""; }
 };
 
+// 測試階段：Signal Board 只列呢 10 隻（有時段格）
+const TEST_SYMS = new Set(["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]);
+
 export default function SignalBoard({ isMobile, light, onBack }) {
   const T = light ? THEMES.light : THEMES.dark;
   const [data, setData] = useState(null);
@@ -103,7 +106,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
 
   const shown = useMemo(() => {
     const k = q.trim().toUpperCase();
-    return rows.filter(r => (!k || r.sym.includes(k)) && (sec === "all" || r.section === sec) && (side === "all" || r.dir === side || r.dir === "mix"))
+    return rows.filter(r => TEST_SYMS.has(r.sym) && (!k || r.sym.includes(k)) && (sec === "all" || r.section === sec) && (side === "all" || r.dir === side || r.dir === "mix"))
       .sort((a, b) => a.first - b.first || a.sym.localeCompare(b.sym));      // 最新信號喺最上
   }, [rows, q, side, sec]);
 
@@ -195,8 +198,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const G_UNIT = isMobile ? 4 : 8;      // 每個 5m 格闊度 px（格闊 < 9px 時用三角標記代替字母）
   const G_BLUE = "#3b9eff";
   // 先試 10 隻指定股票有時段格；其餘仍用舊紅綠燈
-  const hotSet = useMemo(() => new Set(["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]), []);
-  const gridOf = sym => (hotSet.has(sym) ? mtf?.rows?.[sym]?.grid : null);
+  const gridOf = sym => (TEST_SYMS.has(sym) ? mtf?.rows?.[sym]?.grid : null);
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
     if (!g) return null;
