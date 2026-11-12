@@ -249,7 +249,7 @@ def hv_tb_status(df: pd.DataFrame, tb_recent: int = 20):
     tbs_sig = None
     try:
         import intraday_signals as S
-        if n > 101:
+        if n >= 30:    # 新股／週線月線棒數 <101 都計（窗口 = 現有棒數，同 TradingView 一致）
             bi, _bv, si, _sv = S.heavy_now(df)
             if bi is not None or si is not None:
                 buy = si is None or (bi is not None and bi >= si)

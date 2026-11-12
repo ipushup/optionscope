@@ -74,7 +74,7 @@ def analyse(df, S, key="D"):
     if int(pos[-1]) != 0:
         ut = {"s": int(pos[-1]), "n": run_len(list(pos))}
     hv = None
-    if n > 101:
+    if n >= 30:    # 棒數 <101 都計（窗口 = 現有棒數）
         bi, _bv, si, _sv = S.heavy_now(df)
         if bi is not None or si is not None:
             buy = si is None or (bi is not None and bi >= si)

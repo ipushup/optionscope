@@ -140,7 +140,7 @@ def analyse_daily(df, live):
     atr_val, _, _ = C.compute_atr_ratio(df)
     whale = [{"type": w["type"], "val": w["val"]} for w in C.compute_whale_history(df)]
     # Heavy Buy / Heavy Sell（同 Signal Board 同一套 heavy_now，喺日線上計）：兩者之中較新嗰個 = 現時狀態
-    bi, _bv, si, _sv = sb.S.heavy_now(df) if len(df) > 101 else (None, 0, None, 0)
+    bi, _bv, si, _sv = sb.S.heavy_now(df) if len(df) >= 30 else (None, 0, None, 0)
     n = len(df)
     heavy = None
     if bi is not None or si is not None:
