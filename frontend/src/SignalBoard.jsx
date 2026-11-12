@@ -39,7 +39,8 @@ const stamp = iso => {
 };
 
 // 測試階段：Signal Board 只列呢 10 隻（有時段格）
-const TEST_SYMS = new Set(["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]);
+const TEST_ORDER = ["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"];
+const TEST_SYMS = new Set(TEST_ORDER);
 
 export default function SignalBoard({ isMobile, light, onBack }) {
   const T = light ? THEMES.light : THEMES.dark;
@@ -107,7 +108,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const shown = useMemo(() => {
     const k = q.trim().toUpperCase();
     return rows.filter(r => TEST_SYMS.has(r.sym) && (!k || r.sym.includes(k)) && (sec === "all" || r.section === sec) && (side === "all" || r.dir === side || r.dir === "mix"))
-      .sort((a, b) => a.first - b.first || a.sym.localeCompare(b.sym));      // 最新信號喺最上
+      .sort((a, b) => TEST_ORDER.indexOf(a.sym) - TEST_ORDER.indexOf(b.sym));      // 測試階段：固定次序（唔再按信號新舊跳位）
   }, [rows, q, side, sec]);
 
   // 有股票出現新信號（最新一至兩支棒內）→ 響
