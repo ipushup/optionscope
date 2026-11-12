@@ -221,18 +221,18 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         style={{ marginTop: 6, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content" }}>
           {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
-            {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
+            {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 9, fontWeight: 600, color: T.sub, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
           </div></>}
           <span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 11 }}>
             {segs.map(sg => <div key={sg.from} style={{ position: "absolute", left: sg.from * G_UNIT, width: (sg.to - sg.from) * G_UNIT, height: 11, boxSizing: "border-box",
-              background: sg.reg ? "transparent" : T.soft, borderBottom: `2px solid ${sg.reg ? T.acc : T.line}`, fontFamily: M, fontSize: 8, color: sg.reg ? T.acc : T.mute,
+              background: sg.reg ? "transparent" : T.soft, borderBottom: `2px solid ${sg.reg ? T.acc : T.line}`, fontFamily: M, fontSize: 9, fontWeight: 600, color: sg.reg ? T.acc : T.sub,
               whiteSpace: "nowrap", lineHeight: "9px" }}><span style={{ position: "sticky", left: 28, paddingLeft: 3 }}>{(sg.to - sg.from) * G_UNIT >= 40 ? sg.name : ""}</span></div>)}
           </div>
           {G_TFS.map(tf => {
             const rows = g[tf];
             return (
               <Fragment key={tf}>
-                <span style={{ fontFamily: M, fontSize: 8.5, color: T.mute, position: "sticky", left: 0, zIndex: 2, background: T.card, alignSelf: "stretch", display: "flex", alignItems: "center" }}>{tf}</span>
+                <span style={{ fontFamily: M, fontSize: 9.5, fontWeight: 700, color: T.sub, position: "sticky", left: 0, zIndex: 2, background: T.card, alignSelf: "stretch", display: "flex", alignItems: "center" }}>{tf}</span>
                 <div style={{ position: "relative", height: 16, width: W, opacity: rows ? 1 : 0.35, borderBottom: `1px solid ${T.line}` }} title={rows ? undefined : `${tf} 數據不足`}>
                   {(rows || []).map(([sl, ln, fl]) => {
                     const w = ln * G_UNIT, done = sl + ln <= cl;
