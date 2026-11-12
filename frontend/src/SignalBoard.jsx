@@ -219,7 +219,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     return (
       <div ref={el => { if (el && !el.__init) { el.scrollLeft = el.scrollWidth; el.__init = 1; } }}
         style={{ marginTop: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 2, alignItems: "center", width: "max-content" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content" }}>
           {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
             {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 8, color: T.mute, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
           </div></>}
@@ -233,17 +233,18 @@ export default function SignalBoard({ isMobile, light, onBack }) {
             return (
               <Fragment key={tf}>
                 <span style={{ fontFamily: M, fontSize: 8.5, color: T.mute, position: "sticky", left: 0, zIndex: 2, background: T.card, alignSelf: "stretch", display: "flex", alignItems: "center" }}>{tf}</span>
-                <div style={{ position: "relative", height: 16, width: W, opacity: rows ? 1 : 0.35 }} title={rows ? undefined : `${tf} 數據不足`}>
+                <div style={{ position: "relative", height: 16, width: W, opacity: rows ? 1 : 0.35, borderBottom: `1px solid ${T.line}` }} title={rows ? undefined : `${tf} 數據不足`}>
                   {(rows || []).map(([sl, ln, fl]) => {
                     const w = ln * G_UNIT, done = sl + ln <= cl;
                     const ub = !!(fl & 1), us = !!(fl & 2), hb = !!(fl & 4), hs = !!(fl & 8), tb = !!(fl & 16);
-                    const bg = hb ? T.up + "59" : hs ? T.dn + "59" : "transparent";
+                    const bg = tb ? G_BLUE + "66" : "transparent";          // TB 真入市 = 藍底
+                    const hvc = hb ? T.up : hs ? T.dn : null;                // Heavy 買／賣 = 綠／紅框
                     const label = [ub && "UT 買", us && "UT 賣", hb && "Heavy 買", hs && "Heavy 賣", tb && "TB 真入市"].filter(Boolean).join(" + ");
                     const col = ub ? T.up : T.dn;
                     return (
                       <div key={sl} title={fl ? `${tf} · ${hh((m0 + sl * 5) % 1440)} ET · ${label}` : undefined}
                         style={{ position: "absolute", left: sl * G_UNIT, width: w, height: 16, boxSizing: "border-box", background: bg,
-                          border: `1px ${done ? "solid" : "dashed"} ${tb ? G_BLUE : T.line}`, boxShadow: tb ? `inset 0 0 0 1px ${G_BLUE}` : undefined,
+                          borderLeft: `1px ${done ? "solid" : "dashed"} ${T.line}`, boxShadow: hvc ? `inset 0 0 0 2px ${hvc}` : undefined,
                           opacity: done ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center",
                           fontFamily: M, fontSize: 9, fontWeight: 700, lineHeight: 1, color: col, overflow: "hidden" }}>
                         {(ub || us) ? (tf !== "5m" && w >= 9 ? (ub ? "B" : "S") : <span style={{ width: 4, height: 4, borderRadius: "50%", background: col }} />) : null}
@@ -343,7 +344,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅底 = Heavy 買／賣、藍框 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 最近 24 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 最近 24 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
