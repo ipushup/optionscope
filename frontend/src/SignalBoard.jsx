@@ -71,7 +71,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     let alive = true;
     const pull = () => fetch("/mtf.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null))
       .then(j => { if (alive && j && j.rows) setMtf(j); }).catch(() => {});
-    pull(); const id = setInterval(pull, 60000);
+    pull(); const id = setInterval(pull, 20000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
@@ -343,7 +343,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅底 = Heavy 買／賣、藍框 = TB 真入市（日內未驗證）、虛線 = 未收市、黃線 = 現時 · 時間軸 = 最近 24 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
+        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：B/S = UT 轉向、綠／紅底 = Heavy 買／賣、藍框 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 最近 24 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），開頁自動捲到最近 1 小時，可左右拉
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
