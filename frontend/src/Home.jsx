@@ -99,6 +99,7 @@ function Spark({ data, color, T }) {
 
 // Daily brief 樣式：蠟燭 + EMA10/20/50 + SuperTrend + UT Bot 上下箭嘴
 const ZOOM_BARS = 45;
+const barsShown = (full) => Math.min(ZOOM_BARS, full?.c?.length || 0);
 function Candles({ d: full, T, light }) {
   const total = full?.c?.length || 0;
   if (total < 5) return null;
@@ -109,10 +110,10 @@ function Candles({ d: full, T, light }) {
   const W = 300, H = 150;
   let lo = Infinity, hi = -Infinity;
   for (let i = 0; i < n; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
-  const pad = (hi - lo) * 0.07 || 1; lo -= pad; hi += pad;
+  const pad = (hi - lo) * 0.04 || 1; lo -= pad; hi += pad;
   const X = (i) => ((i + 0.5) / n) * W;
   const Y = (p) => H - ((p - lo) / (hi - lo)) * H;
-  const cw = (W / n) * 0.62;
+  const cw = (W / n) * 0.82;
   const path = (arr, mask) => {
     let out = "", pen = false;
     for (let i = 0; i < n; i++) {
@@ -131,7 +132,7 @@ function Candles({ d: full, T, light }) {
         const top = Y(Math.max(d.o[i], c)), bot = Y(Math.min(d.o[i], c));
         return (
           <g key={i}>
-            <line x1={X(i)} x2={X(i)} y1={Y(d.h[i])} y2={Y(d.l[i])} stroke={col} strokeWidth="0.8" />
+            <line x1={X(i)} x2={X(i)} y1={Y(d.h[i])} y2={Y(d.l[i])} stroke={col} strokeWidth="1" />
             <rect x={X(i) - cw / 2} y={top} width={cw} height={Math.max(bot - top, 0.6)} fill={col} />
           </g>
         );
@@ -168,28 +169,28 @@ function IndexCard({ card, T, mode, daily, light, tf, onCycle }) {
     </div>
   );
   return (
-    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
+    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `2px solid ${col}`, borderRadius: 12, padding: "10px 12px 8px", minWidth: 0 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: T.sub }}>{NAMES[card.id] || card.name}</span>
         <span style={{ fontFamily: M, fontSize: 10, color: T.sub }}>{card.index_symbol}</span>
       </div>
       {showDaily ? (
         <>
-          <div style={{ marginTop: 10 }}>{priceBlock}</div>
-          <div onClick={onCycle} role="button" title="撳一下切換 D / W / M" style={{ marginTop: 10, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+          <div style={{ marginTop: 6 }}>{priceBlock}</div>
+          <div onClick={onCycle} role="button" title="撳一下切換 D / W / M" style={{ marginTop: 6, position: "relative", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
             <Candles d={bars} T={T} light={light} />
-            <span style={{ position: "absolute", top: 0, left: 2, fontFamily: M, fontSize: 10, color: T.mute }}>{tf}</span>
+            <span style={{ position: "absolute", top: 0, left: 2, fontFamily: M, fontSize: 10, color: T.mute }}>{tf} · {barsShown(bars)} bars</span>
           </div>
         </>
       ) : (
-        <div className="os-px" style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <div className="os-px" style={{ display: "flex", gap: 10, marginTop: 6 }}>
           {priceBlock}
           <div className="os-spark">
             <Spark data={main?.spark} color={col} T={T} />
           </div>
         </div>
       )}
-      <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.line}` }}>
+      <div style={{ marginTop: 8, paddingTop: 7, borderTop: `1px solid ${T.line}` }}>
         <div className="os-etf" style={{ fontFamily: M, display: "flex", justifyContent: "space-between", gap: 6, whiteSpace: "nowrap" }}>
           <span style={{ color: T.txt }}>{card.etf_symbol}</span>
           <span style={{ color: T.txt }}>{etf ? fmt(etf.last) : "N/A"}</span>
@@ -205,10 +206,12 @@ function IndexCard({ card, T, mode, daily, light, tf, onCycle }) {
 
 function Tile({ label, value, sub, color, T }) {
   return (
-    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "14px 14px 12px", minWidth: 0 }}>
+    <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "12px 14px 10px", minWidth: 0 }}>
       <div style={{ fontFamily: M, fontSize: 10, letterSpacing: "0.12em", color: T.mute }}>{label}</div>
-      <div style={{ fontFamily: M, fontSize: 28, fontWeight: 500, color: color || T.txt, marginTop: 6 }}>{value ?? "—"}</div>
-      <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>{sub}</div>
+      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", columnGap: 8, marginTop: 6 }}>
+        <span style={{ fontFamily: M, fontSize: 28, fontWeight: 500, color: color || T.txt, lineHeight: 1.15 }}>{value ?? "—"}</span>
+        <span style={{ fontSize: 11, color: T.dim }}>{sub}</span>
+      </div>
     </div>
   );
 }
