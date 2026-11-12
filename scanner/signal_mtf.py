@@ -117,7 +117,8 @@ def grid_flags(df, S):
     return fl
 
 
-GRID_N = 288                          # 24h ÷ 5m
+GRID_HOURS = 6
+GRID_N = GRID_HOURS * 12             # 最近 6 小時 ÷ 5m = 72 格
 SESS_B = [0, 240, 570, 960, 1200, 1440]   # 美東分鐘：夜盤→盤前 4:00→正規 9:30→盤後 16:00→夜盤 20:00
 GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "GOOGL", "CRWV", "TTD", "LEU", "MRNA", "HIMS"]
 
@@ -138,15 +139,15 @@ def aggregate_clock(df, k):
 
 def grid_for(frames, S, now_utc=None):
     """frames: 5m/15m/1h（全時段：夜盤+盤前+正規+盤後）、2h/4h（1h 按美東整點合併）。
-    回 {t0, cl, tf: [[slot, len, flags], ...]}：最近 24 小時 = 288 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
+    回 {t0, cl, tf: [[slot, len, flags], ...]}：最近 6 小時 = 72 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
     每個時間級別每支棒一個區塊（len = 佔幾多個 5m 格；盤前盤後邊界會截短，例如 9:00 嗰支 1h 棒只佔 30 分鐘）；
     未收市區塊嘅 flags 係暫時訊號（前端畫虛線淡色）。"""
     now_utc = now_utc or pd.Timestamp.now(tz="UTC")
     now5 = now_utc.floor("5min")
-    t0 = now5 + pd.Timedelta(minutes=5) - pd.Timedelta(hours=24)
+    t0 = now5 + pd.Timedelta(minutes=5) - pd.Timedelta(hours=GRID_HOURS)
     t0n = t0.tz_localize(None)
     nown = now_utc.tz_localize(None)
-    out = {"t0": int(t0.timestamp()), "cl": int((now5 - t0) / pd.Timedelta(minutes=5))}
+    out = {"t0": int(t0.timestamp()), "n": GRID_N, "cl": int((now5 - t0) / pd.Timedelta(minutes=5))}
     any_ok = False
     for tf in GRID_TFS:
         df = frames.get(tf)
