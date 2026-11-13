@@ -325,7 +325,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
               const q = etfQ[e], pf = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`, cc = v => (v >= 0 ? T.up : T.dn);
               return (
                 <div key={e} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "2px 0", fontFamily: M, fontSize: 12.5 }}>
-                  <a href={`https://www.tradingview.com/symbols/${encodeURIComponent(e)}/`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: T.txt, textDecoration: "none", minWidth: 52 }}>{e}</a>
+                  <span style={{ fontWeight: 600, color: T.txt, minWidth: 52 }}>{e}</span>
                   <span style={{ color: T.mute, fontSize: 10.5, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{STOCK_NAMES[e] || ""}</span>
                   <span style={{ fontVariantNumeric: "tabular-nums" }}>{q ? q.last.toFixed(2) : "—"}</span>
                   <span style={{ minWidth: 58, textAlign: "right", fontVariantNumeric: "tabular-nums", color: q ? cc(q.pct) : T.mute }}>{q ? pf(q.pct) : "—"}</span>
