@@ -655,8 +655,9 @@ export default function Watchlist({ isMobile, light }) {
                 <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell(r.hv?.s, r.hv?.n, "Heavy：最近一個 HB / HS，數字 = 幾多棒前")}</td>
                 <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell((r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.s, (r.tb ?? (r.tb_days != null ? { s: 1, n: r.tb_days } : null))?.n, "Triple Band：B = 買入確認（TB）、S = 賣出（TS），數字 = 幾多棒前（最近 20 棒）")}</td>
                 <td style={{ ...tdSig, background: hbOf(r.ticker) }}>{sigCell(r.st === "long" ? 1 : r.st === "short" ? -1 : null, r.st_days, "SuperTrend(10,3)：B = 上升、S = 下降，數字 = 持續咗幾多棒")}</td>
-                <td style={{ background: hbOf(r.ticker), padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", ...(isMobile ? { position: "relative", left: 8 } : {}) }}>
-                  {N(r.last)}
+                <td style={{ background: hbOf(r.ticker), padding: isMobile ? "7px 3px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums" }}>
+                  {/* 手機版向右微調 8px：平移文字（span），唔好平移成個 td——否則 highlight 底色會連格一齊走位，左邊爆縫、右邊同下一格疊色 */}
+                  <span style={isMobile ? { position: "relative", left: 8 } : undefined}>{N(r.last)}</span>
                 </td>
                 <td style={{ background: hbOf(r.ticker), padding: isMobile ? "7px 1px 7px 6px" : "7px 6px", borderBottom: `1px solid ${C.line}`, textAlign: "right", fontFamily: M, fontVariantNumeric: "tabular-nums", color: pctC(r.chg_pct) }}>
                   {P(r.chg_pct)}
