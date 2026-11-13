@@ -58,7 +58,27 @@ def lb(sym):
     return f"{sym}.US"
 
 
+def fetch_sblist():
+    """Signal Board 名單（頁面上增減，存喺 gateway）；攞唔到回 None"""
+    import urllib.request
+    gw, tok = os.getenv("GATEWAY_URL", "").rstrip("/"), os.getenv("INGEST_TOKEN", "")
+    if not (gw and tok):
+        return None
+    try:
+        req = urllib.request.Request(f"{gw}/_ingest/sblist.json", headers={
+            "Authorization": f"Bearer {tok}", "User-Agent": "curl/8.5.0", "Accept": "*/*"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            syms = [str(x) for x in (json.loads(r.read().decode()).get("symbols") or [])]
+            return syms or None
+    except Exception as e:  # noqa: BLE001
+        print(f"ℹ sblist: {e}", flush=True)
+        return None
+
+
 def universe():
+    lst = fetch_sblist()
+    if lst and not os.getenv("SB_SYMS", "").strip():
+        return [{"sym": t, "section": "TEST"} for t in lst]
     only = [x.strip().upper() for x in os.getenv("SB_SYMS", "").split(",") if x.strip()]
     if only:
         return [{"sym": t, "section": "TEST"} for t in only]

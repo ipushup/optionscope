@@ -137,6 +137,39 @@ async function readMylist(env) {
   } catch { /* 用預設 */ }
   return DEFAULT_MYLIST;
 }
+// ── Signal Board 名單：同 My List 一樣可喺頁面增減；美股 "NVDA"、港股 "0968.HK"（同 signals.json／mtf.json 嘅 sym 一致）──
+const DEFAULT_SB = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX", "0968.HK"];
+const SB_MAX = 30;
+function normSb(raw) {
+  const n = normSymbol(raw);
+  if (!n) return null;
+  if (n.endsWith(".HK")) return `${n.slice(0, -3).padStart(4, "0")}.HK`;
+  if (n.endsWith(".US")) return n.slice(0, -3);
+  return null;     // A 股暫不支援
+}
+async function readSb(env) {
+  try {
+    const raw = await env.DATA.get("data/sblist_symbols.json");
+    if (raw) { const j = JSON.parse(raw); if (Array.isArray(j.symbols) && j.symbols.length) return j.symbols; }
+  } catch { /* 用預設 */ }
+  return DEFAULT_SB;
+}
+async function handleSbPut(req, env) {
+  if (req.headers.get("X-Requested-With") !== "xmarket") return json({ error: "Bad request" }, 400);
+  const text = await req.text();
+  if (text.length > 4096) return json({ error: "Too large" }, 413);
+  let body; try { body = JSON.parse(text); } catch { return json({ error: "Bad JSON" }, 400); }
+  const out = [];
+  for (const x of Array.isArray(body.symbols) ? body.symbols : []) {
+    const n = normSb(x);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  if (!out.length) return json({ error: "List cannot be empty" }, 400);
+  if (out.length > SB_MAX) return json({ error: `Max ${SB_MAX} symbols` }, 400);
+  try { await env.DATA.put("data/sblist_symbols.json", JSON.stringify({ symbols: out, updated: new Date().toISOString() })); }
+  catch (e) { return json({ error: "storage write failed", detail: String(e).slice(0, 120) }, 503); }
+  return json({ ok: true, symbols: out });
+}
 async function handleMylistPut(req, env) {
   if (req.headers.get("X-Requested-With") !== "xmarket") return json({ error: "Bad request" }, 400);
   const text = await req.text();
@@ -479,6 +512,12 @@ export default {
       return json({ symbols: await readMylist(env) });
     }
 
+    if (path === "/_ingest/sblist.json" && req.method === "GET") {
+      const auth = req.headers.get("Authorization") || "";
+      if (!env.INGEST_TOKEN || !(await safeEqual(auth, `Bearer ${env.INGEST_TOKEN}`, env.SESSION_SECRET))) return json({ error: "Unauthorized" }, 401);
+      return json({ symbols: await readSb(env) });
+    }
+
     // 圖示要公開（iOS 加到主畫面時唔會帶登入 cookie）；只係個 X 圖，冇敏感內容
     if (req.method === "GET" && PUBLIC_ICONS.has(path)) return withSec(await env.ASSETS.fetch(req));
 
@@ -492,6 +531,11 @@ export default {
     if (path === "/api/mylist") {
       if (req.method === "GET") return json({ symbols: await readMylist(env) }, 200, { "Cache-Control": "no-store" });
       if (req.method === "PUT") return handleMylistPut(req, env);
+    }
+
+    if (path === "/api/sblist") {
+      if (req.method === "GET") return json({ symbols: await readSb(env) }, 200, { "Cache-Control": "no-store" });
+      if (req.method === "PUT") return handleSbPut(req, env);
     }
 
     if (path === "/api/gh-file") return handleGhFile(req, env, url);
