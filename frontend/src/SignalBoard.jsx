@@ -2,9 +2,8 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { PARENTS } from "./parents";
 
 /**
- * SignalBoard.jsx — 同 TradingView 並排用嘅短線信號板。
- * 讀 /signals.json（signal_board.py 每 5 分鐘出）：每隻股 × (5m,15m)
- * 嘅 TB/TS、UT、Heavy 最新事件 + 「接近區間」重疊分數。
+ * SignalBoard.jsx — 同 TradingView 並排用嘅即時短線信號板（集中睇少數股票）。
+ * 名單：/api/sblist（頁面頂部加／減）；卡頭價錢 = /signals.json（推送版 5m），時間格 = /mtf.json。
  * 點股票 → 開 TradingView。
  */
 const URL_ = (typeof window !== "undefined" && /[?&]src=2/.test(window.location.search)) ? "/signals2.json" : "/signals.json";   // ?src=2 = 推送版試跑
@@ -14,15 +13,8 @@ const THEMES = {
 };
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
-const MIN = { "5m": 5, "15m": 15 };
+const MIN = { "5m": 5, "15m": 15 };   // TradingView interval
 
-const GROUP = { TB: "TB", TBskip: "TB", TS: "TB", UTB: "UT", UTS: "UT", HB: "HEAVY", HS: "HEAVY" };
-const BULL = new Set(["TB", "TBskip", "UTB", "HB"]);
-
-function ago(bars, tf) {
-  const m = bars * MIN[tf];
-  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? (m % 60) + "m" : ""}`;
-}
 function beep() {
   try {
     const a = new (window.AudioContext || window.webkitAudioContext)();
@@ -45,9 +37,8 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const T = light ? THEMES.light : THEMES.dark;
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-  const [tfPref, setTf] = useState(() => { try { return localStorage.getItem("os_sb_tf") || "15m"; } catch { return "15m"; } });
-  const tfs = data?.tfs?.length ? data.tfs : ["5m", "15m"];      // 推送版只有 5m
-  const tf = tfs.includes(tfPref) ? tfPref : tfs[0];
+  const tfs = data?.tfs?.length ? data.tfs : ["5m"];      // 推送版只有 5m；時間格另由 mtf.json 供應
+  const tf = tfs.includes("5m") ? "5m" : tfs[0];
   const [side, setSide] = useState("all");      // all | bull | bear
   const [q, setQ] = useState("");
   const [sound, setSound] = useState(false);
@@ -84,10 +75,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     }
   };
   const removeSym = sym => saveList((list || DEFAULT_ORDER).filter(x => x !== sym));
-  const [sec, setSec] = useState("all");         // section 篩選
-  const [hideSkip, setHideSkip] = useState(true); // 隱藏被 rU60 濾走嘅 skip
   const seen = useRef({});                       // sym → 最新信號 key（用嚟判斷有冇新信號）
-  useEffect(() => { try { localStorage.setItem("os_sb_tf", tfPref); } catch { /* */ } }, [tfPref]);
 
   useEffect(() => {
     let alive = true;
@@ -122,33 +110,26 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const out = [];
     for (const r of data.rows) {
       let d = r[tf]; if (!d) continue;
-      if (hideSkip) d = { ...d, ev: d.ev.filter(e => e.k !== "TBskip") };
       const score = Math.max(d.bull, d.bear);
       const dir = d.bull === d.bear ? (d.bull ? "mix" : "none") : d.bull > d.bear ? "bull" : "bear";
       const first = d.ev.length ? Math.min(...d.ev.map(e => e.ago)) : 999;
       out.push({ ...r, d, score, dir, first });
     }
     return out;
-  }, [data, tf, hideSkip]);
-
-  const secs = useMemo(() => {
-    const m = new Map();
-    for (const r of data?.rows || []) if (r.section && !m.has(r.section)) m.set(r.section, r.section.replace(/^\d+-/, ""));
-    return [...m];
-  }, [data]);
+  }, [data, tf]);
 
   const shown = useMemo(() => {
     const k = q.trim().toUpperCase();
-    return rows.filter(r => TEST_SYMS.has(r.sym) && (!k || r.sym.includes(k)) && (sec === "all" || r.section === sec) && (side === "all" || r.dir === side || r.dir === "mix"))
+    return rows.filter(r => TEST_SYMS.has(r.sym) && (!k || r.sym.includes(k)) && (side === "all" || r.dir === side || r.dir === "mix"))
       .sort((a, b) => TEST_ORDER.indexOf(a.sym) - TEST_ORDER.indexOf(b.sym));      // 測試階段：固定次序（唔再按信號新舊跳位）
-  }, [rows, q, side, sec, list]);
+  }, [rows, q, side, list]);
 
   // 名單入面有、但 signals.json 未有數據嘅股票（啱加入，後台未計好）→ 顯示「處理中」卡
   const pending = useMemo(() => {
-    if (!data || side !== "all" || sec !== "all") return [];
+    if (!data || side !== "all") return [];
     const have = new Set(rows.map(r => r.sym)), k = q.trim().toUpperCase();
     return TEST_ORDER.filter(x => !have.has(x) && (!k || x.includes(k)));
-  }, [data, rows, TEST_ORDER, q, side, sec]);
+  }, [data, rows, TEST_ORDER, q, side]);
 
   // 有股票出現新信號（最新一至兩支棒內）→ 響
   useEffect(() => {
@@ -164,7 +145,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     if (ping && sound) beep();
   }, [rows, sound]);
 
-  const near = data?.near ?? 6;
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 10000); return () => clearInterval(id); }, []);
   const age = data ? (now - new Date(data.updated).getTime()) / 1000 : 0;
@@ -200,37 +180,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     return <span title={{ "24h": "夜盤 24h overnight", Pre: "盤前 Pre-market", Post: "盤後 Post-market" }[t]}
       style={{ display: "inline-block", transform: "skewX(-12deg)", marginLeft: ml, background: T.line, color: T.sub, fontFamily: M,
         fontSize: 9.5, fontWeight: 700, fontStyle: "italic", lineHeight: 1.25, padding: "1px 5px", borderRadius: 3, verticalAlign: "middle", whiteSpace: "nowrap" }}>{t}</span>;
-  };
-
-  // 交通燈矩陣：3 行（TB / HV / UT）× 6 個時間級別；綠 = 買方向持倉、紅 = 賣方向、灰 = 冇
-  const MTF_ROWS = [["tb", "TB", "Triple Band（唔計 skip）"], ["hv", "HV", "Heavy Buy/Sell"], ["ut", "UT", "UT Bot 持倉方向"]];
-  const MTF_COL = 28, MTF_LBL = 20;
-  const dotCol = v => (v === 1 ? T.up : v === -1 ? T.dn : T.line);
-  const Matrix = ({ sym, head }) => {
-    const m = mtf?.rows?.[sym];
-    if (!m) return null;
-    const tfsM = mtf.tfs || ["5m", "15m", "1h", "2h", "4h", "1D"];
-    return (
-      <div style={{ marginTop: 5, display: "inline-grid", gridTemplateColumns: `${MTF_LBL}px repeat(${tfsM.length}, ${MTF_COL}px)`, rowGap: 3, alignItems: "center" }}>
-        {head && <><span />{tfsM.map(t => <span key={t} style={{ fontFamily: M, fontSize: 8.5, color: T.mute, textAlign: "center" }}>{t}</span>)}</>}
-        {MTF_ROWS.map(([k, lbl, full]) => (
-          <Fragment key={k}>
-            <span style={{ fontFamily: M, fontSize: 8.5, fontWeight: 600, color: T.mute }} title={full}>{lbl}</span>
-            {tfsM.map(tf => {
-              const st = m[tf];
-              const v = st ? st[k] : null;
-              const ago = st ? st[k + "_ago"] : null;
-              return (
-                <span key={tf} style={{ display: "flex", justifyContent: "center" }}
-                  title={st ? `${tf} ${lbl} ${v === 1 ? "買方向" : v === -1 ? "賣方向" : "冇"}${ago != null ? ` · ${ago} 棒前` : ""}` : `${tf} 數據不足`}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: st ? dotCol(v) : "transparent", border: st ? "none" : `1px solid ${T.line}`, boxSizing: "border-box" }} />
-                </span>
-              );
-            })}
-          </Fragment>
-        ))}
-      </div>
-    );
   };
 
   const gridOf = sym => (TEST_SYMS.has(sym) ? mtf?.rows?.[sym]?.grid : null);
@@ -305,24 +254,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
-  const Cell = ({ r, grp }) => {
-    const e = r.d.ev.filter(x => GROUP[x.k] === grp).sort((a, b) => a.ago - b.ago)[0];
-    if (!e) return <span style={{ color: T.mute }}>–</span>;
-    const bull = BULL.has(e.k);
-    const skip = e.k === "TBskip";
-    let col = skip ? T.mute : bull ? T.up : T.dn;
-    if (e.k === "TB" && e.tier === "weak") col = T.yel;
-    if (e.k === "TS" && e.tier === "weak") col = T.warn;
-    const label = e.k === "UTB" ? "B" : e.k === "UTS" ? "S" : e.k === "HB" ? "HB" : e.k === "HS" ? "HS" : skip ? "skip" : e.k + (e.tier === "strong" ? "★" : "");
-    const fresh = e.ago <= near;
-    return (
-      <span style={{ color: col, opacity: fresh ? 1 : 0.45, whiteSpace: "nowrap", fontWeight: fresh ? 700 : 500 }}
-        title={`${e.k} ${e.t} UTC${e.tier ? " · " + e.tier : ""}${e.val ? " · Δ" + e.val : ""}`}>
-        {label} <span style={{ color: T.dim, fontWeight: 400, fontSize: 11 }}>{ago(e.ago, tf)}</span>
-      </span>
-    );
-  };
-
   const cardBox = { background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 12px", minWidth: 0 };   // 每隻股票一張卡（同 My List 一樣）
   const Card = ({ r }) => {
     const lb = r.reg > 0 && r.pc > 0;
@@ -363,9 +294,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
-  const th = { textAlign: "left", padding: isMobile ? "8px 6px" : "8px 10px", color: T.mute, fontWeight: 500, fontSize: 11, borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.card };
-  const td = { padding: isMobile ? "9px 6px" : "9px 10px", borderBottom: `1px solid ${T.soft}`, fontSize: isMobile ? 12 : 13, fontFamily: M };
-
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.txt, fontFamily: SANS, padding: isMobile ? "14px 7px 40px" : "22px 28px 40px", boxSizing: "border-box", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", minHeight: 20, marginBottom: 10 }}>
@@ -376,21 +304,10 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       </div>
 
       <div style={{ display: "flex", gap: isMobile ? 4 : 8, alignItems: "center", marginBottom: 8, flexWrap: isMobile ? "nowrap" : "wrap" }}>
-        {tfs.length > 1
-          ? <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
-              {tfs.map(x => <button key={x} onClick={() => setTf(x)} style={chip(tf === x)}>{x}</button>)}
-            </div>
-          : <span style={{ fontFamily: M, fontSize: 12, color: T.dim, flexShrink: 0, padding: "0 4px" }}>{tf}</span>}
         <input value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "搜尋" : "搜尋 symbol"}
           style={{ background: T.card, border: `1px solid ${T.line}`, color: T.txt, borderRadius: 7, padding: isMobile ? "6px 8px" : "6px 10px", fontFamily: M, fontSize: 12, width: isMobile ? "auto" : 130, flex: isMobile ? 1 : "0 0 auto", minWidth: 0 }} />
         <SideAndSound />
       </div>
-      <div style={{ display: "flex", gap: 4, overflowX: "auto", marginBottom: 8, paddingBottom: 2, WebkitOverflowScrolling: "touch" }}>
-        <button onClick={() => setHideSkip(v => !v)} style={chip(hideSkip, { flexShrink: 0, whiteSpace: "nowrap" })}>隱 skip</button>
-        <span style={{ width: 1, background: T.line, flexShrink: 0 }} />
-        {[["all", "全部板塊"], ...secs].map(([k, l]) => <button key={k} onClick={() => setSec(k)} style={chip(sec === k, { flexShrink: 0, whiteSpace: "nowrap" })}>{l}</button>)}
-      </div>
-
       <div style={{ display: "flex", gap: 8, margin: "0 0 8px", maxWidth: 520 }}>
         <input value={addIn} onChange={e => setAddIn(e.target.value)} onKeyDown={e => e.key === "Enter" && addSyms()}
           placeholder="加股票：NVDA、968、3868 …" disabled={sbBusy}
@@ -401,7 +318,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       {sbMsg && <div style={{ fontFamily: SANS, fontSize: 11.5, color: sbMsg.startsWith("儲存失敗") ? T.dn : T.mute, marginBottom: 8 }}>{sbMsg}</div>}
 
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
-        TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：綠／紅點 = UT 轉向（買／賣）、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
+        時間格：綠／紅點 = UT 轉向（買／賣）、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(440px, 1fr))", gap: 12, maxWidth: "100%" }}>
