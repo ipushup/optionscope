@@ -66,7 +66,8 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
   const [openSym, setOpenSym] = useState(() => new Set());     // 展開咗圖表嘅股票
-  const [ctf, setCtf] = useState("5m");                         // 展開圖表嘅級別（5m／15m／1h）
+  const [ctfMap, setCtfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("sb_chart_tf") || "{}") || {}; } catch { return {}; } });   // 每隻股票各自嘅圖表級別
+  const setCtf = (sym, x) => setCtfMap(m => { const n = { ...m, [sym]: x }; try { localStorage.setItem("sb_chart_tf", JSON.stringify(n)); } catch { /* ok */ } return n; });
   const toggleOpen = sym => setOpenSym(o => { const n = new Set(o); if (n.has(sym)) n.delete(sym); else n.add(sym); return n; });
   const TEST_ORDER = list || DEFAULT_ORDER;
   const TEST_SYMS = useMemo(() => new Set(TEST_ORDER), [list]);
@@ -284,11 +285,11 @@ export default function SignalBoard({ isMobile, light, onBack }) {
 
   // 展開圖表：撳卡（UT／HV／TB 時間格）展開，K 線 + UT 三角、TB 真入市（實心橙三角）、Heavy（綠／紅空心方格）
   const ChartPanel = ({ sym }) => {
-    const ch = mtf?.rows?.[sym]?.chart, c = ch?.[ctf];
+    const ctf = ctfMap[sym] || "5m", ch = mtf?.rows?.[sym]?.chart, c = ch?.[ctf];
     return (
       <div onClick={e => e.stopPropagation()} style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.line}`, cursor: "default" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
-          {["5m", "15m", "1h", "D", "W", "M"].map(x => <button key={x} type="button" onClick={() => setCtf(x)} style={chip(ctf === x)}>{x}</button>)}
+          {["5m", "15m", "1h", "D", "W", "M"].map(x => <button key={x} type="button" onClick={() => setCtf(sym, x)} style={chip(ctf === x)}>{x}</button>)}
           <span style={{ flex: 1 }} />
           <a href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(sym))}&interval=${MIN[ctf] ?? 60}`} target="_blank" rel="noopener noreferrer"
             style={{ fontFamily: M, fontSize: 11.5, color: T.acc, textDecoration: "none" }}>TradingView ↗</a>
