@@ -27,6 +27,7 @@ MIN_PUSH = float(os.getenv("SB_MIN_PUSH", "4"))
 HEAL_EVERY = 1200            # 每 20 分鐘用歷史補一次最新 100 棒（補斷線期間嘅缺口）
 SILENT_RESUB = 240           # 咁耐冇收到任何推送就重新訂閱
 
+BAD = set()     # 訂閱失敗（代號唔存在）嘅 sym
 lock = threading.Lock()
 B = {}          # sym → {ts: (o,h,l,c,v)}
 PUSHED = {}     # sym → 最新一次推送嘅 ts（歷史補數唔好覆蓋佢）
@@ -38,8 +39,16 @@ PERF = {"cycles": 0, "an_s": 0.0, "max_cycle": 0.0, "n_an": 0, "pushes": 0}
 _prev = {"ev": 0, "t": time.time()}
 
 
+LBMAP = {}      # Longbridge 代號 → Signal Board 代號（968.HK → 0968.HK；NVDA.US → NVDA）
+
+
 def sym_of(s):
-    return s.rsplit(".", 1)[0]
+    return LBMAP.get(s) or s.rsplit(".", 1)[0]
+
+
+def lbs(s):
+    LBMAP[sb.lb(s)] = s
+    return sb.lb(s)
 
 
 def on_candle(symbol, e):
@@ -73,7 +82,7 @@ def history(ctx, s, n):
     for k in range(3):
         try:
             sb._throttle()
-            bars = ctx.candlesticks(f"{s}.US", Period.Min_5, n, AdjustType.NoAdjust, TradeSessions.All)
+            bars = ctx.candlesticks(lbs(s), Period.Min_5, n, AdjustType.NoAdjust, TradeSessions.All)
             if bars:
                 merge_history(s, bars)
             return bool(bars)
@@ -86,10 +95,10 @@ def history(ctx, s, n):
 def subscribe(ctx, s):
     for k in range(3):
         try:
-            ctx.subscribe_candlesticks(f"{s}.US", Period.Min_5, TradeSessions.All)
+            ctx.subscribe_candlesticks(lbs(s), Period.Min_5, TradeSessions.All)
             return True
         except TypeError:
-            ctx.subscribe_candlesticks(f"{s}.US", Period.Min_5); return True
+            ctx.subscribe_candlesticks(lbs(s), Period.Min_5); return True
         except Exception as ex:
             if "invalid security" in str(ex):
                 return False
@@ -122,7 +131,7 @@ def recompute(syms):
 def refresh_quotes(ctx, syms):
     for i in range(0, len(syms), 400):
         try:
-            for q in ctx.quote([f"{x}.US" for x in syms[i:i + 400]]):
+            for q in ctx.quote([lbs(x) for x in syms[i:i + 400]]):
                 QUOTES[sym_of(q.symbol)] = (float(q.last_done), float(q.prev_close))
         except Exception as ex:
             print(f"::warning::quote batch failed: {ex}", flush=True)
@@ -135,7 +144,7 @@ def write(uni):
         if not r:
             continue
         ld, pc = QUOTES.get(s, (None, None))
-        px, sess = r["px"], sb.session_of(r["t"])
+        px, sess = r["px"], (sb.hk_session_of(r["t"]) if s.endswith(".HK") else sb.session_of(r["t"]))
         ref = pc if sess == "盤中" else ld
         chg = round((px / ref - 1) * 100, 2) if ref else None
         rows.append({"sym": s, "section": u["section"], "px": px, "chg": chg, "sess": sess, "reg": ld, "pc": pc, TF: r})
@@ -172,6 +181,7 @@ def main():
     ctx.set_on_candlestick(on_candle)
     end = time.time() + float(os.getenv("SB_LOOP_SECS", "3300"))
     uni = sb.universe()
+    list_mode = sb.fetch_sblist() is not None and not os.getenv("SB_SYMS", "").strip()   # 名單由頁面增減：每分鐘重讀
     uni = warmup(ctx, uni)
     syms = [u["sym"] for u in uni]
     refresh_quotes(ctx, syms)
@@ -180,8 +190,28 @@ def main():
     sb.push(sb.OUT)
     last_q = last_heal = last_push = time.time()
     last_stat = 0
+    last_list = time.time()
     while time.time() < end:
         time.sleep(STEP)
+        if list_mode and time.time() - last_list >= 60:
+            last_list = time.time()
+            try:
+                new = sb.fetch_sblist()
+                if new is not None:
+                    have = {u["sym"] for u in uni}
+                    added = [x for x in new if x not in have and x not in BAD]
+                    if added:
+                        got = warmup(ctx, [{"sym": x, "section": "TEST"} for x in added])
+                        BAD.update(set(added) - {u["sym"] for u in got})     # 訂閱唔到（代號錯）就唔再試
+                        uni.extend(got); refresh_quotes(ctx, [u["sym"] for u in got]); recompute([u["sym"] for u in got])
+                    order = {x: i for i, x in enumerate(new)}
+                    uni[:] = sorted([u for u in uni if u["sym"] in order], key=lambda u: order[u["sym"]])   # 移除／重排
+                    syms[:] = [u["sym"] for u in uni]
+                    if added or len(uni) != len(have):
+                        write(uni); sb.push(sb.OUT); last_push = time.time()
+                        print(f"list updated: {len(uni)} symbols (+{added})", flush=True)
+            except Exception as ex:
+                print(f"::warning::list refresh failed: {ex}", flush=True)
         with lock:
             dirty = list(DIRTY); DIRTY.clear()
         tc = time.time()
