@@ -143,6 +143,13 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       .sort((a, b) => TEST_ORDER.indexOf(a.sym) - TEST_ORDER.indexOf(b.sym));      // 測試階段：固定次序（唔再按信號新舊跳位）
   }, [rows, q, side, sec, list]);
 
+  // 名單入面有、但 signals.json 未有數據嘅股票（啱加入，後台未計好）→ 顯示「處理中」卡
+  const pending = useMemo(() => {
+    if (!data || side !== "all" || sec !== "all") return [];
+    const have = new Set(rows.map(r => r.sym)), k = q.trim().toUpperCase();
+    return TEST_ORDER.filter(x => !have.has(x) && (!k || x.includes(k)));
+  }, [data, rows, TEST_ORDER, q, side, sec]);
+
   // 有股票出現新信號（最新一至兩支棒內）→ 響
   useEffect(() => {
     if (!rows.length) return;
@@ -400,7 +407,15 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         {isMobile ? (
           <div>
             {shown.map(r => <Fragment key={r.sym}>{Card({ r })}</Fragment>)}
-            {data && !shown.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
+            {pending.map(sym => (
+              <div key={`p-${sym}`} style={{ padding: "10px 12px", borderBottom: `1px solid ${T.soft}`, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontWeight: 500, fontSize: 16 }}>{sym}</span>
+                <span style={{ fontSize: 12, color: T.mute, fontFamily: SANS, flex: 1 }}>數據處理中，約 1–2 分鐘內出訊號…</span>
+                <button type="button" title="由名單移除" disabled={sbBusy} onClick={() => removeSym(sym)}
+                  style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px" }}>✕</button>
+              </div>))}
+
+            {data && !shown.length && !pending.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
           </div>
         ) : (
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
@@ -431,7 +446,14 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                 {gridOf(r.sym) && <tr><td colSpan={5} style={{ ...td, paddingTop: 0 }}>{Grid({ sym: r.sym, head: true })}</td></tr>}
               </Fragment>);
             })}
-            {data && !shown.length && <tr><td colSpan={5} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
+            {pending.map(sym => (
+              <tr key={`p-${sym}`}>
+                <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>{sym}</td>
+                <td style={{ ...td, color: T.mute, fontFamily: SANS }} colSpan={3}>數據處理中，約 1–2 分鐘內出訊號…</td>
+                <td style={{ ...td, textAlign: "right" }}><button type="button" title="由名單移除" disabled={sbBusy} onClick={() => removeSym(sym)}
+                  style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer" }}>✕</button></td>
+              </tr>))}
+            {data && !shown.length && !pending.length && <tr><td colSpan={5} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
           </tbody>
         </table>
         )}
