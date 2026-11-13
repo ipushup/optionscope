@@ -128,6 +128,32 @@ def grid_flags(df, S):
     return fl
 
 
+CHART_N = 80
+
+
+def chart_for(frames, S):
+    """展開圖表用：每個級別最近 CHART_N 棒 OHLC + 每棒 UT（+1 買／−1 賣）、TB 真入市（1）、Heavy（+1 買／−1 賣）。
+    最後一棒可能未收市＝暫時訊號。"""
+    out = {}
+    for tf in ("5m", "15m", "1h"):
+        df = frames.get(tf)
+        if df is None or len(df) < 60:
+            continue
+        try:
+            fl = grid_flags(df, S)[-CHART_N:]
+            d = df.iloc[-CHART_N:]
+            out[tf] = {
+                "b": [[round(float(o), 4), round(float(h), 4), round(float(l), 4), round(float(c), 4)]
+                      for o, h, l, c in zip(d["Open"], d["High"], d["Low"], d["Close"])],
+                "u": [1 if f & F_UTB else -1 if f & F_UTS else 0 for f in fl],
+                "tb": [1 if f & F_TB else 0 for f in fl],
+                "hv": [1 if f & F_HVB else -1 if f & F_HVS else 0 for f in fl],
+            }
+        except Exception as e:  # noqa: BLE001
+            print(f"::warning::chart {tf}: {e}", flush=True)
+    return out
+
+
 GRID_HOURS = 6                         # 過去 6 小時
 GRID_FUTURE_H = 2                      # 加未來 2 小時空格（現時線約 75% 位置）
 GRID_N = (GRID_HOURS + GRID_FUTURE_H) * 12   # 96 格
@@ -340,6 +366,7 @@ def main():
                               "4h": None if is_hk(s) else aggregate_clock(h1a, 4)}, S, hk=is_hk(s))
                 if g:
                     r["grid"] = g
+                r["chart"] = chart_for({"5m": f["5m"], "15m": f["15m"], "1h": h1a}, S)
             except Exception as e:  # noqa: BLE001
                 print(f"::warning::{s} grid: {e}", flush=True)
             return s, r
@@ -353,7 +380,7 @@ def main():
         rows, t0, bad = {}, time.time(), 0
         with ThreadPoolExecutor(int(os.getenv("MTF_THREADS", "5"))) as ex:
             for i, (s, r) in enumerate(ex.map(one, syms), 1):
-                if r is None or not any(v for k, v in r.items() if k != "grid"):
+                if r is None or not any(v for k, v in r.items() if k not in ("grid", "chart")):
                     bad += 1
                     continue
                 rows[s] = r

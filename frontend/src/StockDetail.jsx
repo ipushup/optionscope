@@ -31,7 +31,7 @@ function fmtBig(n, unit) {
   if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
-function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf, T }) {
+export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, hvf: allHvf, tf, T }) {
   // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高；顯示棒數按闊度自動調整（手機 40，PC 最多用盡已儲存嘅棒數）
   const box = useRef(null), [W, setW] = useState(168);
   useEffect(() => {
@@ -45,11 +45,12 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
   const H = W > 300 ? Math.round(112 + Math.min(40, (W - 300) / 6)) : 112;
   const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 2.9))), step = (W - 12) / n;
   const bars = allBars.slice(-n), tbf = allTbf && allTbf.length === allBars.length ? allTbf.slice(-n) : null, utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
+  const hvf = allHvf && allHvf.length === allBars.length ? allHvf.slice(-n) : null;   // Heavy 買(+1)／賣(−1)：Signal Board 展開圖用
   const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
   const EC = { 10: "#f5c542", 20: "#4cd964", 50: "#ff3b30", 89: "#ff9f0a", 250: "#3d8bff" };   // 黃／綠／紅／橙／藍
   const stacked = !!(tbf && utf && tbf.some((f, i) => f && utf[i] > 0));   // 有 UT + TB 疊埋先留兩層位
-  const pb = stacked ? 22 : 16;
+  const pb = stacked || (hvf && hvf.some((f, i) => f > 0 && ((utf && utf[i] > 0) || (tbf && tbf[i])))) ? 28 : hvf && hvf.some((f) => f > 0) ? 22 : stacked ? 22 : 16;
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 20 - pb);   // 上留位畀標題／賣出三角，下留位畀買入三角
   return (
     <div ref={box} style={{ width: "100%" }}>
@@ -78,6 +79,12 @@ function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, tf,
         return f === 2   // 2 = TB 成立但持倉中被擋：空心；1 = 真入市：實心
           ? <path key={`t${i}`} d={d} fill="none" stroke="#ff9f0a" strokeWidth="1.1" />
           : <path key={`t${i}`} d={d} fill="#ff9f0a" />;
+      })}
+      {hvf && hvf.map((f, i) => {   // Heavy：買 = 綠色空心方格喺低位下面；賣 = 紅色空心方格喺高位上面（同時間格嘅綠／紅框一致）
+        if (!f) return null;
+        const x = 6 + i * step + step / 2;
+        if (f > 0) { const off = (utf && utf[i] > 0 ? 5.4 : 0) + (tbf && tbf[i] ? 5.4 : 0); return <rect key={`h${i}`} x={(x - 3).toFixed(1)} y={(y(bars[i][2]) + 3 + off + 5.4 * 0).toFixed(1)} width="6" height="6" fill="none" stroke={T.up} strokeWidth="1.3" />; }
+        return <rect key={`h${i}`} x={(x - 3).toFixed(1)} y={(y(bars[i][1]) - 9 - (utf && utf[i] < 0 ? 5.4 : 0)).toFixed(1)} width="6" height="6" fill="none" stroke={T.dn} strokeWidth="1.3" />;
       })}
       <text x="6" y="11" fontSize="9.5" fill={T.mute} fontFamily="inherit">{tf} · {n} bars</text>
     </svg>
