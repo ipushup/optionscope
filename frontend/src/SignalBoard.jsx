@@ -323,6 +323,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
+  const cardBox = { background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 12px", minWidth: 0 };   // 每隻股票一張卡（同 My List 一樣）
   const Card = ({ r }) => {
     const lb = r.reg > 0 && r.pc > 0;
     const last = lb ? r.reg : r.px;
@@ -334,7 +335,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const em = ema[r.sym];
     return (
       <div onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(r.sym))}&interval=${MIN[tf]}`, "_blank", "noopener")}
-        style={{ padding: "9px 12px 8px", borderBottom: `1px solid ${T.soft}`, cursor: "pointer" }}>
+        style={{ ...cardBox, padding: "9px 12px 8px", cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5, minHeight: 24 }}>
@@ -403,60 +404,16 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：綠／紅點 = UT 轉向（買／賣）、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
       </div>
 
-      <div style={{ background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, overflow: "auto", maxWidth: "100%", maxHeight: "calc(100vh - 210px)" }}>
-        {isMobile ? (
-          <div>
-            {shown.map(r => <Fragment key={r.sym}>{Card({ r })}</Fragment>)}
-            {pending.map(sym => (
-              <div key={`p-${sym}`} style={{ padding: "10px 12px", borderBottom: `1px solid ${T.soft}`, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 500, fontSize: 16 }}>{sym}</span>
-                <span style={{ fontSize: 12, color: T.mute, fontFamily: SANS, flex: 1 }}>數據處理中，約 1–2 分鐘內出訊號…</span>
-                <button type="button" title="由名單移除" disabled={sbBusy} onClick={() => removeSym(sym)}
-                  style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px" }}>✕</button>
-              </div>))}
-
-            {data && !shown.length && !pending.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
-          </div>
-        ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
-          <thead><tr>
-            <th style={th}>股票</th><th style={th}>TB / TS</th>
-            <th style={th}>UT</th><th style={th}>Heavy</th>
-            {!isMobile && <th style={{ ...th, textAlign: "right" }}>價 / 升跌</th>}
-          </tr></thead>
-          <tbody>
-            {shown.map(r => {
-              return (<Fragment key={r.sym}>
-                <tr onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(r.sym))}&interval=${MIN[tf]}`, "_blank", "noopener")}
-                  style={{ cursor: "pointer" }}>
-                  <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>
-                    {r.sym}
-                    <button type="button" title="由名單移除" aria-label={`移除 ${r.sym}`} disabled={sbBusy}
-                onClick={e => { e.stopPropagation(); removeSym(r.sym); }}
-                style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px", marginLeft: 2, lineHeight: 1, alignSelf: "center" }}>✕</button>
-                    <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
-                    {SessBadge({ s: r.sess })}
-                    {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
-                  </td>
-                  <td style={td}>{Cell({ r, grp: "TB" })}</td>
-                  <td style={td}>{Cell({ r, grp: "UT" })}</td>
-                  <td style={td}>{Cell({ r, grp: "HEAVY" })}</td>
-                  {!isMobile && <td style={{ ...td, textAlign: "right", color: r.chg >= 0 ? T.up : T.dn }}>{r.px?.toFixed(2)} <span style={{ fontSize: 11 }}>{r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</span></td>}
-                </tr>
-                {gridOf(r.sym) && <tr><td colSpan={5} style={{ ...td, paddingTop: 0 }}>{Grid({ sym: r.sym, head: true })}</td></tr>}
-              </Fragment>);
-            })}
-            {pending.map(sym => (
-              <tr key={`p-${sym}`}>
-                <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>{sym}</td>
-                <td style={{ ...td, color: T.mute, fontFamily: SANS }} colSpan={3}>數據處理中，約 1–2 分鐘內出訊號…</td>
-                <td style={{ ...td, textAlign: "right" }}><button type="button" title="由名單移除" disabled={sbBusy} onClick={() => removeSym(sym)}
-                  style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer" }}>✕</button></td>
-              </tr>))}
-            {data && !shown.length && !pending.length && <tr><td colSpan={5} style={{ ...td, color: T.mute, textAlign: "center", padding: 28 }}>呢個條件下暫時冇信號</td></tr>}
-          </tbody>
-        </table>
-        )}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(440px, 1fr))", gap: 12, maxWidth: "100%" }}>
+        {shown.map(r => <Fragment key={r.sym}>{Card({ r })}</Fragment>)}
+        {pending.map(sym => (
+          <div key={`p-${sym}`} style={{ ...cardBox, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontWeight: 500, fontSize: 16 }}>{sym}</span>
+            <span style={{ fontSize: 12, color: T.mute, fontFamily: SANS, flex: 1 }}>數據處理中，約 1–2 分鐘內出訊號…</span>
+            <button type="button" title="由名單移除" disabled={sbBusy} onClick={() => removeSym(sym)}
+              style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px" }}>✕</button>
+          </div>))}
+        {data && !shown.length && !pending.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
       </div>
     </div>
   );
