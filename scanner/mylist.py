@@ -61,7 +61,7 @@ def run_len(arr):
     return n
 
 
-def analyse(df, S, key="D"):
+def analyse(df, S, key="D", hk=False):
     """一個週期嘅 {ut, hv, ema}；數據太少回 None"""
     if df is None or len(df) < 5:      # 新上市股票月線棒數少：有幾多畫幾多（指標盡量計）
         return None
@@ -118,6 +118,13 @@ def analyse(df, S, key="D"):
     first = n - len(tail)
     k["b"] = [1 if any(e["kind"] == "UTB" and e["i"] == first + j for e in evs) else 0 for j in range(len(tail))]
     k["s"] = [1 if any(e["kind"] == "UTS" and e["i"] == first + j for e in evs) else 0 for j in range(len(tail))]
+    try:   # TB 真入市／被擋標記，同 Data 頁用同一函數（indicator_scan.tb_flags）
+        from indicator_scan import tb_flags
+        tf_ = tb_flags(df, hk=hk) if n >= 30 else None
+        if tf_ is not None:
+            k["tbf"] = tf_[-keep:]
+    except Exception:  # noqa: BLE001
+        pass
     return {"ut": ut, "hv": hv, "tb": tb, "ema": ema, "bars": n, "k": k}
 
 
@@ -163,7 +170,7 @@ def main():
         for s in syms:
             r = {"name": name_of(s)}
             for key, period in (("D", Period.Day), ("W", Period.Week), ("M", Period.Month)):
-                r[key] = analyse(pull(s, period, BARS[key]), S, key)
+                r[key] = analyse(pull(s, period, BARS[key]), S, key, hk=s.upper().endswith(".HK"))
             rows[s] = r
         payload = {"updated": datetime.now(timezone.utc).isoformat(), "symbols": syms, "rows": rows}
         OUT.parent.mkdir(parents=True, exist_ok=True)
