@@ -15,7 +15,7 @@ const THEMES = {
 };
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
-const MIN = { "5m": 5, "15m": 15, "1h": 60 };   // TradingView interval
+const MIN = { "5m": 5, "15m": 15, "1h": 60, D: "D", W: "W", M: "M" };   // TradingView interval
 
 function beep() {
   try {
@@ -288,7 +288,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     return (
       <div onClick={e => e.stopPropagation()} style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.line}`, cursor: "default" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
-          {["5m", "15m", "1h"].map(x => <button key={x} type="button" onClick={() => setCtf(x)} style={chip(ctf === x)}>{x}</button>)}
+          {["5m", "15m", "1h", "D", "W", "M"].map(x => <button key={x} type="button" onClick={() => setCtf(x)} style={chip(ctf === x)}>{x}</button>)}
           <span style={{ flex: 1 }} />
           <a href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(sym))}&interval=${MIN[ctf] ?? 60}`} target="_blank" rel="noopener noreferrer"
             style={{ fontFamily: M, fontSize: 11.5, color: T.acc, textDecoration: "none" }}>TradingView ↗</a>

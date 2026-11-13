@@ -135,9 +135,9 @@ def chart_for(frames, S):
     """展開圖表用：每個級別最近 CHART_N 棒 OHLC + 每棒 UT（+1 買／−1 賣）、TB 真入市（1）、Heavy（+1 買／−1 賣）。
     最後一棒可能未收市＝暫時訊號。"""
     out = {}
-    for tf in ("5m", "15m", "1h"):
+    for tf in ("5m", "15m", "1h", "D", "W", "M"):
         df = frames.get(tf)
-        if df is None or len(df) < 60:
+        if df is None or len(df) < (60 if tf in ("5m", "15m", "1h") else 30):
             continue
         try:
             fl = grid_flags(df, S)[-CHART_N:]
@@ -362,6 +362,8 @@ def main():
             f["4h"] = aggregate(h1, 4, tzs) if h1 is not None else None
             f["1D"] = pull(s, Period.Day, 300, AdjustType.ForwardAdjust, TradeSessions.Intraday)
             r = compute_symbol(f, S)
+            fw = pull(s, Period.Week, 300, AdjustType.ForwardAdjust, TradeSessions.Intraday)     # 展開圖表 W／M 用（最後一棒未完成＝暫時訊號）
+            fm = pull(s, Period.Month, 200, AdjustType.ForwardAdjust, TradeSessions.Intraday)
             try:
                 h1a = pull(s, Period.Min_60, 700, AdjustType.NoAdjust, TradeSessions.All)   # 24h 時間格用：全時段 1h
                 g = grid_for({"5m": f["5m"], "15m": f["15m"], "1h": h1a,
@@ -369,7 +371,7 @@ def main():
                               "4h": None if is_hk(s) else aggregate_clock(h1a, 4)}, S, hk=is_hk(s))
                 if g:
                     r["grid"] = g
-                r["chart"] = chart_for({"5m": f["5m"], "15m": f["15m"], "1h": h1a}, S)
+                r["chart"] = chart_for({"5m": f["5m"], "15m": f["15m"], "1h": h1a, "D": f["1D"], "W": fw, "M": fm}, S)
             except Exception as e:  # noqa: BLE001
                 print(f"::warning::{s} grid: {e}", flush=True)
             return s, r
