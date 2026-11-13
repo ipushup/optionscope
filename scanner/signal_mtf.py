@@ -36,14 +36,25 @@ HV_GRACE = 3     # 標記消失後仍保留幾多棒
 HV_REPLAY = 300  # Heavy 重放只用最近咁多棒（夠長，慳 CPU）
 HV_FRESH = 50   # Heavy 標記只認最近 50 棒（窗口 100 棒嘅後半）；更舊嘅當冇
 ET = ZoneInfo("America/New_York")
+HKT = ZoneInfo("Asia/Hong_Kong")
+HK_B = [0, 570, 720, 780, 960, 1440]   # 港股 HKT 分鐘：休市→早市 9:30→午休 12:00→午市 13:00→收市 16:00
+HK_OPEN = [(570, 720), (780, 960)]
 
 
-def aggregate(df, k):
-    """1h → k 小時：按美東交易日分組，每 k 棒合併一組（OHLCV）"""
+def is_hk(sym):
+    return sym.endswith(".HK")
+
+
+def lb_sym(sym):
+    return f"{int(sym[:-3])}.HK" if is_hk(sym) else f"{sym}.US"
+
+
+def aggregate(df, k, tz=ET):
+    """1h → k 小時：按交易日（預設美東；港股傳 HKT）分組，每 k 棒合併一組（OHLCV）"""
     if df is None or df.empty:
         return df
     idx = pd.DatetimeIndex(df.index)
-    day = idx.tz_localize("UTC").tz_convert(ET).date if idx.tz is None else idx.tz_convert(ET).date
+    day = idx.tz_localize("UTC").tz_convert(tz).date if idx.tz is None else idx.tz_convert(tz).date
     d = df.copy()
     d["_day"] = day
     d["_pos"] = d.groupby("_day").cumcount() // k
@@ -121,7 +132,7 @@ GRID_HOURS = 6                         # 過去 6 小時
 GRID_FUTURE_H = 2                      # 加未來 2 小時空格（現時線約 75% 位置）
 GRID_N = (GRID_HOURS + GRID_FUTURE_H) * 12   # 96 格
 SESS_B = [0, 240, 570, 960, 1200, 1440]   # 美東分鐘：夜盤→盤前 4:00→正規 9:30→盤後 16:00→夜盤 20:00
-GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX"]
+GRID_DEFAULT = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX", "0968.HK"]
 
 
 def aggregate_clock(df, k):
@@ -138,7 +149,7 @@ def aggregate_clock(df, k):
     return out.sort_index()
 
 
-def grid_for(frames, S, now_utc=None):
+def grid_for(frames, S, now_utc=None, hk=False):
     """frames: 5m/15m/1h（全時段：夜盤+盤前+正規+盤後）、2h/4h（1h 按美東整點合併）。
     回 {t0, cl, tf: [[slot, len, flags], ...]}：過去 6 小時 + 未來 2 小時 = 96 個 5m 格（slot 0 = t0，epoch 秒 UTC）；
     每個時間級別每支棒一個區塊（len = 佔幾多個 5m 格；盤前盤後邊界會截短，例如 9:00 嗰支 1h 棒只佔 30 分鐘）；
@@ -149,9 +160,13 @@ def grid_for(frames, S, now_utc=None):
     t0n = t0.tz_localize(None)
     nown = now_utc.tz_localize(None)
     out = {"t0": int(t0.timestamp()), "n": GRID_N, "cl": int((now5 - t0) / pd.Timedelta(minutes=5))}
+    if hk:
+        out["hk"] = 1     # 前端按 HKT 畫早市／午市分段
+    tz = HKT if hk else ET
+    bnd = HK_B if hk else SESS_B
     any_ok = False
     for tf in GRID_TFS:
-        df = frames.get(tf)
+        df = None if (hk and tf in ("2h", "4h")) else frames.get(tf)   # 港股 2h/4h 冇意義（一日得 5 小時，仲分上下午）→ 唔出
         if df is None or df.empty:
             out[tf] = None
             continue
@@ -159,8 +174,9 @@ def grid_for(frames, S, now_utc=None):
         if tf in ("2h", "4h"):
             ln = np.full(len(df), GRID_LEN[tf])
         else:
-            sm = np.asarray(_et(start).hour) * 60 + np.asarray(_et(start).minute)
-            nb = np.array([min(b for b in SESS_B if b > m) for m in sm])
+            lt = _et(start).tz_convert(tz)
+            sm = np.asarray(lt.hour) * 60 + np.asarray(lt.minute)
+            nb = np.array([min(b for b in bnd if b > m) for m in sm])
             ln = np.minimum(GRID_LEN[tf], nb - sm)
         end = start + pd.to_timedelta(ln, unit="m")
         closed = np.asarray(end <= nown)
@@ -187,8 +203,10 @@ def grid_for(frames, S, now_utc=None):
             if s0 in have:
                 continue
             ts = t0 + pd.Timedelta(minutes=5 * s0)
-            et = ts.tz_convert(ET)
+            et = ts.tz_convert(tz)
             m = et.hour * 60 + et.minute
+            if hk and not any(a <= m < b for a, b in HK_OPEN):
+                continue        # 港股休市時段冇棒
             if tf == "5m":
                 ln_m = 5
             elif tf == "15m":
@@ -196,9 +214,13 @@ def grid_for(frames, S, now_utc=None):
                     continue
                 ln_m = 15
             elif tf == "1h":
-                if (m - 570) % 60 if 570 <= m < 960 else m % 60:
+                if hk:
+                    a0 = 570 if m < 720 else 780
+                    if (m - a0) % 60:
+                        continue
+                elif (m - 570) % 60 if 570 <= m < 960 else m % 60:
                     continue
-                ln_m = min(60, min(b for b in SESS_B if b > m) - m)
+                ln_m = min(60, min(b for b in bnd if b > m) - m)
             else:
                 k = 2 if tf == "2h" else 4
                 if m % (k * 60):
@@ -287,7 +309,7 @@ def main():
         for k in range(3):
             try:
                 sb._throttle()
-                bars = ctx.candlesticks(f"{sym}.US", period, count, adj, sess)
+                bars = ctx.candlesticks(lb_sym(sym), period, count, adj, sess)
                 if not bars:
                     return None
                 df = sb._df(bars)
@@ -304,14 +326,16 @@ def main():
             f["15m"] = pull(s, Period.Min_15, 600, AdjustType.NoAdjust, TradeSessions.All)
             h1 = pull(s, Period.Min_60, 700, AdjustType.NoAdjust, TradeSessions.Intraday)
             f["1h"] = h1
-            f["2h"] = aggregate(h1, 2) if h1 is not None else None
-            f["4h"] = aggregate(h1, 4) if h1 is not None else None
+            tzs = HKT if is_hk(s) else ET
+            f["2h"] = aggregate(h1, 2, tzs) if h1 is not None else None
+            f["4h"] = aggregate(h1, 4, tzs) if h1 is not None else None
             f["1D"] = pull(s, Period.Day, 300, AdjustType.ForwardAdjust, TradeSessions.Intraday)
             r = compute_symbol(f, S)
             try:
                 h1a = pull(s, Period.Min_60, 700, AdjustType.NoAdjust, TradeSessions.All)   # 24h 時間格用：全時段 1h
                 g = grid_for({"5m": f["5m"], "15m": f["15m"], "1h": h1a,
-                              "2h": aggregate_clock(h1a, 2), "4h": aggregate_clock(h1a, 4)}, S)
+                              "2h": None if is_hk(s) else aggregate_clock(h1a, 2),
+                              "4h": None if is_hk(s) else aggregate_clock(h1a, 4)}, S, hk=is_hk(s))
                 if g:
                     r["grid"] = g
             except Exception as e:  # noqa: BLE001

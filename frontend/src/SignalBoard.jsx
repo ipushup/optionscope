@@ -39,7 +39,7 @@ const stamp = iso => {
 };
 
 // 測試階段：Signal Board 只列呢 10 隻（有時段格）
-const TEST_ORDER = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX"];
+const TEST_ORDER = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX", "0968.HK"];
 const TEST_SYMS = new Set(TEST_ORDER);
 
 export default function SignalBoard({ isMobile, light, onBack }) {
@@ -201,19 +201,24 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const G_UNIT = isMobile ? 13 : 9;      // 每個 5m 格闊度 px
   const G_BLUE = "#3b9eff";
   const SESS = [[0, 240, "夜盤"], [240, 570, "盤前"], [570, 960, "正規"], [960, 1200, "盤後"], [1200, 1440, "夜盤"]];
+  const SESS_HK = [[0, 570, "休市"], [570, 720, "早市"], [720, 780, "午休"], [780, 960, "午市"], [960, 1440, "休市"]];   // 港股（HKT）
+  const hkFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const hkMinOf = ts => { const p = hkFmt.formatToParts(new Date(ts * 1000)); return +p.find(x => x.type === "hour").value * 60 + +p.find(x => x.type === "minute").value; };
+  const tvSym = sym => (sym.endsWith(".HK") ? `HKEX:${parseInt(sym, 10)}` : sym);
   const etFmt = new Intl.DateTimeFormat("en-GB", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   const etMinOf = ts => { const p = etFmt.formatToParts(new Date(ts * 1000)); return +p.find(x => x.type === "hour").value * 60 + +p.find(x => x.type === "minute").value; };
   const hh = m => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   const Grid = ({ sym, head }) => {
     const g = gridOf(sym);
     if (!g || !g.t0) return null;
-    const G_N = g.n || 96, W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, m0 = etMinOf(g.t0);
+    const G_N = g.n || 96, W = G_N * G_UNIT, cl = g.cl ?? G_N - 1, hk = !!g.hk, m0 = hk ? hkMinOf(g.t0) : etMinOf(g.t0);
+    const SS = hk ? SESS_HK : SESS, isReg = m => (hk ? (m >= 570 && m < 720) || (m >= 780 && m < 960) : m >= 570 && m < 960);
     // 時段分段（按美東分鐘計；窗口內 DST 轉換忽略）
     const segs = []; let cur = null;
     for (let s = 0; s < G_N; s++) {
-      const m = (m0 + s * 5) % 1440, sg = SESS.find(x => m >= x[0] && m < x[1])[2] + (m >= 570 && m < 960 ? "" : "");
-      const key = sg + "@" + (m >= 570 && m < 960 ? "R" : m >= 240 && m < 570 ? "P" : m >= 960 && m < 1200 ? "A" : "N");
-      if (!cur || cur.key !== key) { cur = { key, name: sg, from: s, to: s + 1, reg: m >= 570 && m < 960 }; segs.push(cur); } else cur.to = s + 1;
+      const m = (m0 + s * 5) % 1440, sg = SS.find(x => m >= x[0] && m < x[1])[2];
+      const key = hk ? sg : sg + "@" + (m >= 570 && m < 960 ? "R" : m >= 240 && m < 570 ? "P" : m >= 960 && m < 1200 ? "A" : "N");
+      if (!cur || cur.key !== key) { cur = { key, name: sg, from: s, to: s + 1, reg: isReg(m) }; segs.push(cur); } else cur.to = s + 1;
     }
     const ticks = []; for (let s = 0; s < G_N; s++) if ((m0 + s * 5) % 60 === 0) ticks.push([s, (m0 + s * 5) % 1440]);
     return (
@@ -242,7 +247,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                     const label = [ub && "UT 買", us && "UT 賣", hb && "Heavy 買", hs && "Heavy 賣", tb && "TB 真入市"].filter(Boolean).join(" + ");
                     const col = ub ? T.up : T.dn;
                     return (
-                      <div key={sl} title={fl ? `${tf} · ${hh((m0 + sl * 5) % 1440)} ET · ${label}` : undefined}
+                      <div key={sl} title={fl ? `${tf} · ${hh((m0 + sl * 5) % 1440)} ${hk ? "HKT" : "ET"} · ${label}` : undefined}
                         style={{ position: "absolute", left: sl * G_UNIT, width: w, height: 16, boxSizing: "border-box", background: bg,
                           borderLeft: `1px ${done ? "solid" : "dashed"} ${T.line}`, boxShadow: hvc ? `inset 0 0 0 2px ${hvc}` : undefined,
                           opacity: done ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center",
@@ -289,7 +294,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const par = PARENTS[r.sym];
     const em = ema[r.sym];
     return (
-      <div onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=${MIN[tf]}`, "_blank", "noopener")}
+      <div onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(r.sym))}&interval=${MIN[tf]}`, "_blank", "noopener")}
         style={{ padding: "9px 12px 8px", borderBottom: `1px solid ${T.soft}`, cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ minWidth: 0 }}>
@@ -363,7 +368,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           <tbody>
             {shown.map(r => {
               return (<Fragment key={r.sym}>
-                <tr onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(r.sym)}&interval=${MIN[tf]}`, "_blank", "noopener")}
+                <tr onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(r.sym))}&interval=${MIN[tf]}`, "_blank", "noopener")}
                   style={{ cursor: "pointer" }}>
                   <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>
                     {r.sym}

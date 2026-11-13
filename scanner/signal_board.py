@@ -48,6 +48,16 @@ def _throttle():
         time.sleep(t - now)
 
 
+EXTRA = ["0968.HK"]   # 測試名單加入嘅港股（其餘 universe 只有美股）
+
+
+def lb(sym):
+    """Signal Board 代號 → Longbridge 代號：0968.HK → 968.HK；美股 NVDA → NVDA.US"""
+    if sym.endswith(".HK"):
+        return f"{int(sym[:-3])}.HK"
+    return f"{sym}.US"
+
+
 def universe():
     only = [x.strip().upper() for x in os.getenv("SB_SYMS", "").split(",") if x.strip()]
     if only:
@@ -58,7 +68,8 @@ def universe():
         if not t or t.endswith(".HK") or not US_OK.match(t) or t in seen:
             continue
         seen.add(t); out.append({"sym": t, "section": r["section"]})
-    return out[:LIMIT] if LIMIT else out
+    out = out[:LIMIT] if LIMIT else out
+    return out + [{"sym": h, "section": "HK"} for h in EXTRA if h not in seen]
 
 
 DFC = {}            # (sym, tf) → (DataFrame, 上次全量拎嘅時間)；之後只拎最新幾十棒再合併，大幅減少每個 call 嘅數據量
@@ -81,7 +92,7 @@ def fetch(ctx, sym, tf):
         try:
             _throttle()
             inc = bool(old) and time.time() - old[1] < FULL_EVERY
-            bars = ctx.candlesticks(f"{sym}.US", PERIOD[tf], INC if inc else BARS, AdjustType.NoAdjust, TradeSessions.All)
+            bars = ctx.candlesticks(lb(sym), PERIOD[tf], INC if inc else BARS, AdjustType.NoAdjust, TradeSessions.All)
             if not bars:
                 return None
             new = _df(bars)
@@ -149,6 +160,13 @@ def session_of(ts):
     return "夜盤"
 
 
+def hk_session_of(ts):
+    """港股：bar 時間（UTC naive）→ 盤中（9:30–12:00、13:00–16:00 HKT）／休市"""
+    t = pd.Timestamp(ts) + pd.Timedelta(hours=8)
+    m = t.hour * 60 + t.minute
+    return "盤中" if (570 <= m < 720 or 780 <= m < 960) else "休市"
+
+
 _FAST = [False]; _LAST_PUSH = [0.0]
 
 
@@ -202,8 +220,9 @@ def run_once(ctx, on_write=None):
     quotes = {}
     for i in range(0, len(syms), 400):
         try:
-            for q in ctx.quote([f"{s}.US" for s in syms[i:i + 400]]):
-                quotes[q.symbol.rsplit(".", 1)[0]] = (float(q.last_done), float(q.prev_close))
+            back = {lb(x): x for x in syms[i:i + 400]}
+            for q in ctx.quote(list(back)):
+                quotes[back.get(q.symbol, q.symbol.rsplit(".", 1)[0])] = (float(q.last_done), float(q.prev_close))
         except Exception as e:
             print(f"::warning::quote batch failed: {e}")
     jobs = [(u, tf) for u in uni for tf in TFS]
@@ -222,7 +241,7 @@ def run_once(ctx, on_write=None):
                 continue
             ld, pc = quotes.get(s, (None, None))
             d = r.get("15m") or r.get(TFS[0]) or next(iter(r.values()))
-            px, sess = d["px"], session_of(d["t"])
+            px, sess = d["px"], (hk_session_of(d["t"]) if s.endswith(".HK") else session_of(d["t"]))
             # 盤中：對上日收市；盤前/盤後/夜盤：對最近一個正式收市（last_done）
             ref = pc if sess == "盤中" else ld
             chg = round((px / ref - 1) * 100, 2) if ref else None
