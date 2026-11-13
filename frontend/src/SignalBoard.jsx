@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { PARENTS } from "./parents";
+import { MiniChart } from "./StockDetail";
 
 /**
  * SignalBoard.jsx — 同 TradingView 並排用嘅即時短線信號板（集中睇少數股票）。
@@ -13,7 +14,7 @@ const THEMES = {
 };
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";   // 數字/標籤字體：iOS 系統字 (SF Pro)，同 Longbridge app 一致；配 tabular-nums
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
-const MIN = { "5m": 5, "15m": 15 };   // TradingView interval
+const MIN = { "5m": 5, "15m": 15, "1h": 60 };   // TradingView interval
 
 function beep() {
   try {
@@ -46,6 +47,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const [addIn, setAddIn] = useState("");
   const [sbMsg, setSbMsg] = useState("");
   const [sbBusy, setSbBusy] = useState(false);
+  const [openSym, setOpenSym] = useState(() => new Set());     // 展開咗圖表嘅股票
+  const [ctf, setCtf] = useState("5m");                         // 展開圖表嘅級別（5m／15m／1h）
+  const toggleOpen = sym => setOpenSym(o => { const n = new Set(o); if (n.has(sym)) n.delete(sym); else n.add(sym); return n; });
   const TEST_ORDER = list || DEFAULT_ORDER;
   const TEST_SYMS = useMemo(() => new Set(TEST_ORDER), [list]);
   useEffect(() => {
@@ -211,7 +215,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const ticks = []; for (let s = 0; s < G_N; s++) if ((m0 + s * 5) % 60 === 0) ticks.push([s, (m0 + s * 5) % 1440]);
     return (
       <div ref={el => { if (el && !el.__init) { el.scrollLeft = Math.max(0, 24 + cl * G_UNIT - el.clientWidth * 0.72); el.__init = 1; } }}
-        style={{ marginTop: 6, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }} onClick={e => e.stopPropagation()}>
+        style={{ marginTop: 6, overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }} >
         <div style={{ display: "grid", gridTemplateColumns: `24px ${W}px`, rowGap: 0, alignItems: "center", width: "max-content" }}>
           {head && <><span style={{ position: "sticky", left: 0, zIndex: 2, background: T.card }} /><div style={{ position: "relative", height: 10 }}>
             {ticks.map(([s, m]) => <span key={s} style={{ position: "absolute", left: s * G_UNIT, fontFamily: M, fontSize: 9, fontWeight: 600, color: T.sub, transform: "translateX(-2px)" }}>{hh(m)}</span>)}
@@ -254,6 +258,24 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
 
+  // 展開圖表：撳卡（UT／HV／TB 時間格）展開，K 線 + UT 三角、TB 真入市（實心橙三角）、Heavy（綠／紅空心方格）
+  const ChartPanel = ({ sym }) => {
+    const ch = mtf?.rows?.[sym]?.chart, c = ch?.[ctf];
+    return (
+      <div onClick={e => e.stopPropagation()} style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.line}`, cursor: "default" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
+          {["5m", "15m", "1h"].map(x => <button key={x} type="button" onClick={() => setCtf(x)} style={chip(ctf === x)}>{x}</button>)}
+          <span style={{ flex: 1 }} />
+          <a href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(sym))}&interval=${MIN[ctf] ?? 60}`} target="_blank" rel="noopener noreferrer"
+            style={{ fontFamily: M, fontSize: 11.5, color: T.acc, textDecoration: "none" }}>TradingView ↗</a>
+        </div>
+        {c ? <MiniChart bars={c.b} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} />
+          : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據（下一輪掃描後出現）</div>}
+        <div style={{ fontFamily: M, fontSize: 10.5, color: T.mute, marginTop: 5, lineHeight: 1.5 }}>白三角 = UT 買／賣 · 橙實心三角 = TB 真入市 · 綠／紅空心方 = Heavy 買／賣 · 最後一棒未收市時訊號係暫時</div>
+      </div>
+    );
+  };
+
   const cardBox = { background: T.card, border: `1px solid ${T.line}`, borderRadius: 12, padding: "10px 12px", minWidth: 0 };   // 每隻股票一張卡（同 My List 一樣）
   const Card = ({ r }) => {
     const lb = r.reg > 0 && r.pc > 0;
@@ -265,8 +287,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const par = PARENTS[r.sym];
     const em = ema[r.sym];
     return (
-      <div onClick={() => window.open(`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(r.sym))}&interval=${MIN[tf]}`, "_blank", "noopener")}
-        style={{ ...cardBox, padding: "9px 12px 8px", cursor: "pointer" }}>
+      <div onClick={() => toggleOpen(r.sym)} style={{ ...cardBox, padding: "9px 12px 8px", cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5, minHeight: 24 }}>
@@ -290,6 +311,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           </div>
         </div>
         {Grid({ sym: r.sym, head: true })}
+        {openSym.has(r.sym) && ChartPanel({ sym: r.sym })}
       </div>
     );
   };
