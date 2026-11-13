@@ -11,6 +11,9 @@ on:
     - cron: '40 21 * * 1-5'
     # heavy scan: after HK close (08:00 UTC)
     - cron: '40 8 * * 1-5'
+    # HK 午市休市（12:00–13:00 HKT）重算一次：04:40 UTC = 12:40 HKT。分鐘位 40 → 行 full scan。
+    # 日線仍然 drop_forming（今日未收市唔入），但 W／M 未完成嗰支棒會用到上午嘅價，令 HV／TB 跟得上 TradingView。
+    - cron: '40 4 * * 1-5'
     # US quotes — pre+regular+post. 分鐘位 5/20/35/50，同 radar 嘅 */15 錯開。
     - cron: '5,20,35,50 8-23 * * 1-5'
     # HK quotes — 01:00-08:00 UTC
