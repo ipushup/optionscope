@@ -190,6 +190,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   // 24 小時連續時間格（mtf.json rows[sym].grid = {t0, cl, tf:[[slot,len,flags],...]}）：最近 24h = 288 個 5m 格，
   // 夜盤 / 盤前 / 正規 / 盤後（美東）用顏色分段；一開頁自動捲到最近 1 小時，可左右拉開睇更早
   const G_TFS = ["5m", "15m", "1h", "2h", "4h"];
+  const G_ROW = 11;                      // 訊號表每行高度 px（原 16）
   const G_UNIT = isMobile ? 13 : 9;      // 每個 5m 格闊度 px
   const G_BLUE = "#3b9eff";
   const SESS = [[0, 240, "夜盤"], [240, 570, "盤前"], [570, 960, "正規"], [960, 1200, "盤後"], [1200, 1440, "夜盤"]];
@@ -230,7 +231,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
             return (
               <Fragment key={tf}>
                 <span style={{ fontFamily: M, fontSize: 9.5, fontWeight: 700, color: T.sub, position: "sticky", left: 0, zIndex: 2, background: T.card, alignSelf: "stretch", display: "flex", alignItems: "center" }}>{tf}</span>
-                <div style={{ position: "relative", height: 16, width: W, opacity: rows ? 1 : 0.35, borderBottom: `1px solid ${T.line}` }} title={rows ? undefined : `${tf} 數據不足`}>
+                <div style={{ position: "relative", height: G_ROW, width: W, opacity: rows ? 1 : 0.35, borderBottom: `1px solid ${T.line}` }} title={rows ? undefined : `${tf} 數據不足`}>
                   {(rows || []).map(([sl, ln, fl]) => {
                     const w = ln * G_UNIT, done = sl + ln <= cl;
                     const ub = !!(fl & 1), us = !!(fl & 2), hb = !!(fl & 4), hs = !!(fl & 8), tb = !!(fl & 16);
@@ -240,7 +241,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                     const col = ub ? T.up : T.dn;
                     return (
                       <div key={sl} title={fl ? `${tf} · ${hh((m0 + sl * 5) % 1440)} ${hk ? "HKT" : "ET"} · ${label}` : undefined}
-                        style={{ position: "absolute", left: sl * G_UNIT, width: w, height: 16, boxSizing: "border-box", background: bg,
+                        style={{ position: "absolute", left: sl * G_UNIT, width: w, height: G_ROW, boxSizing: "border-box", background: bg,
                           borderLeft: `1px ${done ? "solid" : "dashed"} ${T.line}`, boxShadow: hvc ? `inset 0 0 0 2px ${hvc}` : undefined,
                           opacity: done ? 1 : 0.45, display: "flex", alignItems: "center", justifyContent: "center",
                           fontFamily: M, fontSize: 9, fontWeight: 700, lineHeight: 1, color: col, overflow: "hidden" }}>
@@ -248,7 +249,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                       </div>
                     );
                   })}
-                  {cl > 0 && cl < G_N && <div style={{ position: "absolute", left: cl * G_UNIT, top: -1, width: 1, height: 18, background: T.warn }} />}
+                  {cl > 0 && cl < G_N && <div style={{ position: "absolute", left: cl * G_UNIT, top: -1, width: 1, height: G_ROW + 2, background: T.warn }} />}
                 </div>
               </Fragment>
             );
