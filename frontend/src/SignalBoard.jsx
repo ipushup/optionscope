@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { PARENTS } from "./parents";
 import { MiniChart } from "./StockDetail";
+import STOCK_NAMES from "./names.json";
 
 /**
  * SignalBoard.jsx — 同 TradingView 並排用嘅即時短線信號板（集中睇少數股票）。
@@ -47,6 +48,23 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const [addIn, setAddIn] = useState("");
   const [sbMsg, setSbMsg] = useState("");
   const [sbBusy, setSbBusy] = useState(false);
+  const [menu, setMenu] = useState(null);                  // 撳代號彈出：上移／下移／移除（同 My List 一樣）
+  const [mgn, setMgn] = useState({ data: {}, stale: false });   // /margin.json 直接讀（同 My List／Data 頁一份）
+  useEffect(() => {
+    fetch("/margin.json", { cache: "no-store" }).then(r => (r.ok ? r.json() : null)).then(d => {
+      if (!d || !d.data) return;
+      const age = d.as_of ? (Date.now() - new Date(d.as_of).getTime()) / 864e5 : 0;
+      setMgn({ data: d.data, stale: age > 30, asOf: d.as_of });
+    }).catch(() => {});
+  }, []);
+  const marginSup = sym => {     // 孖展保證金率 superscript：美股 NVDA、港股 0968.HK；✕ = 不可融資
+    const v = mgn.data[sym];
+    if (v == null) return null;
+    return (
+      <sup title={(v <= 0 ? "不可融資" : `孖展保證金率 ${Math.round(v)}%`) + (mgn.stale ? `（資料 ${mgn.asOf}，已過期）` : "")}
+        style={{ marginLeft: 2, fontSize: "0.62em", fontWeight: 700, color: T.txt, opacity: mgn.stale ? 0.55 : 1, lineHeight: 0 }}>{v <= 0 ? "✕" : Math.round(v)}</sup>
+    );
+  };
   const [openSym, setOpenSym] = useState(() => new Set());     // 展開咗圖表嘅股票
   const [ctf, setCtf] = useState("5m");                         // 展開圖表嘅級別（5m／15m／1h）
   const toggleOpen = sym => setOpenSym(o => { const n = new Set(o); if (n.has(sym)) n.delete(sym); else n.add(sym); return n; });
@@ -78,7 +96,12 @@ export default function SignalBoard({ isMobile, light, onBack }) {
       setAddIn(""); setSbMsg(n > 0 ? `已加入 ${n} 隻，下一輪掃描（約 1 分鐘）後出訊號` : "冇新增（格式唔啱或已經喺名單）");
     }
   };
-  const removeSym = sym => saveList((list || DEFAULT_ORDER).filter(x => x !== sym));
+  const removeSym = sym => { setMenu(null); return saveList((list || DEFAULT_ORDER).filter(x => x !== sym)); };
+  const moveSym = (sym, d) => {
+    const a = [...(list || DEFAULT_ORDER)], i = a.indexOf(sym), j = i + d;
+    if (i < 0 || j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]]; saveList(a);          // 選單保持打開，可連續上移／下移
+  };
   const seen = useRef({});                       // sym → 最新信號 key（用嚟判斷有冇新信號）
 
   useEffect(() => {
@@ -287,19 +310,22 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const par = PARENTS[r.sym];
     const em = ema[r.sym];
     return (
-      <div onClick={() => toggleOpen(r.sym)} style={{ ...cardBox, padding: "9px 12px 8px", cursor: "pointer" }}>
+      <div onClick={() => toggleOpen(r.sym)} style={{ ...cardBox, padding: "9px 12px 8px", cursor: "pointer", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5, minHeight: 24 }}>
               {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
-              <span style={{ fontWeight: 500, fontSize: 16, flexShrink: 0, alignSelf: "center" }}>{r.sym}</span>
-              <button type="button" title="由名單移除" aria-label={`移除 ${r.sym}`} disabled={sbBusy}
-              onClick={e => { e.stopPropagation(); removeSym(r.sym); }}
-              style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px", marginLeft: 2, lineHeight: 1, alignSelf: "center" }}>✕</button>
+              <span role="button" tabIndex={0} title="撳一下：上移／下移／移除"
+                onClick={e => { e.stopPropagation(); setMenu(menu === r.sym ? null : r.sym); }}
+                onKeyDown={e => (e.key === "Enter" || e.key === " ") && (e.stopPropagation(), setMenu(menu === r.sym ? null : r.sym))}
+                style={{ fontWeight: 500, fontSize: 16, flexShrink: 0, alignSelf: "center", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+                {r.sym}{marginSup(r.sym)}<span aria-hidden="true" style={{ fontSize: 9, color: T.mute, marginLeft: 4 }}>▾</span>
+              </span>
               {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1, alignSelf: "center" }}>
                 {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
               </span>}
             </div>
+            <div style={{ fontFamily: SANS, fontSize: 11, color: T.mute, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 170 }}>{STOCK_NAMES[r.sym] || " "}</div>
           </div>
           <div style={{ flexShrink: 0, whiteSpace: "nowrap", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -310,6 +336,17 @@ export default function SignalBoard({ isMobile, light, onBack }) {
               {r.px.toFixed(2)} <span style={{ color: cc(ext) }}>{pf(ext)}</span>{SessBadge({ s: r.sess, ml: 4 })}</div>}
           </div>
         </div>
+        {menu === r.sym && (
+          <>
+            <div onClick={e => { e.stopPropagation(); setMenu(null); }} style={{ position: "fixed", inset: 0, zIndex: 20 }} />
+            <div role="menu" onClick={e => e.stopPropagation()} style={{ position: "absolute", left: 10, top: 44, zIndex: 21, background: T.card, border: `1px solid ${T.line}`, borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.35)", minWidth: 120, overflow: "hidden" }}>
+              {[["↑  上移", () => moveSym(r.sym, -1), T.txt, TEST_ORDER.indexOf(r.sym) === 0], ["↓  下移", () => moveSym(r.sym, 1), T.txt, TEST_ORDER.indexOf(r.sym) === TEST_ORDER.length - 1], ["✕  移除", () => removeSym(r.sym), T.dn, false]].map(([t, f, col, off], i) => (
+                <button key={t} type="button" role="menuitem" disabled={sbBusy || off} onClick={f}
+                  style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: i ? `1px solid ${T.line}` : "none", color: col, opacity: off ? 0.35 : 1, fontSize: 14, fontFamily: SANS, padding: "10px 14px", cursor: off ? "default" : "pointer" }}>{t}</button>
+              ))}
+            </div>
+          </>
+        )}
         {Grid({ sym: r.sym, head: true })}
         {openSym.has(r.sym) && ChartPanel({ sym: r.sym })}
       </div>
