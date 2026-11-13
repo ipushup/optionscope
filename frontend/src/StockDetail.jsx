@@ -31,7 +31,7 @@ function fmtBig(n, unit) {
   if (unit === "M") return n >= 1e9 ? (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
   return n >= 1e8 ? (n / 1e8).toFixed(n >= 1e10 ? 0 : 2) + "億" : n >= 1e4 ? (n / 1e4).toFixed(n >= 1e6 ? 0 : 1) + "萬" : String(Math.round(n));
 }
-export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, hvf: allHvf, tf, T }) {
+export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allTbf, hvf: allHvf, tf, T, maxBars, tight }) {
   // 闊度跟住容器（手機 168px；PC 較闊），高度隨闊度加高；顯示棒數按闊度自動調整（手機 40，PC 最多用盡已儲存嘅棒數）
   const box = useRef(null), [W, setW] = useState(168);
   useEffect(() => {
@@ -43,7 +43,7 @@ export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allT
     return () => ro.disconnect();
   }, []);
   const H = W > 300 ? Math.round(112 + Math.min(40, (W - 300) / 6)) : 112;
-  const n = Math.min(allBars.length, Math.max(40, Math.floor((W - 12) / 2.9))), step = (W - 12) / n;
+  const n = Math.min(allBars.length, maxBars || Infinity, Math.max(40, Math.floor((W - 12) / 2.9))), step = (W - 12) / n;
   const bars = allBars.slice(-n), tbf = allTbf && allTbf.length === allBars.length ? allTbf.slice(-n) : null, utf = allUtf && allUtf.length === allBars.length ? allUtf.slice(-n) : null;
   const hvf = allHvf && allHvf.length === allBars.length ? allHvf.slice(-n) : null;   // Heavy 買(+1)／賣(−1)：Signal Board 展開圖用
   const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
@@ -57,7 +57,7 @@ export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allT
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", borderRadius: 8, background: T.chip || T.bg }} role="img" aria-label={`${tf} 線 ${n} bars`}>
       {bars.map((b, i) => {
         const x = 6 + i * step + step / 2, up = b[3] >= b[0], c = up ? T.up : T.dn, t = y(Math.max(b[0], b[3])), bt = y(Math.min(b[0], b[3]));
-        return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * 0.4} y={t} width={Math.max(1, step * 0.8)} height={Math.max(1, bt - t)} fill={c} /></g>;
+        return <g key={i}><line x1={x} x2={x} y1={y(b[1])} y2={y(b[2])} stroke={c} strokeWidth="1" /><rect x={x - step * (tight ? 0.45 : 0.4)} y={t} width={Math.max(1, step * (tight ? 0.9 : 0.8))} height={Math.max(1, bt - t)} fill={c} /></g>;
       })}
       <clipPath id="mc-clip"><rect x="0" y="14" width={W} height={H - 14} /></clipPath>
       <g clipPath="url(#mc-clip)" fill="none" strokeWidth="1" strokeLinejoin="round" opacity="0.9">

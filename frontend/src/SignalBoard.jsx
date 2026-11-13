@@ -294,7 +294,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           <a href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(sym))}&interval=${MIN[ctf] ?? 60}`} target="_blank" rel="noopener noreferrer"
             style={{ fontFamily: M, fontSize: 11.5, color: T.acc, textDecoration: "none" }}>TradingView ↗</a>
         </div>
-        {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} />
+        {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} maxBars={isMobile ? 60 : undefined} tight={isMobile} />
           : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據（下一輪掃描後出現）</div>}
       </div>
     );
