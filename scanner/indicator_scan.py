@@ -304,8 +304,8 @@ def chart_series(df: pd.DataFrame, n: int = 100, hk: bool = False):
                         in_pos = False
                     if i in tbi and not in_pos:
                         real.add(i); in_pos = True
-                if real:
-                    out["tbf"] = [1 if i in real else 0 for i in range(len(df))][-n:]
+                # 1 = 真入市；2 = TB 訊號成立但持倉中被擋（圖上畫空心三角，同狀態欄 B1 對得上）
+                out["tbf"] = [1 if i in real else (2 if i in tbi else 0) for i in range(len(df))][-n:]
     except Exception:  # noqa: BLE001
         pass
     close = df["Close"].astype(float)
