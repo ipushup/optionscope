@@ -282,6 +282,26 @@ def _rp(x: float) -> float:
     return round(x, 2) if abs(x) >= 10 else round(x, 4)   # 減細 JSON：>=10 取 2 位小數
 
 
+def tb_flags(df: pd.DataFrame, hk: bool = False):
+    """每棒 TB 標記：1 = 真入市；2 = TB 成立但持倉中被擋（圖上空心）；0 = 冇。
+    同回測引擎一樣——一次一倉，UT 賣出轉向先平倉（同棒先平後入）；港股只觀察冇真倉（回 None）。
+    所有圖（Data／My List）都用呢個，確保一致。"""
+    if hk:
+        return None
+    import intraday_signals as _S
+    tbi = {e["i"] for e in _S.triple_band(df) if e["kind"] == "TB"}
+    pos = ut_pos_series(df)
+    if not tbi or pos is None:
+        return None
+    real, in_pos = set(), False
+    for i in range(len(df)):
+        if in_pos and i > 0 and pos[i] == -1 and pos[i - 1] != -1:
+            in_pos = False
+        if i in tbi and not in_pos:
+            real.add(i); in_pos = True
+    return [1 if i in real else (2 if i in tbi else 0) for i in range(len(df))]
+
+
 def chart_series(df: pd.DataFrame, n: int = 100, hk: bool = False):
     """最近 n 棒 [o,h,l,c] + 同棒對齊嘅 EMA 10/20/50/89/250（用全段收市價計；歷史唔夠 p 棒就唔畫該條）"""
     out = {"bars": [[_rp(float(x)) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
@@ -292,20 +312,10 @@ def chart_series(df: pd.DataFrame, n: int = 100, hk: bool = False):
             out["utf"] = flips[-n:]
     except Exception:  # noqa: BLE001
         pass
-    try:   # 真正會入市嘅 TB：同回測引擎一樣——一次一倉，持倉期間嘅 TB 唔計；UT 賣出轉向先平倉（同棒先平後入）；港股只觀察冇真倉
-        if not hk:
-            import intraday_signals as _S
-            tbi = {e["i"] for e in _S.triple_band(df) if e["kind"] == "TB"}
-            pos = ut_pos_series(df)
-            if tbi and pos is not None:
-                real, in_pos = set(), False
-                for i in range(len(df)):
-                    if in_pos and i > 0 and pos[i] == -1 and pos[i - 1] != -1:
-                        in_pos = False
-                    if i in tbi and not in_pos:
-                        real.add(i); in_pos = True
-                # 1 = 真入市；2 = TB 訊號成立但持倉中被擋（圖上畫空心三角，同狀態欄 B1 對得上）
-                out["tbf"] = [1 if i in real else (2 if i in tbi else 0) for i in range(len(df))][-n:]
+    try:
+        tb = tb_flags(df, hk=hk)
+        if tb is not None:
+            out["tbf"] = tb[-n:]
     except Exception:  # noqa: BLE001
         pass
     close = df["Close"].astype(float)

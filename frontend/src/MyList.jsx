@@ -56,6 +56,13 @@ function MiniChart({ k: full, T, light }) {
       </>}
       {(k.b || []).map((on, i) => on ? <path key={`b${i}`} d={`M${X(i)} ${Y(k.l[i]) + 4} l-3.2 5.5 h6.4z`} fill={arrowC} /> : null)}
       {(k.s || []).map((on, i) => on ? <path key={`s${i}`} d={`M${X(i)} ${Y(k.h[i]) - 4} l-3.2 -5.5 h6.4z`} fill={arrowC} /> : null)}
+      {(k.tbf || []).map((f, i) => {   // TB：橙色向上三角，實心 = 真入市、空心 = 持倉中被擋；同日 UT 買入就畫喺 UT 三角下面（同 Data 頁一致）
+        if (!f) return null;
+        const d = `M${X(i)} ${Y(k.l[i]) + 4 + (k.b && k.b[i] ? 6.5 : 0)} l-3.2 5.5 h6.4z`;
+        return f === 2
+          ? <path key={`t${i}`} d={d} fill="none" stroke="#ff9f0a" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          : <path key={`t${i}`} d={d} fill="#ff9f0a" />;
+      })}
     </svg>
   );
 }
