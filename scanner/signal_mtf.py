@@ -301,7 +301,9 @@ def main():
     from concurrent.futures import ThreadPoolExecutor
     sb.RATE = float(os.getenv("MTF_RATE", "6"))
     only = [x.strip().upper() for x in (os.getenv("SB_MTF_SYMS") or "").split(",") if x.strip()]
-    syms = only or GRID_DEFAULT      # 測試階段：只掃 10 隻有時間格嘅股票（其餘舊紅綠燈已隱藏）
+    def get_syms():       # 每輪重新讀名單（頁面上增減後下一輪生效）
+        return only or sb.fetch_sblist() or GRID_DEFAULT
+    syms = get_syms()
     print(f"{len(syms)} symbols", flush=True)
     ctx = QuoteContext(Config.from_apikey_env())
 
@@ -346,6 +348,8 @@ def main():
             return s, None
 
     def run_once():
+        nonlocal syms
+        syms = get_syms()
         rows, t0, bad = {}, time.time(), 0
         with ThreadPoolExecutor(int(os.getenv("MTF_THREADS", "5"))) as ex:
             for i, (s, r) in enumerate(ex.map(one, syms), 1):

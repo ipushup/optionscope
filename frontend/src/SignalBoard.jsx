@@ -38,9 +38,8 @@ const stamp = iso => {
   } catch { return ""; }
 };
 
-// 測試階段：Signal Board 只列呢 10 隻（有時段格）
-const TEST_ORDER = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX", "0968.HK"];
-const TEST_SYMS = new Set(TEST_ORDER);
+// Signal Board 名單：預設值；實際名單由 /api/sblist 讀取（頁面頂部可增減）
+const DEFAULT_ORDER = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX", "0968.HK"];
 
 export default function SignalBoard({ isMobile, light, onBack }) {
   const T = light ? THEMES.light : THEMES.dark;
@@ -52,6 +51,39 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   const [side, setSide] = useState("all");      // all | bull | bear
   const [q, setQ] = useState("");
   const [sound, setSound] = useState(false);
+  const [list, setList] = useState(null);        // 名單（gateway /api/sblist）；未載入前用預設
+  const [addIn, setAddIn] = useState("");
+  const [sbMsg, setSbMsg] = useState("");
+  const [sbBusy, setSbBusy] = useState(false);
+  const TEST_ORDER = list || DEFAULT_ORDER;
+  const TEST_SYMS = useMemo(() => new Set(TEST_ORDER), [list]);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/sblist", { cache: "no-store" }).then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(j => alive && setList(j.symbols || null)).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const saveList = async next => {
+    setSbBusy(true); setSbMsg("");
+    try {
+      const r = await fetch("/api/sblist", { method: "PUT", headers: { "Content-Type": "application/json", "X-Requested-With": "xmarket" }, body: JSON.stringify({ symbols: next }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || r.status);
+      setList(j.symbols); return j.symbols;
+    } catch (e) { setSbMsg(`儲存失敗：${e.message || e}`); return null; }
+    finally { setSbBusy(false); }
+  };
+  const addSyms = async () => {
+    const parts = addIn.split(/[\s,，、]+/).filter(Boolean);
+    if (!parts.length) return;
+    const cur = list || DEFAULT_ORDER;
+    const out = await saveList([...cur, ...parts]);
+    if (out) {
+      const n = out.length - cur.length;
+      setAddIn(""); setSbMsg(n > 0 ? `已加入 ${n} 隻，下一輪掃描（約 1 分鐘）後出訊號` : "冇新增（格式唔啱或已經喺名單）");
+    }
+  };
+  const removeSym = sym => saveList((list || DEFAULT_ORDER).filter(x => x !== sym));
   const [sec, setSec] = useState("all");         // section 篩選
   const [hideSkip, setHideSkip] = useState(true); // 隱藏被 rU60 濾走嘅 skip
   const seen = useRef({});                       // sym → 最新信號 key（用嚟判斷有冇新信號）
@@ -109,7 +141,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     const k = q.trim().toUpperCase();
     return rows.filter(r => TEST_SYMS.has(r.sym) && (!k || r.sym.includes(k)) && (sec === "all" || r.section === sec) && (side === "all" || r.dir === side || r.dir === "mix"))
       .sort((a, b) => TEST_ORDER.indexOf(a.sym) - TEST_ORDER.indexOf(b.sym));      // 測試階段：固定次序（唔再按信號新舊跳位）
-  }, [rows, q, side, sec]);
+  }, [rows, q, side, sec, list]);
 
   // 有股票出現新信號（最新一至兩支棒內）→ 響
   useEffect(() => {
@@ -301,6 +333,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
             <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, gap: 5, minHeight: 24 }}>
               {par && <span style={{ fontSize: 9.5, color: T.mute, fontWeight: 400, flexShrink: 0 }}>{par} ›</span>}
               <span style={{ fontWeight: 500, fontSize: 16, flexShrink: 0, alignSelf: "center" }}>{r.sym}</span>
+              <button type="button" title="由名單移除" aria-label={`移除 ${r.sym}`} disabled={sbBusy}
+              onClick={e => { e.stopPropagation(); removeSym(r.sym); }}
+              style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px", marginLeft: 2, lineHeight: 1, alignSelf: "center" }}>✕</button>
               {em && <span style={{ display: "flex", gap: 2, flexShrink: 0, marginLeft: 1, alignSelf: "center" }}>
                 {em.map(e => <span key={e.p} style={{ fontFamily: M, fontSize: 9, fontWeight: 600, padding: "1px 3px", borderRadius: 3, background: (!e.valid ? T.mute : e.above ? T.up : T.dn) + "26", color: !e.valid ? T.mute : e.above ? T.up : T.dn }}>{e.p}</span>)}
               </span>}
@@ -348,6 +383,15 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         {[["all", "全部板塊"], ...secs].map(([k, l]) => <button key={k} onClick={() => setSec(k)} style={chip(sec === k, { flexShrink: 0, whiteSpace: "nowrap" })}>{l}</button>)}
       </div>
 
+      <div style={{ display: "flex", gap: 8, margin: "0 0 8px", maxWidth: 520 }}>
+        <input value={addIn} onChange={e => setAddIn(e.target.value)} onKeyDown={e => e.key === "Enter" && addSyms()}
+          placeholder="加股票：NVDA、968、3868 …" disabled={sbBusy}
+          style={{ flex: 1, minWidth: 0, background: T.soft, color: T.txt, border: `1px solid ${T.line}`, borderRadius: 8, padding: "8px 12px", fontSize: 14, fontFamily: SANS, outline: "none" }} />
+        <button type="button" onClick={addSyms} disabled={sbBusy || !addIn.trim()}
+          style={{ background: T.acc, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: sbBusy || !addIn.trim() ? 0.5 : 1 }}>加入</button>
+      </div>
+      {sbMsg && <div style={{ fontFamily: SANS, fontSize: 11.5, color: sbMsg.startsWith("儲存失敗") ? T.dn : T.mute, marginBottom: 8 }}>{sbMsg}</div>}
+
       <div style={{ fontSize: 11, color: T.mute, fontFamily: M, marginBottom: 10, lineHeight: 1.6 }}>
         TB/TS：★ 強、黃/橙 弱、skip = 被 rU60 濾走 · UT：B 買 / S 賣 · Heavy：HB / HS · 灰淡 = 超過 {ago(near, tf)} · 時間格：綠／紅點 = UT 轉向（買／賣）、綠／紅框 = Heavy 買／賣、藍底 = TB 真入市（日內未驗證）、虛線淡色 = 未收市（暫時訊號，收市前可能消失）、黃線 = 現時 · 時間軸 = 過去 6 小時 + 未來 2 小時（美東時間；夜盤 / 盤前 / 正規 / 盤後分段），現時線約喺 70% 位置並自動跟住，可左右拉
       </div>
@@ -372,6 +416,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
                   style={{ cursor: "pointer" }}>
                   <td style={{ ...td, fontWeight: 500, fontFamily: SANS }}>
                     {r.sym}
+                    <button type="button" title="由名單移除" aria-label={`移除 ${r.sym}`} disabled={sbBusy}
+                onClick={e => { e.stopPropagation(); removeSym(r.sym); }}
+                style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px", marginLeft: 2, lineHeight: 1, alignSelf: "center" }}>✕</button>
                     <span style={{ marginLeft: 5, color: r.d.ut_pos === 1 ? T.up : T.dn, fontSize: 9 }} title="UT 持倉方向">{r.d.ut_pos === 1 ? "●" : "○"}</span>
                     {SessBadge({ s: r.sess })}
                     {isMobile && <div style={{ fontFamily: M, fontSize: 11, color: r.chg >= 0 ? T.up : T.dn, fontWeight: 400 }}>{r.px?.toFixed(2)} {r.chg != null ? `${r.chg >= 0 ? "+" : ""}${r.chg}%` : ""}</div>}
