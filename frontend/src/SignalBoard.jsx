@@ -3,6 +3,10 @@ import { PARENTS } from "./parents";
 import { MiniChart } from "./StockDetail";
 import STOCK_NAMES from "./names.json";
 
+// parents.js 係 ETF → 正股；反轉做 正股 → [ETF]（展開卡顯示該股嘅槓桿／衍生 ETF）
+const ETFS_OF = {};
+for (const [e, p] of Object.entries(PARENTS)) if (/^[A-Z]{1,5}$/.test(e)) (ETFS_OF[p] = ETFS_OF[p] || []).push(e);
+
 /**
  * SignalBoard.jsx — 同 TradingView 並排用嘅即時短線信號板（集中睇少數股票）。
  * 名單：/api/sblist（頁面頂部加／減）；卡頭價錢 = /signals.json（推送版 5m），時間格 = /mtf.json。
@@ -66,6 +70,24 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     );
   };
   const [openSym, setOpenSym] = useState(() => new Set());     // 展開咗圖表嘅股票
+  const [etfQ, setEtfQ] = useState({});                          // 展開咗嘅股票嘅 ETF 即時報價：{ETF: {last, pct, ext}}（Worker /api/quotes → Longbridge）
+  useEffect(() => {
+    const syms = [...new Set([...openSym].flatMap(x => ETFS_OF[x] || []))];
+    if (!syms.length) return undefined;
+    let alive = true;
+    const pull = async () => {
+      try {
+        const r = await fetch(`/api/quotes?symbols=${syms.map(e => `${e}.US`).join(",")}`, { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json(), m = {};
+        for (const q of d.quotes || []) if (q.reg > 0) m[q.symbol.replace(/\.US$/, "")] = { last: q.reg, pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct };
+        if (alive) setEtfQ(o => ({ ...o, ...m }));
+      } catch { /* 下一輪再試 */ }
+    };
+    pull();
+    const id = setInterval(pull, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, [openSym]);
   const [ctfMap, setCtfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("sb_chart_tf") || "{}") || {}; } catch { return {}; } });   // 每隻股票各自嘅圖表級別
   const setCtf = (sym, x) => setCtfMap(m => { const n = { ...m, [sym]: x }; try { localStorage.setItem("sb_chart_tf", JSON.stringify(n)); } catch { /* ok */ } return n; });
   const toggleOpen = sym => setOpenSym(o => { const n = new Set(o); if (n.has(sym)) n.delete(sym); else n.add(sym); return n; });
@@ -296,6 +318,22 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         </div>
         {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} maxBars={isMobile ? 60 : undefined} tight={isMobile} />
           : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據（下一輪掃描後出現）</div>}
+        {(ETFS_OF[sym] || []).length > 0 && (
+          <div style={{ marginTop: 8, paddingTop: 6, borderTop: `1px dashed ${T.line}` }}>
+            <div style={{ fontSize: 10.5, color: T.mute, fontFamily: M, marginBottom: 3 }}>{sym} 嘅 ETF</div>
+            {ETFS_OF[sym].map(e => {
+              const q = etfQ[e], pf = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`, cc = v => (v >= 0 ? T.up : T.dn);
+              return (
+                <div key={e} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "2px 0", fontFamily: M, fontSize: 12.5 }}>
+                  <a href={`https://www.tradingview.com/symbols/${encodeURIComponent(e)}/`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: T.txt, textDecoration: "none", minWidth: 52 }}>{e}</a>
+                  <span style={{ color: T.mute, fontSize: 10.5, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{STOCK_NAMES[e] || ""}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{q ? q.last.toFixed(2) : "—"}</span>
+                  <span style={{ minWidth: 58, textAlign: "right", fontVariantNumeric: "tabular-nums", color: q ? cc(q.pct) : T.mute }}>{q ? pf(q.pct) : "—"}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
