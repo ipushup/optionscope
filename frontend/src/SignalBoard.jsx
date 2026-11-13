@@ -320,7 +320,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
           : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據（下一輪掃描後出現）</div>}
         {(ETFS_OF[sym] || []).length > 0 && (
           <div style={{ marginTop: 8, paddingTop: 6, borderTop: `1px dashed ${T.line}` }}>
-            <div style={{ fontSize: 10.5, color: T.mute, fontFamily: M, marginBottom: 3 }}>{sym} 嘅 ETF</div>
             {ETFS_OF[sym].map(e => {
               const q = etfQ[e], pf = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`, cc = v => (v >= 0 ? T.up : T.dn);
               return (
