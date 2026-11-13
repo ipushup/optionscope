@@ -272,7 +272,6 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         </div>
         {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} />
           : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據（下一輪掃描後出現）</div>}
-        <div style={{ fontFamily: M, fontSize: 10.5, color: T.mute, marginTop: 5, lineHeight: 1.5 }}>EMA 10 黃／20 綠／50 紅／89 橙 · 白三角 = UT 買／賣 · 橙實心三角 = TB 真入市 · 綠／紅空心方 = Heavy 買／賣 · 最後一棒未收市時訊號係暫時</div>
       </div>
     );
   };
@@ -354,6 +353,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
               style={{ background: "none", border: "none", color: T.mute, fontSize: 13, cursor: "pointer", padding: "0 4px" }}>✕</button>
           </div>))}
         {data && !shown.length && !pending.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
+      </div>
+      <div style={{ fontFamily: M, fontSize: 10.5, color: T.mute, marginTop: 12, lineHeight: 1.6 }}>
+        備註：EMA 10 黃／20 綠／50 紅／89 橙 · 白三角 = UT 買／賣 · 橙實心三角 = TB 真入市 · 綠／紅空心方 = Heavy 買／賣 · 最後一棒未收市時訊號係暫時
       </div>
     </div>
   );
