@@ -148,9 +148,9 @@ def chart_for(frames, S):
                 "u": [1 if f & F_UTB else -1 if f & F_UTS else 0 for f in fl],
                 "tb": [1 if f & F_TB else 0 for f in fl],
                 "hv": [1 if f & F_HVB else -1 if f & F_HVS else 0 for f in fl],
-                # EMA 10/20/50/89：用全部棒計（唔係只用最後 80 棒），再截尾
+                # EMA 10/20/50/89/250：用全部棒計（唔係只用最後 80 棒），再截尾；歷史不足 250 棒就唔畫 EMA250
                 "e": {str(k): [round(float(x), 4) for x in df["Close"].astype(float).ewm(span=k, adjust=False).mean().iloc[-CHART_N:]]
-                      for k in (10, 20, 50, 89)},
+                      for k in (10, 20, 50, 89, 250) if k < 250 or len(df) >= 250},
             }
         except Exception as e:  # noqa: BLE001
             print(f"::warning::chart {tf}: {e}", flush=True)
