@@ -48,7 +48,7 @@ export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allT
   const hvf = allHvf && allHvf.length === allBars.length ? allHvf.slice(-n) : null;   // Heavy 買(+1)／賣(−1)：Signal Board 展開圖用
   const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
-  const EC = { 10: "#ffc400", 20: "#00e0ff", 50: "#e040fb", 89: "#2979ff", 250: "#ff6d00" };   // 亮黃／亮青／亮紫／亮藍／亮橙：鮮明、避開 K 線紅綠
+  const EC = { 10: "#ffc400", 20: "#00e0ff", 50: "#ff6d00", 89: "#e040fb", 250: "#2979ff" };   // 亮黃／亮青／亮橙／亮紫／亮藍：鮮明、避開 K 線紅綠
   const stacked = !!(tbf && utf && tbf.some((f, i) => f && utf[i] > 0));   // 有 UT + TB 疊埋先留兩層位
   const pb = stacked || (hvf && hvf.some((f, i) => f > 0 && ((utf && utf[i] > 0) || (tbf && tbf[i])))) ? 28 : hvf && hvf.some((f) => f > 0) ? 22 : stacked ? 22 : 16;
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 20 - pb);   // 上留位畀標題／賣出三角，下留位畀買入三角
