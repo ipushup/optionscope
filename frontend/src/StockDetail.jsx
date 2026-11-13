@@ -48,8 +48,7 @@ export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allT
   const hvf = allHvf && allHvf.length === allBars.length ? allHvf.slice(-n) : null;   // Heavy 買(+1)／賣(−1)：Signal Board 展開圖用
   const emas = {}; Object.keys(allEmas || {}).forEach((k) => { if (allEmas[k].length === allBars.length) emas[k] = allEmas[k].slice(-n); });
   const hi = Math.max(...bars.map((b) => b[1])), lo = Math.min(...bars.map((b) => b[2]));   // 縱軸只按K線範圍；EMA 超出範圍就裁走
-  const EC = { 10: "#f5a623", 20: "#14b8c8", 50: "#a855f7", 89: "#2f5bea", 250: "#78909c" };   // 琥珀／青／紫／藍／灰：避開 K 線紅綠，慢線較粗
-  const EW = { 10: 1, 20: 1.2, 50: 1.5, 89: 1.8, 250: 2.2 };
+  const EC = { 10: "#ffc400", 20: "#00e0ff", 50: "#e040fb", 89: "#2979ff", 250: "#ff6d00" };   // 亮黃／亮青／亮紫／亮藍／亮橙：鮮明、避開 K 線紅綠
   const stacked = !!(tbf && utf && tbf.some((f, i) => f && utf[i] > 0));   // 有 UT + TB 疊埋先留兩層位
   const pb = stacked || (hvf && hvf.some((f, i) => f > 0 && ((utf && utf[i] > 0) || (tbf && tbf[i])))) ? 28 : hvf && hvf.some((f) => f > 0) ? 22 : stacked ? 22 : 16;
   const y = (v) => 20 + ((hi - v) / (hi - lo || 1)) * (H - 20 - pb);   // 上留位畀標題／賣出三角，下留位畀買入三角
@@ -63,7 +62,7 @@ export function MiniChart({ bars: allBars, emas: allEmas, utf: allUtf, tbf: allT
       <clipPath id="mc-clip"><rect x="0" y="14" width={W} height={H - 14} /></clipPath>
       <g clipPath="url(#mc-clip)" fill="none" strokeWidth="1" strokeLinejoin="round" opacity="0.9">
         {Object.keys(EC).filter((p) => emas?.[p]?.length === n).map((p) => (
-          <polyline key={p} stroke={EC[p]} strokeWidth={EW[p]} points={emas[p].map((v, i) => `${(6 + i * step + step / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ")} />
+          <polyline key={p} stroke={EC[p]} points={emas[p].map((v, i) => `${(6 + i * step + step / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ")} />
         ))}
       </g>
       {utf && utf.length === n && utf.map((f, i) => {   // UT Bot：買 = 低位下面向上三角，賣 = 高位上面向下三角（同 01 Market Snapshot 一樣）

@@ -24,7 +24,7 @@ const short = s => (s || "").replace(/\.US$/, "").replace(/\.HK$/, "");
 const fmtPx = (v, sym) => (v == null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: sym.endsWith(".HK") && v < 1 ? 3 : 2 }));
 
 
-// 細 K 線圖（同主頁 snapshot 同一風格：K 線 + EMA 10 琥珀 / 20 青 / 50 紫 / 89 藍 / 250 灰）
+// 細 K 線圖（同主頁 snapshot 同一風格：K 線 + EMA 10 黃 / 20 青 / 50 紫 / 89 藍 / 250 橙）
 const CHART_BARS = 30;   // D / W / M 一律 30 棒，棒粗幼一致
 function MiniChart({ k: full, T, light }) {
   const from = Math.max(0, (full?.c?.length || 0) - CHART_BARS);
