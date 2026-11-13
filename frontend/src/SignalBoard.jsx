@@ -393,7 +393,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         {data && !shown.length && !pending.length && <div style={{ color: T.mute, textAlign: "center", padding: 28, fontFamily: M, fontSize: 12 }}>呢個條件下暫時冇信號</div>}
       </div>
       <div style={{ fontFamily: M, fontSize: 10.5, color: T.mute, marginTop: 12, lineHeight: 1.6 }}>
-        備註：EMA 10 黃／20 綠／50 紅／89 橙 · 白三角 = UT 買／賣 · 橙實心三角 = TB 真入市 · 綠／紅空心方 = Heavy 買／賣 · 最後一棒未收市時訊號係暫時
+        備註：EMA 10 琥珀／20 青／50 紫／89 藍／250 灰 · 白三角 = UT 買／賣 · 橙實心三角 = TB 真入市 · 綠／紅空心方 = Heavy 買／賣 · 最後一棒未收市時訊號係暫時
       </div>
     </div>
   );
