@@ -1,0 +1,31 @@
+name: Sector Flow
+
+# 主頁「SECTOR FLOW」：19 隻板塊／主題／跨資產 ETF 嘅升跌、排名、資金流、K 線 + EMA → sector.json → 私人 gateway
+# 美股時段（含盤前盤後）每 15 分鐘一次；收市後再跑一次確保收市價。GitHub cron 唔準時，遲少少冇所謂。
+on:
+  schedule:
+    - cron: '*/15 13-22 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: sector-flow
+  cancel-in-progress: false
+
+jobs:
+  sector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install pandas numpy yfinance longbridge
+      - name: Build sector.json
+        env:
+          LONGBRIDGE_APP_KEY: ${{ secrets.LONGBRIDGE_APP_KEY }}
+          LONGBRIDGE_APP_SECRET: ${{ secrets.LONGBRIDGE_APP_SECRET }}
+          LONGBRIDGE_ACCESS_TOKEN: ${{ secrets.LONGBRIDGE_ACCESS_TOKEN }}
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: python scanner/sector_flow.py
