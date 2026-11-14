@@ -379,7 +379,7 @@ function BandSection({ band, bq, wl, T }) {
                           {r.chg != null && <span style={{ fontFamily: M, fontSize: 12, fontWeight: 600, minWidth: 60, textAlign: "right", padding: "2px 4px", borderRadius: 4, background: cc(r.chg), color: "#fff" }}>{pf(r.chg)}</span>}
                         </div>
                       </div>
-                      {openSym === r.symbol && <StockDetail r={{ ...(wlMap[r.symbol] || {}), ticker: r.symbol }} T={T} />}
+                      {openSym === r.symbol && <StockDetail r={{ ...(wlMap[r.symbol] || {}), ticker: r.symbol }} T={T} maxBars={45} />}
                     </div>
                     </div>
                   );
@@ -587,7 +587,7 @@ function ConfluenceSection({ wl, T, onNavigate }) {
                 <div style={{ width: 14, display: "flex", justifyContent: "center", color: q?.ext == null ? T.mute : q.ext >= 0 ? T.up : T.dn }} title={q?.ext != null ? `${SESS_NAME[q.sess] || q.sess} ${pctText(q.ext)}` : undefined}>{q?.ext != null ? sessIcon(q.sess) : null}</div>
               </div>
             </button>
-            {isOpen && <StockDetail r={r} q={q} T={T} />}
+            {isOpen && <StockDetail r={r} q={q} T={T} maxBars={45} />}
             </div>
             );
           })}

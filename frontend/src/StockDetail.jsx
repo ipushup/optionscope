@@ -158,7 +158,7 @@ function useLiveQuote(ticker, enabled) {
   return q;
 }
 
-export default function StockDetail({ r, q: qProp, T }) {
+export default function StockDetail({ r, q: qProp, T, maxBars }) {
   const own = useLiveQuote(r.ticker, qProp === undefined);
   const q = qProp !== undefined ? qProp : own;
   // 同 My List 一樣：撳圖輪流切換 D → W → M，每隻股票各自記低
@@ -208,7 +208,7 @@ export default function StockDetail({ r, q: qProp, T }) {
       <div style={{ display: "flex", gap: 10, alignItems: "stretch", padding: "0 2px 10px" }}>
         <div onClick={() => cycleTf(r.ticker)} role="button" title="撳一下切換 D / W / M 圖" className="os-xchart" style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
           {bars && bars.length > 5
-            ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tbf={src.tbf} tf={tf} T={T} />
+            ? <MiniChart bars={bars} emas={src.emas} utf={src.utf} tbf={src.tbf} tf={tf} T={T} maxBars={maxBars} />
             : <div style={{ width: "100%", height: 112, borderRadius: 8, background: T.soft || T.chip, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 10.5, color: T.mute, textAlign: "center", padding: 8, boxSizing: "border-box" }}>{cd.loading ? "載入 K 線…" : "K 線暫時攞唔到"}</div>}
         </div>
         <div className="os-xstats" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignContent: "space-between" }}>
