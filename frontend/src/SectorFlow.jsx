@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { MiniChart } from "./StockDetail";
+import HOLD from "./etfHoldings.json";
 
 /**
  * SectorFlow — 主頁「05 / SECTOR FLOW · 板塊資金流向」
@@ -38,6 +39,26 @@ export default function SectorFlow({ data, T }) {
   const [tfMap, setTfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("sf_chart_tf") || "{}") || {}; } catch { return {}; } });
   const setTf = (s, x) => setTfMap((m) => { const n = { ...m, [s]: x }; save("sf_chart_tf", JSON.stringify(n)); return n; });
 
+  // 展開咗嘅 ETF：前 10 大持倉嘅即時升跌（Worker /api/quotes → Longbridge，每 15 秒）
+  const [hq, setHq] = useState({});
+  useEffect(() => {
+    const syms = (HOLD.etfs[open]?.h || []).map((x) => x.s).filter(Boolean);
+    if (!syms.length) return undefined;
+    let alive = true;
+    const pull = async () => {
+      try {
+        const r = await fetch(`/api/quotes?symbols=${syms.join(",")}`, { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json(), m = {};
+        for (const q of d.quotes || []) if (q.reg > 0) m[q.symbol] = { pct: q.reg_pct, ext: q.session === "regular" ? null : q.pct };
+        if (alive) setHq((o) => ({ ...o, ...m }));
+      } catch { /* 下一輪再試 */ }
+    };
+    pull();
+    const id = setInterval(pull, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, [open]);
+
   const groups = data?.groups || [];
   const time = data?.updated ? new Date(data.updated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null;
 
@@ -73,6 +94,27 @@ export default function SectorFlow({ data, T }) {
     );
   };
 
+  const Holdings = ({ sym }) => {
+    const h = HOLD.etfs[sym], note = HOLD.notes[sym];
+    if (!h) return note ? <div style={{ marginTop: 8, fontSize: 11.5, color: T.mute }}>{note}</div> : null;
+    return (
+      <div style={{ marginTop: 8, paddingTop: 6, borderTop: `1px dashed ${T.line}` }}>
+        <div style={{ fontFamily: M, fontSize: 10.5, color: T.mute, marginBottom: 3 }}>前 10 大持倉 · {h.asof.slice(5).replace("-", "/")} 披露</div>
+        {h.h.map((x) => {
+          const q = x.s ? hq[x.s] : null;
+          return (
+            <div key={x.n} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "2px 0", fontFamily: M, fontSize: 12.5 }}>
+              <b style={{ minWidth: 48, fontWeight: 600, color: x.s ? T.txt : T.mute }}>{x.s ? x.s.replace(/\.US$/, "") : "—"}</b>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.n}</span>
+              <span style={{ fontVariantNumeric: "tabular-nums", color: T.sub, fontSize: 11.5 }}>{x.w.toFixed(1)}%</span>
+              <span style={{ minWidth: 56, textAlign: "right", fontVariantNumeric: "tabular-nums", color: q ? (q.pct >= 0 ? T.up : T.dn) : T.mute }}>{q ? sgn(q.pct, 2) : "—"}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const Row = ({ it }) => {
     const on = open === it.sym, ctf = tfMap[it.sym] || "D", c = it.chart?.[ctf];
     return (
@@ -98,6 +140,7 @@ export default function SectorFlow({ data, T }) {
             </div>
             {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} maxBars={narrow ? 60 : undefined} tight={narrow} />
               : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據</div>}
+            {Holdings({ sym: it.sym })}
           </div>
         )}
       </>
