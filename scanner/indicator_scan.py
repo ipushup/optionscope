@@ -302,6 +302,27 @@ def tb_flags(df: pd.DataFrame, hk: bool = False):
     return [1 if i in real else (2 if i in tbi else 0) for i in range(len(df))]
 
 
+def hv_flag_series(df: pd.DataFrame, n: int = 100):
+    """每棒 Heavy 標記：1 = 買、-1 = 賣（同 signal_mtf.hv_flags／網站 HV B1／S1 一致；要 >101 棒）。"""
+    if len(df) <= n + 1 or "Volume" not in df:
+        return None
+    h, l, c, v = (df[k].values.astype(float) for k in ("High", "Low", "Close", "Volume"))
+    rng = h - l
+    with np.errstate(divide="ignore", invalid="ignore"):
+        vb = np.where(rng > 0, v * (c - l) / rng, v * 0.5)
+        vs = np.where(rng > 0, v * (h - c) / rng, v * 0.5)
+    delta = vb - vs
+    sp = np.concatenate([[0.0], np.cumsum(delta)])
+    fl = [0] * len(df)
+    for j in range(n + 1, len(df)):
+        w = sp[max(0, j - n): j + 1]
+        if delta[j] > 0 and sp[j] <= w.min():
+            fl[j] = 1
+        elif delta[j] < 0 and sp[j] >= w.max():
+            fl[j] = -1
+    return fl
+
+
 def chart_series(df: pd.DataFrame, n: int = 100, hk: bool = False):
     """最近 n 棒 [o,h,l,c] + 同棒對齊嘅 EMA 10/20/50/89/250（用全段收市價計；歷史唔夠 p 棒就唔畫該條）"""
     out = {"bars": [[_rp(float(x)) for x in row] for row in df[["Open", "High", "Low", "Close"]].tail(n).values.tolist()]}
@@ -316,6 +337,12 @@ def chart_series(df: pd.DataFrame, n: int = 100, hk: bool = False):
         tb = tb_flags(df, hk=hk)
         if tb is not None:
             out["tbf"] = tb[-n:]
+    except Exception:  # noqa: BLE001
+        pass
+    try:   # Heavy 買／賣（綠／紅空心方格）
+        hv = hv_flag_series(df)
+        if hv is not None:
+            out["hvf"] = hv[-n:]
     except Exception:  # noqa: BLE001
         pass
     close = df["Close"].astype(float)

@@ -258,6 +258,8 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
                 row["utf"] = indicators[row["ticker"]]["utf"]
             if indicators.get(row["ticker"], {}).get("tbf"):
                 row["tbf"] = indicators[row["ticker"]]["tbf"]
+            if indicators.get(row["ticker"], {}).get("hvf"):
+                row["hvf"] = indicators[row["ticker"]]["hvf"]
             for k in ("W", "M"):   # 週／月 圖（撳圖切換 D→W→M）
                 src = indicators.get(row["ticker"], {}).get(k)
                 if isinstance(src, dict) and src.get("bars") and isinstance(row.get(k), dict):
@@ -268,6 +270,8 @@ def run(watchlist_path: Path, band_path: Path, band_scan_path: Path,
                         row[k]["utf"] = src["utf"]
                     if src.get("tbf"):
                         row[k]["tbf"] = src["tbf"]
+                    if src.get("hvf"):
+                        row[k]["hvf"] = src["hvf"]
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

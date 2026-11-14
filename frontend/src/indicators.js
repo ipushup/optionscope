@@ -30,8 +30,26 @@ function utFlips(bars, key = 2) {
   return flips;
 }
 
+// Heavy 買(+1)／賣(−1)：同掃描器 signal_mtf.hv_flags 一樣（窗口 100+1 棒，要 >101 棒同有成交量）
+function hvFlags(bars, n = 100) {
+  const N = bars.length, delta = new Array(N), sp = new Array(N + 1).fill(0), fl = new Array(N).fill(0);
+  for (let i = 0; i < N; i++) {
+    const [, h, l, c, v = 0] = bars[i], rng = h - l;
+    const vb = rng > 0 ? (v * (c - l)) / rng : v * 0.5, vs = rng > 0 ? (v * (h - c)) / rng : v * 0.5;
+    delta[i] = vb - vs; sp[i + 1] = sp[i] + delta[i];
+  }
+  for (let j = n + 1; j < N; j++) {
+    let mn = Infinity, mx = -Infinity;
+    for (let k = Math.max(0, j - n); k <= j; k++) { if (sp[k] < mn) mn = sp[k]; if (sp[k] > mx) mx = sp[k]; }
+    if (delta[j] > 0 && sp[j] <= mn) fl[j] = 1;
+    else if (delta[j] < 0 && sp[j] >= mx) fl[j] = -1;
+  }
+  return fl;
+}
+
 export function chartSeries(bars, n) {
-  const close = bars.map((b) => b[3]), out = { bars: bars.slice(-n).map((b) => b.map(rp)) };
+  const close = bars.map((b) => b[3]), out = { bars: bars.slice(-n).map((b) => b.slice(0, 4).map(rp)) };
+  if (bars.length > 101 && bars.every((b) => b.length > 4 && b[4] > 0)) out.hvf = hvFlags(bars).slice(-n);
   const fl = utFlips(bars);
   if (fl) out.utf = fl.slice(-n);
   out.emas = {};
