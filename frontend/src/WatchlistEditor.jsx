@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { parseParents, setParents } from "./parents";
 
 /**
  * WatchlistEditor — 喺網頁直接增減 Watchlist 股票／分組同孖展率。
@@ -37,6 +38,20 @@ function parseWl(text) {
 const serializeWl = secs => secs.flatMap(s => [s.head, ...s.items]).join(",") + ",\n";
 const secName = s => s.head.replace(/^###\s*(SECTION\s+)?/i, "");
 const symOf = tok => tok.split(":").slice(1).join(":");
+
+// ── watchlist_parents.txt：每行 "子(ETF) 母(正股)"，# 後面係註解 ──
+const pSym = raw => {   // 代號寫法同 Watchlists 一樣：港股唔補零、去 .US
+  const t = raw.trim().toUpperCase().replace(/\.US$/, "");
+  const hk = t.replace(/\.HK$/, "");
+  return /^\d{1,5}$/.test(hk) ? String(parseInt(hk, 10)) : t;
+};
+function setParentLine(text, child, parent) {   // parent == null → 解除；否則設定（同一個子只留一行）
+  const lines = String(text || "").split("\n");
+  const keep = lines.filter(l => { const c = l.split("#")[0].trim().split(/[\s,]+/)[0]; return !(c && c.toUpperCase() === child); });
+  while (keep.length && keep[keep.length - 1].trim() === "") keep.pop();
+  if (parent) keep.push(`${child.padEnd(5)} ${parent}`);
+  return keep.join("\n") + "\n";
+}
 
 // ── margin.txt ──
 const mKey = s => {
@@ -80,6 +95,7 @@ export default function WatchlistEditor({ C, F, M, isMobile, onClose, onSaved })
   const [tab, setTab] = useState("add");
   const [wl, setWl] = useState(null);      // { secs, sha }
   const [mg, setMg] = useState(null);      // { text, sha }
+  const [pa, setPa] = useState(null);      // { text, sha }：watchlist_parents.txt（讀唔到就 null，只係唔可以設從屬）
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -87,8 +103,8 @@ export default function WatchlistEditor({ C, F, M, isMobile, onClose, onSaved })
 
   useEffect(() => {
     let alive = true;
-    Promise.all([loadFile("watchlist"), loadFile("margin")])
-      .then(([w, m]) => { if (alive) { setWl({ secs: parseWl(w.content), sha: w.sha }); setMg({ text: m.content, sha: m.sha }); } })
+    Promise.all([loadFile("watchlist"), loadFile("margin"), loadFile("parents").catch(() => null)])
+      .then(([w, m, p]) => { if (alive) { setWl({ secs: parseWl(w.content), sha: w.sha }); setMg({ text: m.content, sha: m.sha }); if (p) setPa({ text: p.content, sha: p.sha }); } })
       .catch(e => alive && setErr(String(e.message || e)));
     return () => { alive = false; };
   }, []);
@@ -107,6 +123,12 @@ export default function WatchlistEditor({ C, F, M, isMobile, onClose, onSaved })
     setMg({ text, sha }); setMsg(note); onSaved && onSaved();
   };
 
+  const commitPa = async (text, message, note) => {
+    if (!pa) throw new Error("讀唔到從屬關係檔（Worker 要先 deploy 新版）");
+    const sha = await saveFile("parents", text, pa.sha, message);
+    setPa({ text, sha }); setParents(parseParents(text)); setMsg(note); setScanned(false); onSaved && onSaved();
+  };
+
   const input = { background: C.chip, border: `1px solid ${C.line}`, color: C.txt, padding: "8px 9px", borderRadius: 6, fontFamily: M, fontSize: 16, minWidth: 0 };
   const btn = (on, extra) => ({ background: on ? C.tabOn : C.chip, color: C.txt, border: `1px solid ${C.line}`, borderRadius: 6, padding: "8px 12px", fontFamily: M, fontSize: 13, cursor: busy ? "wait" : "pointer", ...extra });
 
@@ -114,7 +136,7 @@ export default function WatchlistEditor({ C, F, M, isMobile, onClose, onSaved })
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,.55)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background: C.card, color: C.txt, fontFamily: F, border: `1px solid ${C.line}`, borderRadius: isMobile ? "14px 14px 0 0" : 14, width: "100%", maxWidth: 560, maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 12px", borderBottom: `1px solid ${C.line}` }}>
-          {[["add", "加股票"], ["manage", "管理"], ["margin", "孖展率"]].map(([k, l]) => (
+          {[["add", "加股票"], ["manage", "管理"], ["link", "ETF"], ["margin", "孖展率"]].map(([k, l]) => (
             <button key={k} onClick={() => { setTab(k); setErr(""); setMsg(""); }} style={btn(tab === k)}>{l}</button>
           ))}
           <span style={{ flex: 1 }} />
@@ -122,7 +144,8 @@ export default function WatchlistEditor({ C, F, M, isMobile, onClose, onSaved })
         </div>
         <div style={{ padding: 12, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
           {!wl || !mg ? <div style={{ color: err ? C.warn : C.mute, fontSize: 13 }}>{err ? `⚠ ${err}` : "載入緊…"}</div> : <>
-            {tab === "add" && <AddTab {...{ wl, C, M, input, btn, busy, guard, commitWl, setErr }} />}
+            {tab === "add" && <AddTab {...{ wl, pa, C, M, input, btn, busy, guard, commitWl, commitPa, setErr }} />}
+            {tab === "link" && <LinkTab {...{ wl, pa, C, M, input, btn, busy, guard, commitPa }} />}
             {tab === "manage" && <ManageTab {...{ wl, C, M, input, btn, busy, guard, commitWl }} />}
             {tab === "margin" && <MarginTab {...{ mg, C, M, input, btn, guard, commitMg }} />}
             {err && <div style={{ color: C.warn, fontSize: 13 }}>⚠ {err}</div>}
@@ -144,8 +167,9 @@ export default function WatchlistEditor({ C, F, M, isMobile, onClose, onSaved })
   );
 }
 
-function AddTab({ wl, C, M, input, btn, busy, guard, commitWl }) {
+function AddTab({ wl, pa, C, M, input, btn, busy, guard, commitWl, commitPa }) {
   const [txt, setTxt] = useState("");
+  const [par, setPar] = useState("");   // 選填：呢啲係邊隻正股嘅 ETF
   const [ex, setEx] = useState("auto");
   const [secIdx, setSecIdx] = useState(0);
   const [newSec, setNewSec] = useState("");
@@ -164,6 +188,9 @@ function AddTab({ wl, C, M, input, btn, busy, guard, commitWl }) {
   const go = () => guard(async () => {
     const toks = txt.split(/[\s,，、]+/).map(toToken).filter(Boolean);
     if (!toks.length) throw new Error("冇有效代號");
+    const parent = par.trim() ? pSym(par) : null;
+    if (parent && !pa) throw new Error("讀唔到從屬關係檔（Worker 要先 deploy 新版）");
+    if (parent && !wl.secs.some(s => s.items.some(t => symOf(t).toUpperCase() === parent))) throw new Error(`母股 ${parent} 未喺 Watchlist，請先加母股`);
     const secs = wl.secs.map(s => ({ ...s, items: [...s.items] }));
     let target;
     if (secIdx === -1) {
@@ -177,9 +204,14 @@ function AddTab({ wl, C, M, input, btn, busy, guard, commitWl }) {
       if (exists.has(t) || target.items.map(x => x.toUpperCase()).includes(t)) { skipped.push(t); continue; }
       target.items.push(t); added.push(t);
     }
-    if (!added.length) throw new Error(`已經喺 Watchlist：${skipped.join(", ")}`);
-    await commitWl(secs, `web: add ${added.map(symOf).join(",")} to ${secName(target)}`, `已加 ${added.map(symOf).join(", ")} → ${secName(target)}${skipped.length ? `（跳過已存在：${skipped.map(symOf).join(", ")}）` : ""}`);
-    setTxt("");
+    if (!added.length && !parent) throw new Error(`已經喺 Watchlist：${skipped.join(", ")}`);
+    if (added.length) await commitWl(secs, `web: add ${added.map(symOf).join(",")} to ${secName(target)}`, `已加 ${added.map(symOf).join(", ")} → ${secName(target)}${skipped.length ? `（跳過已存在：${skipped.map(symOf).join(", ")}）` : ""}`);
+    if (parent) {
+      const kids = toks.map(t => symOf(t).toUpperCase());
+      let text = pa.text; kids.forEach(k => { text = setParentLine(text, k, parent); });
+      await commitPa(text, `web: ${kids.join(",")} → ETF of ${parent}`, `${added.length ? `已加 ${added.map(symOf).join(", ")}，` : ""}${kids.join(", ")} 已設為 ${parent} 嘅 ETF`);
+    }
+    setTxt(""); setPar("");
   });
 
   return (
@@ -195,8 +227,44 @@ function AddTab({ wl, C, M, input, btn, busy, guard, commitWl }) {
           {["auto", "NASDAQ", "NYSE", "AMEX", "CBOE"].map(x => <option key={x} value={x}>{x}</option>)}
         </select>
       </div>
+      <input value={par} onChange={e => setPar(e.target.value)} placeholder="（選填）呢隻係邊隻股嘅 ETF？例如 CRWV" style={input} autoCapitalize="characters" />
       {secIdx === -1 && <input value={newSec} onChange={e => setNewSec(e.target.value)} placeholder="新分組名稱，例如 23-MY IDEAS" style={input} />}
       <button disabled={busy} onClick={go} style={btn(true)}>{busy ? "儲存中…" : "加入"}</button>
+    </>
+  );
+}
+
+function LinkTab({ wl, pa, C, M, input, btn, busy, guard, commitPa }) {
+  const [c, setC] = useState(""), [p, setP] = useState(""), [q, setQ] = useState("");
+  const inWl = useMemo(() => new Set(wl.secs.flatMap(s => s.items.map(t => symOf(t).toUpperCase()))), [wl]);
+  const map = useMemo(() => parseParents(pa?.text), [pa]);
+  const rows = Object.entries(map).filter(([e, par]) => { const k = q.trim().toUpperCase(); return !k || e.includes(k) || par.includes(k); });
+  const link = () => guard(async () => {
+    if (!pa) throw new Error("讀唔到從屬關係檔（Worker 要先 deploy 新版）");
+    const ch = pSym(c), par = pSym(p);
+    if (!ch || !par) throw new Error("請輸入 ETF 同母股代號");
+    if (ch === par) throw new Error("ETF 同母股唔可以係同一隻");
+    for (const [k, why] of [[ch, "ETF"], [par, "母股"]]) if (!inWl.has(k)) throw new Error(`${why} ${k} 未喺 Watchlist，請先喺「加股票」加入（否則掃描會忽略呢個關係）`);
+    await commitPa(setParentLine(pa.text, ch, par), `web: ${ch} → ETF of ${par}`, `${ch} 已設為 ${par} 嘅 ETF`);
+    setC(""); setP("");
+  });
+  const unlink = e => guard(async () => { await commitPa(setParentLine(pa.text, e, null), `web: unlink ${e}`, `已解除 ${e} 嘅從屬關係`); });
+  return (
+    <>
+      <div style={{ fontSize: 12, color: C.mute, lineHeight: 1.6 }}>設定「ETF → 母股」：Signal 頁展開母股會列出佢嘅 ETF，Data／Band 頁會縮排喺母股下面。兩隻都要先喺 Watchlist。</div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <input value={c} onChange={e => setC(e.target.value)} placeholder="ETF，例如 CRWG" style={{ ...input, flex: 1 }} autoCapitalize="characters" />
+        <input value={p} onChange={e => setP(e.target.value)} placeholder="母股，例如 CRWV" style={{ ...input, flex: 1 }} autoCapitalize="characters" />
+      </div>
+      <button disabled={busy} onClick={link} style={btn(true)}>{busy ? "儲存中…" : "連結"}</button>
+      <div style={{ fontSize: 12, color: C.mute, marginTop: 6 }}>現有關係（{Object.keys(map).length}）</div>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="搜尋" style={input} autoCapitalize="characters" />
+      {rows.slice(0, 60).map(([e, par]) => (
+        <div key={e} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: M, fontSize: 13.5, borderBottom: `1px solid ${C.line}`, padding: "4px 0" }}>
+          <b style={{ minWidth: 60 }}>{e}</b><span style={{ color: C.mute }}>→</span><span style={{ flex: 1 }}>{par}{!inWl.has(e) || !inWl.has(par) ? <span style={{ color: C.warn, fontSize: 11 }}>　未喺 Watchlist，掃描會忽略</span> : null}</span>
+          <button disabled={busy} onClick={() => unlink(e)} style={btn(false, { padding: "3px 9px", color: C.dn })}>解除</button>
+        </div>
+      ))}
     </>
   );
 }

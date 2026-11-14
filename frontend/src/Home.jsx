@@ -3,7 +3,7 @@ import STOCK_NAMES from "./names.json";
 import StockDetail, { SessBadge, sessIcon } from "./StockDetail";
 import UtB1Section from "./UtB1Section";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useRef, useState } from "react";
-import { PARENTS, groupRows } from "./parents";
+import { PARENTS, groupRows, useParents } from "./parents";
 import AppHeader from "./AppHeader";
 
 /**
@@ -234,6 +234,7 @@ const hktStamp = (iso, withDate = true) => {
 };
 
 function BandSection({ band, bq, wl, T }) {
+  useParents();
   const c = band?.counts || {};
   const quotes = bq?.quotes || {};
   const [mkt, setMkt] = useState(() => { try { return localStorage.getItem("os_band_mkt") === "HK" ? "HK" : "US"; } catch { return "US"; } });
