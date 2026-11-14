@@ -313,6 +313,16 @@ export default function Watchlist({ isMobile, light }) {
     fetch("/margin.json", { cache: "no-store" }).then((x) => (x.ok ? x.json() : null)).then((d) => { if (d && d.data) setMgn(d.data); }).catch(() => {});
   }, []);
   const [openT, setOpenT] = useState(null);   // 展開緊邊隻（一次一隻）
+  const [qExact, setQExact] = useState(false);   // 由主頁 Sector Flow 撳持倉跳過嚟：搜尋欄填咗代號，只顯示完全相同嗰隻（改搜尋欄就恢復模糊搜尋）
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("os_focus");
+      if (!raw) return;
+      sessionStorage.removeItem("os_focus");
+      const f = JSON.parse(raw);
+      if (f && f.s && f.t) { setQ(f.s); setQExact(true); setOpenT(f.t); }
+    } catch { /* 冇 sessionStorage 就算 */ }
+  }, []);
   const wrapRef = useRef(null);
   const [wrapW, setWrapW] = useState(0);
   useEffect(() => {
@@ -417,7 +427,7 @@ export default function Watchlist({ isMobile, light }) {
   const query = q.trim().toUpperCase();
   const rows = status.rows
     .filter(r =>
-      (!query || r.symbol.toUpperCase().includes(query)) &&
+      (!query || (qExact ? r.symbol.toUpperCase() === query : r.symbol.toUpperCase().includes(query))) &&
       (!section || r.section === section) &&
       (!bandFilter || r.tband === bandFilter))
     .map(r0 => {
@@ -548,7 +558,7 @@ export default function Watchlist({ isMobile, light }) {
       {editing && <WatchlistEditor C={C} F={F} M={M} isMobile={isMobile} onClose={() => setEditing(false)} />}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: isMobile ? 4 : 6, alignItems: "center", marginBottom: 8 }}>
         <input
-          value={q} onChange={e => setQ(e.target.value)} placeholder={isMobile ? "search…" : "search symbol…"}
+          value={q} onChange={e => { setQ(e.target.value); setQExact(false); }} placeholder={isMobile ? "search…" : "search symbol…"}
           style={{
             ...ctl, padding: isMobile ? "6px 6px" : "6px 9px", flex: "1 1 0%",
           }}

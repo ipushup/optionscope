@@ -850,7 +850,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
 
         <SummarySection sm={sm} T={T} />
 
-        <SectorFlow data={sector} T={T} />
+        <SectorFlow data={sector} T={T} wl={wl} onOpenStock={(r) => { try { sessionStorage.setItem("os_focus", JSON.stringify({ t: r.ticker, s: r.symbol })); } catch { /* ignore */ } onNavigate("watchlist"); }} />
 
         <div style={{ fontFamily: M, fontSize: 11, lineHeight: 1.7, color: T.mute }}>Read-only. No orders can be placed here. Quotes may be delayed. Not investment advice.</div>
       </main>

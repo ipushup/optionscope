@@ -31,7 +31,7 @@ function useNarrow(px = 640) {
   return n;
 }
 
-export default function SectorFlow({ data, T }) {
+export default function SectorFlow({ data, T, wl, onOpenStock }) {
   const narrow = useNarrow();
   const [sortKey, setSortKey] = useState(() => load("sf_sort", "d1"));
   const [rk, setRk] = useState(() => (load("sf_rank", "5") === "20" ? "20" : "5"));
@@ -58,6 +58,11 @@ export default function SectorFlow({ data, T }) {
     const id = setInterval(pull, 15000);
     return () => { alive = false; clearInterval(id); };
   }, [open]);
+
+  // Data 頁（Watchlist）有嘅股票：持倉代號可以撳（BRK.B ↔ BRK-B 兩種寫法都對）
+  const wlMap = {};
+  for (const r of wl?.rows || []) { wlMap[String(r.symbol || "").toUpperCase()] = r; wlMap[String(r.ticker || "").toUpperCase()] = r; }
+  const wlRow = (s) => (s ? wlMap[s.replace(/\.US$/, "").toUpperCase()] || wlMap[s.replace(/\.US$/, "").toUpperCase().replace(".", "-")] || null : null);
 
   const groups = data?.groups || [];
   const time = data?.updated ? new Date(data.updated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null;
@@ -104,7 +109,12 @@ export default function SectorFlow({ data, T }) {
           const q = x.s ? hq[x.s] : null;
           return (
             <div key={x.n} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "2px 0", fontFamily: M, fontSize: 12.5 }}>
-              <b style={{ minWidth: 48, fontWeight: 600, color: x.s ? T.txt : T.mute }}>{x.s ? x.s.replace(/\.US$/, "") : "—"}</b>
+              {(() => {
+                const r = onOpenStock ? wlRow(x.s) : null, label = x.s ? x.s.replace(/\.US$/, "") : "—";
+                return r
+                  ? <button type="button" title="喺 Data 頁開啟" onClick={() => onOpenStock(r)} style={{ minWidth: 48, padding: 0, border: 0, background: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit", fontSize: "inherit", fontWeight: 600, color: T.acc, textDecoration: "underline", textUnderlineOffset: 2 }}>{label}</button>
+                  : <b style={{ minWidth: 48, fontWeight: 600, color: x.s ? T.txt : T.mute }}>{label}</b>;
+              })()}
               <span style={{ flex: 1, minWidth: 0, fontSize: 10.5, color: T.mute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.n}</span>
               <span style={{ fontVariantNumeric: "tabular-nums", color: T.sub, fontSize: 11.5 }}>{x.w.toFixed(1)}%</span>
               <span style={{ minWidth: 56, textAlign: "right", fontVariantNumeric: "tabular-nums", color: q ? (q.pct >= 0 ? T.up : T.dn) : T.mute }}>{q ? sgn(q.pct, 2) : "—"}</span>
