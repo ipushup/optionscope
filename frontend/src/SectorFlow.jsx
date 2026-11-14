@@ -9,7 +9,6 @@ import { MiniChart } from "./StockDetail";
  */
 const M = "-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Roboto','Segoe UI',system-ui,sans-serif";
 const SANS = "'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif";
-const EMA_LEG = [["10", "#ffc400"], ["20", "#00e0ff"], ["50", "#ff6d00"], ["89", "#e040fb"], ["250", "#2979ff"]];
 const SCALE = { d1: 3, d5: 6, d20: 12 };
 const COLS = [["d1", "今日"], ["d5", "5 日"], ["d20", "20 日"]];
 const TFS = [["D", "日"], ["W", "週"], ["M", "月"]];
@@ -99,9 +98,6 @@ export default function SectorFlow({ data, T }) {
             </div>
             {c ? <MiniChart bars={c.b} emas={c.e} tf={ctf} T={T} maxBars={narrow ? 60 : undefined} tight={narrow} />
               : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據</div>}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 10px", marginTop: 5, fontFamily: M, fontSize: 11 }}>
-              {EMA_LEG.map(([p, col]) => <span key={p} style={{ color: col }}>■ {p}</span>)}
-            </div>
           </div>
         )}
       </>
