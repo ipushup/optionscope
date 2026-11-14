@@ -297,7 +297,7 @@ async function handleIngest(req, env, name) {
 // 簽名演算法抄自官方 SDK：longbridge/openapi rust/crates/httpclient/src/signature.rs
 // 端點：POST https://openapi.longbridge.com/quote/quotes  body {"symbol":[...]}
 const LB_BASE = "https://openapi.longbridge.com";
-const SYMBOL_RE = /^\.?[A-Za-z0-9]{1,12}(?:\.[A-Za-z]{1,4})?$/;
+const SYMBOL_RE = /^\.?[A-Za-z0-9]{1,12}(?:\.[A-Za-z]{1,4}){0,2}$/;   // 允許 BRK.B.US 呢類兩個點
 const MAX_SYMBOLS = 100;
 
 async function sha1hex(data) {
