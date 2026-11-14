@@ -432,7 +432,7 @@ async function handleCandles(req, env, url) {
   const bars = [];
   for (let i = 0; i < (r0.timestamp || []).length; i++) {
     const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i];
-    if (o > 0 && h > 0 && l > 0 && c > 0) bars.push([o, h, l, c]);
+    if (o > 0 && h > 0 && l > 0 && c > 0) bars.push([o, h, l, c, q.volume?.[i] || 0]);
   }
   const res = json({ symbol, tf, bars, fetched_at: new Date().toISOString() }, 200, { "Cache-Control": "public, max-age=300" });
   if (!debug && bars.length) await cache.put(cacheKey, res.clone());
