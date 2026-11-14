@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * 05 / UT B1·S1：每日「UT 當日轉多（B1）／當日轉空（S1）」嘅股票佔該市場有效股票％。
+ * 06 / UT B1·S1：每日「UT 當日轉多（B1）／當日轉空（S1）」嘅股票佔該市場有效股票％。
  * 上 US、下 HK 兩格；每日一支向上柱（B1）+ 一支向下柱（S1），白線 = 淨值（B1% − S1%）。最近 30 個交易日。
  * 數據：watchlist_merged.json 嘅 ut_b1 = { days:[YYYY-MM-DD], US:[[b%, bN, total, s%, sN]|null], HK:[...] }
  * （舊版數據冇 s% / sN：只畫 B1，等下次完整掃描就有 S1）

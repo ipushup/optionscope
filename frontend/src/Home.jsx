@@ -4,6 +4,7 @@ import StockDetail, { SessBadge, sessIcon } from "./StockDetail";
 import UtB1Section from "./UtB1Section";   // 股票名（Longbridge static_info 生成：美股英文、港股中文），打包入 bundle，唔經 Worker KV
 import { useEffect, useRef, useState } from "react";
 import { PARENTS, groupRows, useParents } from "./parents";
+import SectorFlow from "./SectorFlow";
 import AppHeader from "./AppHeader";
 
 /**
@@ -27,6 +28,7 @@ const SUMMARY_URL = `${BASE}/summary.json`;
 const BAND_URL = `${BASE}/band.json`;
 const WL_URL = `${BASE}/watchlist_merged.json`;
 const BQ_URL = `${BASE}/band_quotes.json`;
+const SECTOR_URL = `${BASE}/sector.json`;
 // 即時報價（Worker 代 Longbridge 查）。card id → Longbridge 指數代號；ETF 代號喺 market.json 入面。
 const LIVE_URL = "/api/quotes";
 const INDEX_LB = { spx: ".SPX.US", ndx: ".IXIC.US", dji: ".DJI.US", vix: ".VIX.US", hsi: "HSI.HK" };
@@ -648,6 +650,7 @@ export default function Home({ onNavigate, light, onToggleLight }) {
   const [daily, setDaily] = useState(null);
   const [sm, setSm] = useState(null);
   const [wl, setWl] = useState(null);
+  const [sector, setSector] = useState(null);
   const [mode, setMode] = useState(() => {
     try { return localStorage.getItem("os_snap_mode") === "intraday" ? "intraday" : "D"; } catch (e) { return "D"; }
   });
@@ -668,8 +671,10 @@ export default function Home({ onNavigate, light, onToggleLight }) {
     get(BAND_URL, setBand);
     get(BQ_URL, setBq);
     get(WL_URL, setWl);
+    get(SECTOR_URL, setSector);
     const t = setInterval(() => get(BQ_URL, setBq), 120 * 1000);
-    return () => { dead = true; clearInterval(t); };
+    const t2 = setInterval(() => get(SECTOR_URL, setSector), 300 * 1000);
+    return () => { dead = true; clearInterval(t); clearInterval(t2); };
   }, []);
 
   useEffect(() => {
@@ -845,6 +850,8 @@ export default function Home({ onNavigate, light, onToggleLight }) {
         <ConfluenceSection wl={wl} T={T} onNavigate={onNavigate} />
 
         <SummarySection sm={sm} T={T} />
+
+        <SectorFlow data={sector} T={T} />
 
         <UtB1Section wl={wl} T={T} />
 
