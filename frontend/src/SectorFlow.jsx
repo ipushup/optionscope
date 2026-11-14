@@ -96,7 +96,7 @@ export default function SectorFlow({ data, T }) {
               <span style={{ flex: 1 }} />
               {it.last != null && <span style={{ fontFamily: M, fontSize: 11, color: T.mute }}>{it.last.toFixed(2)}{it.flow != null ? ` · 淨流入 ${it.flow >= 0 ? "+" : "−"}${Math.abs(it.flow).toFixed(1)}M` : ""}</span>}
             </div>
-            {c ? <MiniChart bars={c.b} emas={c.e} tf={ctf} T={T} maxBars={narrow ? 60 : undefined} tight={narrow} />
+            {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} maxBars={narrow ? 60 : undefined} tight={narrow} />
               : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據</div>}
           </div>
         )}
@@ -127,7 +127,7 @@ export default function SectorFlow({ data, T }) {
             </div>
           ))}
           <div style={{ marginTop: 10, fontSize: 11, lineHeight: 1.65, color: T.mute }}>
-            升跌 = 對上日（今日）／5／20 個交易日前收市；排名 = 組內按該期升跌排，▲▼ = 對比上一個同長週期（5–10／20–40 個交易日前）嘅排名升降。撳行展開 K 線圖（EMA 10／20／50／89／250）。淨流入為 Longbridge 按成交方向估算，唔等於 ETF 申購贖回。
+            升跌 = 對上日（今日）／5／20 個交易日前收市；排名 = 組內按該期升跌排，▲▼ = 對比上一個同長週期（5–10／20–40 個交易日前）嘅排名升降。撳行展開 K 線圖（EMA 10／20／50／89／250）。白三角 = UT 買／賣 · 橙實心三角 = TB 真入市 · 綠／紅空心方 = Heavy 買／賣 · 最後一棒未收市時訊號係暫時。淨流入為 Longbridge 按成交方向估算，唔等於 ETF 申購贖回。
           </div>
         </div>
       )}

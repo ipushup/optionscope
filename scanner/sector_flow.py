@@ -6,7 +6,7 @@ sector_flow.py — 主頁「SECTOR FLOW · 板塊資金流向」數據（sector.
 ETF 清單（SPDR 11 大板塊 / 主題 / 跨資產）→ 每隻：
   今日升跌（Longbridge 報價：現價 vs 上日收市）、5 日／20 日升跌（日線收市價）、
   5 日／20 日「組內排名」同上一個週期（5–10／20–40 個交易日前）嘅排名、即日資金淨流入（capital_flow 最後一點）、
-  展開圖表：日／週／月 K 線（最近 60 棒）+ EMA 10/20/50/89/250（用全部棒計；唔夠 250 棒就唔畀 EMA250）。
+  展開圖表：日／週／月 K 線（最近 80 棒）+ UT／TB／Heavy 訊號 + EMA 10/20/50/89/250（用全部棒計；唔夠 250 棒就唔畀 EMA250）。
 
 環境變數：LONGBRIDGE_APP_KEY/_SECRET/_ACCESS_TOKEN；GATEWAY_URL / INGEST_TOKEN（有就推私人 gateway）
   SECTOR_OUT  輸出檔（預設 frontend/public/sector.json）
@@ -58,6 +58,8 @@ def chart_of(df):
 def build():
     from longbridge.openapi import AdjustType, Config, Period, QuoteContext, TradeSessions
     import signal_board as sb
+    import signal_mtf as mtf          # chart_for：K 線 + UT／TB／Heavy 訊號 + EMA（同 Signal Board 展開圖同一套）
+    import intraday_signals as S
     sb.RATE = 6.0
     ctx = QuoteContext(Config.from_apikey_env())
     lb = lambda s: f"{s}.US"
@@ -107,7 +109,14 @@ def build():
                 it["flow"] = float(fl[-1].inflow) / 1e6 if fl else None
             except Exception as e:  # noqa: BLE001
                 it["flow"] = None; print(f"::warning::{sym} flow: {e}", flush=True)
-            it["chart"] = {k: v for k, v in (("D", chart_of(d)), ("W", chart_of(w)), ("M", chart_of(m))) if v}
+            frames = {"D": d, "W": w, "M": m}
+            ch = mtf.chart_for(frames, S)
+            for k, df in frames.items():       # 訊號計算失敗嘅級別，退而求其次只畀 K 線 + EMA
+                if k not in ch:
+                    v = chart_of(df)
+                    if v:
+                        ch[k] = v
+            it["chart"] = ch
             items.append(it)
         for k5, kp in (("d5", "p5"), ("d20", "p20")):
             now, prv = ranks(items, k5), ranks(items, kp)
