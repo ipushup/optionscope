@@ -217,7 +217,7 @@ async function handleMylistPut(req, env) {
 
 
 // ── Watchlist / 孖展率 網頁編輯：經 GitHub Contents API 讀寫 repo 入面嘅 txt（需要 secret GH_CONTENTS_TOKEN）──
-const GH_FILES = { watchlist: "scanner/Watchlists.txt", margin: "scanner/margin.txt" };
+const GH_FILES = { watchlist: "scanner/Watchlists.txt", margin: "scanner/margin.txt", parents: "scanner/watchlist_parents.txt" };
 function b64ToUtf8(b64) { const bin = atob(b64.replace(/\s/g, "")); const u = Uint8Array.from(bin, (c) => c.charCodeAt(0)); return new TextDecoder().decode(u); }
 function utf8ToB64(str) { const u = new TextEncoder().encode(str); let bin = ""; for (const b of u) bin += String.fromCharCode(b); return btoa(bin); }
 function ghHeaders(env) { return { Authorization: `Bearer ${env.GH_CONTENTS_TOKEN || env.GH_DISPATCH_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "xmarket-gateway", "X-GitHub-Api-Version": "2022-11-28" }; }
@@ -243,6 +243,11 @@ async function handleGhFile(req, env, url) {
       const toks = content.trim().split(",").map((x) => x.trim()).filter(Boolean);
       if (!toks.length || !toks[0].startsWith("###")) return json({ error: "Watchlists 格式唔啱（要以 ###SECTION 開頭）" }, 400);
       for (const t of toks) if (!(t.startsWith("###") ? t.length > 3 : /^[A-Za-z0-9_.\-!]+:[A-Za-z0-9_.\-!&]+$/.test(t))) return json({ error: `格式唔啱：${t.slice(0, 40)}` }, 400);
+    } else if (b.name === "parents") {   // 從屬關係：每行 "子 母"（# 後面係註解），代號只准字母數字 . - ! &
+      for (const raw of content.split("\n")) {
+        const line = raw.split("#")[0].trim(); if (!line) continue;
+        if (!/^[A-Za-z0-9.\-!&]+[\s,]+[A-Za-z0-9.\-!&]+$/.test(line)) return json({ error: `從屬格式唔啱：${line.slice(0, 40)}` }, 400);
+      }
     } else if (content.length < 50) return json({ error: "margin 內容太短" }, 400);
     const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${f}`, {
       method: "PUT", headers: { ...ghHeaders(env), "Content-Type": "application/json" },

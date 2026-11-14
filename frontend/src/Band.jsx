@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PARENTS, groupRows } from "./parents";
+import { PARENTS, groupRows, useParents } from "./parents";
 
 /**
  * Band.jsx — Triple Band radar
@@ -53,6 +53,7 @@ const QUOTES_URL = `${BASE}/band_quotes.json`;
 const FLOG_URL = `${BASE}/band_forming_log.json`;
 
 export default function BandView({ isMobile, light }) {
+  useParents();
   const [band, setBand] = useState(null);
   const [q, setQ] = useState({});
   const [qAt, setQAt] = useState(null);

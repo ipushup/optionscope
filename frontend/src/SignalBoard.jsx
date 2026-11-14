@@ -1,11 +1,10 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { PARENTS } from "./parents";
+import { PARENTS, etfsOf, useParents } from "./parents";
 import { MiniChart } from "./StockDetail";
 import STOCK_NAMES from "./names.json";
 
-// parents.js 係 ETF → 正股；反轉做 正股 → [ETF]（展開卡顯示該股嘅槓桿／衍生 ETF）
-const ETFS_OF = {};
-for (const [e, p] of Object.entries(PARENTS)) if (/^[A-Z]{1,5}$/.test(e)) (ETFS_OF[p] = ETFS_OF[p] || []).push(e);
+// parents.js 係 ETF → 正股；etfsOf(正股) = 該股嘅槓桿／衍生 ETF（只計美股代號）
+const usEtfs = (p) => etfsOf(p).filter((e) => /^[A-Z]{1,5}$/.test(e));
 
 /**
  * SignalBoard.jsx — 同 TradingView 並排用嘅即時短線信號板（集中睇少數股票）。
@@ -40,6 +39,7 @@ const stamp = iso => {
 const DEFAULT_ORDER = ["INTC", "NVDA", "BABA", "NOK", "CRWV", "TTD", "MRNA", "HIMS", "RKLB", "SKHY", "SKHX", "SPCX", "0968.HK"];
 
 export default function SignalBoard({ isMobile, light, onBack }) {
+  useParents();   // Data 頁 Edit 改咗從屬關係就即時 re-render
   const T = light ? THEMES.light : THEMES.dark;
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
@@ -71,8 +71,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
   };
   const [openSym, setOpenSym] = useState(() => new Set());     // 展開咗圖表嘅股票
   const [etfQ, setEtfQ] = useState({});                          // 展開咗嘅股票嘅 ETF 即時報價：{ETF: {last, pct, ext}}（Worker /api/quotes → Longbridge）
+  const etfSig = [...new Set([...openSym].flatMap(x => usEtfs(x)))].join(",");   // 從屬關係或展開有變就重拉
   useEffect(() => {
-    const syms = [...new Set([...openSym].flatMap(x => ETFS_OF[x] || []))];
+    const syms = etfSig ? etfSig.split(",") : [];
     if (!syms.length) return undefined;
     let alive = true;
     const pull = async () => {
@@ -87,7 +88,7 @@ export default function SignalBoard({ isMobile, light, onBack }) {
     pull();
     const id = setInterval(pull, 15000);
     return () => { alive = false; clearInterval(id); };
-  }, [openSym]);
+  }, [etfSig]);
   const [ctfMap, setCtfMap] = useState(() => { try { return JSON.parse(localStorage.getItem("sb_chart_tf") || "{}") || {}; } catch { return {}; } });   // 每隻股票各自嘅圖表級別
   const setCtf = (sym, x) => setCtfMap(m => { const n = { ...m, [sym]: x }; try { localStorage.setItem("sb_chart_tf", JSON.stringify(n)); } catch { /* ok */ } return n; });
   const toggleOpen = sym => setOpenSym(o => { const n = new Set(o); if (n.has(sym)) n.delete(sym); else n.add(sym); return n; });
@@ -318,9 +319,9 @@ export default function SignalBoard({ isMobile, light, onBack }) {
         </div>
         {c ? <MiniChart bars={c.b} emas={c.e} utf={c.u} tbf={c.tb} hvf={c.hv} tf={ctf} T={T} maxBars={isMobile ? 60 : undefined} tight={isMobile} />
           : <div style={{ color: T.mute, fontFamily: M, fontSize: 12, padding: "14px 0", textAlign: "center" }}>呢個級別暫時冇圖表數據（下一輪掃描後出現）</div>}
-        {(ETFS_OF[sym] || []).length > 0 && (
+        {usEtfs(sym).length > 0 && (
           <div style={{ marginTop: 8, paddingTop: 6, borderTop: `1px dashed ${T.line}` }}>
-            {ETFS_OF[sym].map(e => {
+            {usEtfs(sym).map(e => {
               const q = etfQ[e], pf = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`, cc = v => (v >= 0 ? T.up : T.dn);
               return (
                 <div key={e} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "2px 0", fontFamily: M, fontSize: 12.5 }}>
